@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'ssumjeon',
       script: 'dist/src/app.js',
-      cwd: '/home/ubuntu/ssumjeon/backend',
+      cwd: '/home/ec2-user/ssumjeon/backend',
       instances: 1,
       autorestart: true,
       watch: false,
