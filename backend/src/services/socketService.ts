@@ -24,6 +24,7 @@ interface QueueEntry {
 }
 
 const matchingQueue = new Map<string, QueueEntry>()
+const pendingJoinTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
 function isCompatible(a: QueueEntry, b: QueueEntry): boolean {
   const aWants = a.filters.gender ?? (a.gender === 'male' ? 'female' : 'male')
@@ -104,61 +105,75 @@ export function setupSocket(io: Server) {
           return
         }
 
-        const entry: QueueEntry = { userId, socketId: socket.id, ...me, filters }
+        socket.emit('matching:waiting')
 
-        let matched: QueueEntry | null = null
-        for (const [qId, qEntry] of matchingQueue) {
-          if (qId === userId) continue
-          if (isCompatible(entry, qEntry)) { matched = qEntry; break }
-        }
+        const timer = setTimeout(async () => {
+          pendingJoinTimers.delete(userId)
+          try {
+            const entry: QueueEntry = { userId, socketId: socket.id, ...me, filters }
 
-        if (matched) {
-          matchingQueue.delete(matched.userId)
-          matchingQueue.delete(userId)
+            let matched: QueueEntry | null = null
+            for (const [qId, qEntry] of matchingQueue) {
+              if (qId === userId) continue
+              if (isCompatible(entry, qEntry)) { matched = qEntry; break }
+            }
 
-          const matchId = uuidv4()
-          await query(
-            'INSERT INTO matches (id, user1_id, user2_id, status) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING',
-            [matchId, userId, matched.userId, 'matched'],
-          )
+            if (matched) {
+              matchingQueue.delete(matched.userId)
+              matchingQueue.delete(userId)
 
-          const existingRoom = await query<{ id: string }>(
-            `SELECT cr.id FROM chat_rooms cr
-             JOIN chat_room_members m1 ON m1.chat_room_id = cr.id AND m1.user_id = $1
-             JOIN chat_room_members m2 ON m2.chat_room_id = cr.id AND m2.user_id = $2
-             WHERE cr.type = 'individual'`,
-            [userId, matched.userId],
-          )
+              const matchId = uuidv4()
+              await query(
+                'INSERT INTO matches (id, user1_id, user2_id, status) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING',
+                [matchId, userId, matched.userId, 'matched'],
+              )
 
-          let chatRoomId: string
-          if (existingRoom.rows.length > 0) {
-            chatRoomId = existingRoom.rows[0].id
-          } else {
-            chatRoomId = uuidv4()
-            await query('INSERT INTO chat_rooms (id, type) VALUES ($1,$2)', [chatRoomId, 'individual'])
-            await query(
-              'INSERT INTO chat_room_members (chat_room_id, user_id) VALUES ($1,$2),($1,$3)',
-              [chatRoomId, userId, matched.userId],
-            )
+              const existingRoom = await query<{ id: string }>(
+                `SELECT cr.id FROM chat_rooms cr
+                 JOIN chat_room_members m1 ON m1.chat_room_id = cr.id AND m1.user_id = $1
+                 JOIN chat_room_members m2 ON m2.chat_room_id = cr.id AND m2.user_id = $2
+                 WHERE cr.type = 'individual'`,
+                [userId, matched.userId],
+              )
+
+              let chatRoomId: string
+              if (existingRoom.rows.length > 0) {
+                chatRoomId = existingRoom.rows[0].id
+              } else {
+                chatRoomId = uuidv4()
+                await query('INSERT INTO chat_rooms (id, type) VALUES ($1,$2)', [chatRoomId, 'individual'])
+                await query(
+                  'INSERT INTO chat_room_members (chat_room_id, user_id) VALUES ($1,$2),($1,$3)',
+                  [chatRoomId, userId, matched.userId],
+                )
+              }
+
+              io.to(socket.id).emit('matching:success', { matchId, chatRoomId })
+              io.to(matched.socketId).emit('matching:success', { matchId, chatRoomId })
+            } else {
+              matchingQueue.set(userId, entry)
+            }
+          } catch {
+            socket.emit('matching:error', { message: '매칭 오류가 발생했습니다.' })
           }
+        }, 5000)
 
-          io.to(socket.id).emit('matching:success', { matchId, chatRoomId })
-          io.to(matched.socketId).emit('matching:success', { matchId, chatRoomId })
-        } else {
-          matchingQueue.set(userId, entry)
-          socket.emit('matching:waiting')
-        }
+        pendingJoinTimers.set(userId, timer)
       } catch (err) {
         socket.emit('matching:error', { message: '매칭 오류가 발생했습니다.' })
       }
     })
 
     socket.on('matching:cancel', () => {
+      const timer = pendingJoinTimers.get(userId)
+      if (timer) { clearTimeout(timer); pendingJoinTimers.delete(userId) }
       matchingQueue.delete(userId)
     })
 
     socket.on('disconnect', () => {
       console.log(`[Socket] User disconnected: ${userId}`)
+      const timer = pendingJoinTimers.get(userId)
+      if (timer) { clearTimeout(timer); pendingJoinTimers.delete(userId) }
       matchingQueue.delete(userId)
       userSockets.get(userId)?.delete(socket.id)
       if (userSockets.get(userId)?.size === 0) userSockets.delete(userId)
