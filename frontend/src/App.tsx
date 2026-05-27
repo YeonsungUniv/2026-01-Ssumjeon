@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import MainLayout from '@/components/layout/MainLayout'
@@ -41,19 +41,33 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function useInitialRefresh() {
-  const { isAuthenticated, accessToken, setAccessToken, logout } = useAuthStore()
+  const { accessToken, setAccessToken, logout } = useAuthStore()
+  const [ready, setReady] = useState(false)
+
   useEffect(() => {
-    if (!isAuthenticated || accessToken) return
+    if (accessToken) { setReady(true); return }
     fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => setAccessToken(data.data.accessToken))
       .catch(() => logout())
+      .finally(() => setReady(true))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  return ready
 }
 
 export default function App() {
-  useInitialRefresh()
+  const ready = useInitialRefresh()
+
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-10 h-10 border-4 border-primary-300 border-t-primary-500 rounded-full" />
+      </div>
+    )
+  }
+
   return (
     <BrowserRouter>
       <Routes>
