@@ -3,6 +3,13 @@ import path from 'path'
 import { pool } from '../src/config/db'
 
 async function runMigrations() {
+  const dbHost = process.env.DB_HOST
+  if (!dbHost || dbHost.includes('your-rds')) {
+    console.log('[Migration] DB_HOST not configured — skipping migrations')
+    await pool.end()
+    return
+  }
+
   const client = await pool.connect()
   try {
     await client.query(`
