@@ -1,0 +1,206 @@
+import { v4 as uuidv4 } from 'uuid'
+import { query } from '../config/db'
+import type { MessageRow, ChatRoomRow, UserRow } from '../types'
+
+export const chatService = {
+  async getRooms(userId: string) {
+    const result = await query<
+      ChatRoomRow & {
+        partner_id: string | null
+        partner_nickname: string | null
+        partner_image: string | null
+        group_name: string | null
+        last_message: string | null
+        last_message_at: Date | null
+        unread_count: string
+      }
+    >(
+      `SELECT
+         cr.id,
+         cr.type,
+         -- 1:1 상대방 정보
+         partner.id AS partner_id,
+         partner.nickname AS partner_nickname,
+         partner.profile_image AS partner_image,
+         -- 그룹 방 이름
+         gr.title AS group_name,
+         -- 마지막 메시지
+         last_msg.content AS last_message,
+         last_msg.created_at AS last_message_at,
+         -- 안읽은 메시지 수
+         (SELECT COUNT(*) FROM messages m2
+          WHERE m2.room_id = cr.id AND m2.sender_id != $1 AND m2.is_read = false) AS unread_count
+       FROM chat_rooms cr
+       JOIN chat_room_members crm ON crm.chat_room_id = cr.id AND crm.user_id = $1
+       LEFT JOIN chat_room_members crm2 ON crm2.chat_room_id = cr.id AND crm2.user_id != $1
+       LEFT JOIN users partner ON partner.id = crm2.user_id AND cr.type = 'individual'
+       LEFT JOIN group_rooms gr ON gr.id = cr.group_room_id
+       LEFT JOIN LATERAL (
+         SELECT content, created_at FROM messages
+         WHERE room_id = cr.id ORDER BY created_at DESC LIMIT 1
+       ) last_msg ON true
+       ORDER BY last_msg.created_at DESC NULLS LAST`,
+      [userId],
+    )
+
+    return result.rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      partner: r.partner_id
+        ? { id: r.partner_id, nickname: r.partner_nickname, profileImage: r.partner_image }
+        : undefined,
+      groupName: r.group_name,
+      lastMessage: r.last_message,
+      lastMessageAt: r.last_message_at?.toISOString(),
+      unreadCount: parseInt(r.unread_count, 10),
+    }))
+  },
+
+  async getMessages(roomId: string, userId: string, page = 1, limit = 30) {
+    // 접근 권한 확인
+    const access = await query(
+      'SELECT 1 FROM chat_room_members WHERE chat_room_id = $1 AND user_id = $2',
+      [roomId, userId],
+    )
+    if (access.rows.length === 0) throw new Error('접근 권한이 없습니다.')
+
+    const offset = (page - 1) * limit
+    const result = await query<MessageRow & { sender_nickname: string }>(
+      `SELECT m.*, u.nickname AS sender_nickname
+       FROM messages m
+       JOIN users u ON u.id = m.sender_id
+       WHERE m.room_id = $1
+       ORDER BY m.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [roomId, limit, offset],
+    )
+
+    const countResult = await query<{ count: string }>('SELECT COUNT(*) FROM messages WHERE room_id = $1', [roomId])
+    const total = parseInt(countResult.rows[0].count, 10)
+
+    return {
+      items: result.rows.reverse().map((m) => ({
+        id: m.id,
+        roomId: m.room_id,
+        senderId: m.sender_id,
+        senderNickname: m.sender_nickname,
+        content: m.content,
+        createdAt: m.created_at.toISOString(),
+        isRead: m.is_read,
+      })),
+      total,
+      page,
+      limit,
+      hasMore: offset + limit < total,
+    }
+  },
+
+  async sendMessage(roomId: string, senderId: string, content: string) {
+    const access = await query(
+      'SELECT 1 FROM chat_room_members WHERE chat_room_id = $1 AND user_id = $2',
+      [roomId, senderId],
+    )
+    if (access.rows.length === 0) throw new Error('접근 권한이 없습니다.')
+
+    const id = uuidv4()
+    const result = await query<MessageRow & { sender_nickname: string }>(
+      `INSERT INTO messages (id, room_id, sender_id, content)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *, (SELECT nickname FROM users WHERE id = $3) AS sender_nickname`,
+      [id, roomId, senderId, content],
+    )
+
+    const m = result.rows[0]
+    return {
+      id: m.id,
+      roomId: m.room_id,
+      senderId: m.sender_id,
+      senderNickname: m.sender_nickname,
+      content: m.content,
+      createdAt: m.created_at.toISOString(),
+      isRead: m.is_read,
+    }
+  },
+
+  async markAsRead(roomId: string, userId: string) {
+    await query(
+      'UPDATE messages SET is_read = true WHERE room_id = $1 AND sender_id != $2',
+      [roomId, userId],
+    )
+  },
+
+  async leaveRoom(roomId: string, userId: string) {
+    const access = await query(
+      'SELECT 1 FROM chat_room_members WHERE chat_room_id = $1 AND user_id = $2',
+      [roomId, userId],
+    )
+    if (access.rows.length === 0) throw new Error('채팅방 멤버가 아닙니다.')
+    await query('DELETE FROM chat_room_members WHERE chat_room_id = $1 AND user_id = $2', [roomId, userId])
+
+    // 그룹 채팅방이면 과팅방 멤버에서도 제거 (방장이면 위임 또는 방 해체)
+    const chatRoom = await query<{ group_room_id: string | null }>(
+      "SELECT group_room_id FROM chat_rooms WHERE id = $1 AND type = 'group'",
+      [roomId],
+    )
+    const groupRoomId = chatRoom.rows[0]?.group_room_id
+    if (groupRoomId) {
+      const leaderCheck = await query<{ is_leader: boolean }>(
+        'SELECT is_leader FROM group_room_members WHERE group_room_id = $1 AND user_id = $2',
+        [groupRoomId, userId],
+      )
+      const isLeader = leaderCheck.rows[0]?.is_leader ?? false
+
+      await query('DELETE FROM group_room_members WHERE group_room_id = $1 AND user_id = $2', [groupRoomId, userId])
+
+      if (isLeader) {
+        const remaining = await query<{ user_id: string }>(
+          'SELECT user_id FROM group_room_members WHERE group_room_id = $1 LIMIT 1',
+          [groupRoomId],
+        )
+        if (remaining.rows.length === 0) {
+          await query("UPDATE group_rooms SET status = 'closed' WHERE id = $1", [groupRoomId])
+          await query('DELETE FROM chat_rooms WHERE id = $1', [roomId])
+        } else {
+          const nextLeader = remaining.rows[0].user_id
+          await query(
+            'UPDATE group_room_members SET is_leader = true WHERE group_room_id = $1 AND user_id = $2',
+            [groupRoomId, nextLeader],
+          )
+          await query('UPDATE group_rooms SET leader_id = $1 WHERE id = $2', [nextLeader, groupRoomId])
+        }
+      }
+    }
+  },
+
+  async blockUser(blockerId: string, blockedId: string) {
+    if (blockerId === blockedId) throw new Error('자기 자신을 차단할 수 없습니다.')
+    await query(
+      'INSERT INTO user_blocks (blocker_id, blocked_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [blockerId, blockedId],
+    )
+    await query(
+      `DELETE FROM chat_room_members
+       WHERE user_id = $1
+         AND chat_room_id IN (
+           SELECT cr.id FROM chat_rooms cr
+           JOIN chat_room_members crm ON crm.chat_room_id = cr.id AND crm.user_id = $2
+           WHERE cr.type = 'individual'
+         )`,
+      [blockerId, blockedId],
+    )
+  },
+
+  async unblockUser(blockerId: string, blockedId: string) {
+    await query('DELETE FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2', [blockerId, blockedId])
+  },
+
+  async getBlockedUsers(userId: string) {
+    const result = await query<{ id: string; nickname: string }>(
+      `SELECT u.id, u.nickname FROM users u
+       JOIN user_blocks ub ON ub.blocked_id = u.id
+       WHERE ub.blocker_id = $1`,
+      [userId],
+    )
+    return result.rows
+  },
+}

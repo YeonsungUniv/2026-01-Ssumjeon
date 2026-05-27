@@ -1,0 +1,1 @@
+ALTER TABLE group_rooms ADD COLUMN IF NOT EXISTS invite_code VARCHAR(8) UNIQUE;

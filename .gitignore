@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables (contains secrets)
+.env
+.env.local
+.env.production
+**/.env
+
+# Build output
+dist/
+build/
+**/dist/
+
+# Uploaded files
+backend/uploads/
+
+# Database local data
+pgdata/
+pgsql/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Claude Code local data
+.claude/
+
+# Local SSL certs
+*.pem
