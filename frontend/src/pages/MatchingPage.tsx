@@ -11,7 +11,7 @@ const GENDER_OPTIONS = [
   { value: 'female' as const, label: '여성' },
 ]
 
-type Phase = 'idle' | 'waiting' | 'matched'
+type Phase = 'idle' | 'waiting' | 'searching' | 'matched'
 
 export default function MatchingPage() {
   const navigate = useNavigate()
@@ -37,9 +37,12 @@ export default function MatchingPage() {
 
     const onSuccess = ({ chatRoomId }: { chatRoomId: string }) => {
       clearInterval(timerRef.current!)
-      setPhase('matched')
+      setPhase('searching')
       chatApi.getRooms().then((res) => setRooms(res.data))
-      setTimeout(() => navigate(`/chat/${chatRoomId}`), 1200)
+      setTimeout(() => {
+        setPhase('matched')
+        setTimeout(() => navigate(`/chat/${chatRoomId}`), 1500)
+      }, 3000)
     }
 
     const onError = ({ message }: { message?: string } = {}) => {
@@ -103,6 +106,23 @@ export default function MatchingPage() {
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
   const hasFilters = !!(filters.departments?.length || filters.grades?.length || filters.gender)
+
+  // ── 상대방 검색 중 ────────────────────────────────────────────────
+  if (phase === 'searching') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8">
+        <div className="relative w-44 h-44">
+          <div className="absolute inset-0 rounded-full border-[6px] border-pink-200 animate-ping" />
+          <div className="absolute inset-0 rounded-full border-[6px] border-pink-400 animate-pulse" />
+          <div className="absolute inset-0 flex items-center justify-center text-6xl">🔍</div>
+        </div>
+        <div className="text-center space-y-2">
+          <p className="text-2xl font-bold text-gray-800">인연을 찾았어요!</p>
+          <p className="text-gray-400 animate-pulse">상대방 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    )
+  }
 
   // ── 매칭 성공 ─────────────────────────────────────────────────────
   if (phase === 'matched') {
