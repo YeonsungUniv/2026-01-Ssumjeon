@@ -2,7 +2,9 @@ import { NavLink } from 'react-router-dom'
 import { useChatStore } from '@/store/chatStore'
 import { useAuthStore } from '@/store/authStore'
 
-const baseTabs = [
+type Tab = { to: string; label: string; icon: ({ className }: { className?: string }) => JSX.Element; badge?: boolean }
+
+const baseTabs: Tab[] = [
   { to: '/',               label: '홈',    icon: HomeIcon },
   { to: '/matching',       label: '매칭',  icon: HeartIcon },
   { to: '/group-matching', label: '과팅',  icon: GroupIcon },
@@ -10,7 +12,7 @@ const baseTabs = [
   { to: '/profile',        label: '나',    icon: PersonIcon },
 ]
 
-const adminTab = { to: '/suggestions', label: '건의사항', icon: SuggestionIcon }
+const adminTab: Tab = { to: '/suggestions', label: '건의사항', icon: SuggestionIcon }
 
 export default function TabBar() {
   const { rooms } = useChatStore()

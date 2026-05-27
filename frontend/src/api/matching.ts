@@ -8,14 +8,13 @@ export interface MatchFilters {
 }
 
 export const matchingApi = {
-  getCards: (filters?: MatchFilters) =>
-    client.get<ApiResponse<MatchCard[]>>('/matching/cards', {
-      params: {
-        ...(filters?.departments?.length ? { departments: filters.departments.join(',') } : {}),
-        ...(filters?.grades?.length ? { grades: filters.grades.join(',') } : {}),
-        ...(filters?.gender ? { gender: filters.gender } : {}),
-      },
-    }),
+  getCards: (filters?: MatchFilters) => {
+    const params: Record<string, string> = {}
+    if (filters?.departments?.length) params.departments = filters.departments.join(',')
+    if (filters?.grades?.length) params.grades = filters.grades.join(',')
+    if (filters?.gender) params.gender = filters.gender
+    return client.get<ApiResponse<MatchCard[]>>('/matching/cards', { params })
+  },
 
   swipe: (targetId: string, action: 'like' | 'pass') =>
     client.post<ApiResponse<MatchResult>>('/matching/swipe', { targetId, action }),
