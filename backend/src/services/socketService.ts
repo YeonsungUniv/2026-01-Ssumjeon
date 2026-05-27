@@ -68,7 +68,6 @@ export function setupSocket(io: Server) {
     try {
       const payload = verifyAccessToken(token)
       socket.data.userId = payload.userId
-      socket.data.email = payload.email
       next()
     } catch {
       next(new Error('Authentication error'))
