@@ -26,14 +26,14 @@ jobs:
 
             # 백엔드 빌드
             cd backend
-            npm ci
+            npm install
             npm run migrate
             npm run build
             cd ..
 
             # 프론트엔드 빌드
             cd frontend
-            npm ci
+            npm install
             npm run build
             cd ..
 
