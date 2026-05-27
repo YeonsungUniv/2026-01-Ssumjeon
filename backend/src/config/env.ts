@@ -38,4 +38,11 @@ export const env = {
   devEmailOverride: process.env.DEV_EMAIL_OVERRIDE ?? '',
 
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+
+  aws: {
+    region: process.env.AWS_REGION ?? 'ap-northeast-2',
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
+    s3Bucket: process.env.AWS_S3_BUCKET ?? '',
+  },
 } as const

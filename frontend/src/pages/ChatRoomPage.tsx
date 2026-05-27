@@ -16,7 +16,7 @@ import 'dayjs/locale/ko'
 dayjs.locale('ko')
 
 const isImageContent = (content: string) =>
-  content.startsWith('/uploads/chat/') || content.startsWith('blob:')
+  content.startsWith('blob:') || content.includes('s3.amazonaws.com')
 
 export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
@@ -271,10 +271,10 @@ export default function ChatRoomPage() {
                 <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
                   {isImageContent(msg.content) ? (
                     <img
-                      src={msg.content.startsWith('blob:') ? msg.content : `http://localhost:4000${msg.content}`}
+                      src={msg.content}
                       alt="사진"
                       className="max-w-[220px] max-h-[280px] object-cover cursor-pointer"
-                      onClick={() => window.open(msg.content.startsWith('blob:') ? msg.content : `http://localhost:4000${msg.content}`, '_blank')}
+                      onClick={() => window.open(msg.content, '_blank')}
                     />
                   ) : (
                     <span className="block px-4 py-2.5">{msg.content}</span>

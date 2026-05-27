@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express'
 import { authService } from '../services/authService'
 import { success, fail } from '../utils/response'
 import { env } from '../config/env'
+import { uploadToS3 } from '../utils/s3'
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -14,7 +15,9 @@ export const authController = {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
       const { username, password, nickname, gender, department, grade } = req.body
-      const enrollmentDocPath = req.file ? `/uploads/enrollments/${req.file.filename}` : null
+      const enrollmentDocPath = req.file
+        ? await uploadToS3(req.file.buffer, req.file.mimetype, 'enrollments')
+        : null
 
       if (!department) return fail(res, '학과를 선택해주세요.')
       const gradeNum = parseInt(grade, 10)

@@ -2,6 +2,7 @@ import type { Response, NextFunction } from 'express'
 import { query } from '../config/db'
 import { success, fail } from '../utils/response'
 import { getIO } from '../services/socketService'
+import { uploadToS3 } from '../utils/s3'
 import type { AuthRequest, UserRow } from '../types'
 
 export const userController = {
@@ -55,7 +56,7 @@ export const userController = {
   async uploadProfileImage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.file) return fail(res, '이미지를 업로드해주세요.')
-      const imageUrl = `/uploads/profiles/${req.file.filename}`
+      const imageUrl = await uploadToS3(req.file.buffer, req.file.mimetype, 'profiles')
       await query('UPDATE users SET profile_image = $1, updated_at = NOW() WHERE id = $2', [imageUrl, req.user!.userId])
       return success(res, { profileImage: imageUrl })
     } catch (err) {

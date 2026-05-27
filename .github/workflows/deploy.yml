@@ -15,14 +15,19 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 10m
           script: |
             set -e
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
+
             cd ~/ssumjeon
             git pull origin main
 
             # 백엔드 빌드
             cd backend
             npm ci
+            npm run migrate
             npm run build
             cd ..
 
@@ -30,9 +35,9 @@ jobs:
             cd frontend
             npm ci
             npm run build
-            sudo cp -r dist/. /var/www/ssumjeon/
+            cp -r dist/. /var/www/ssumjeon/
             cd ..
 
-            # 백엔드 재시작
+            # PM2 재시작
             pm2 startOrRestart ecosystem.config.js --env production
             pm2 save

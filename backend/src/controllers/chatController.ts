@@ -2,6 +2,7 @@ import type { Response, NextFunction } from 'express'
 import { chatService } from '../services/chatService'
 import { emitToRoom } from '../services/socketService'
 import { success, fail } from '../utils/response'
+import { uploadToS3 } from '../utils/s3'
 import type { AuthRequest } from '../types'
 
 export const chatController = {
@@ -42,7 +43,7 @@ export const chatController = {
     try {
       const { roomId } = req.params
       if (!req.file) return fail(res, '이미지 파일이 없습니다.')
-      const imageUrl = `/uploads/chat/${req.file.filename}`
+      const imageUrl = await uploadToS3(req.file.buffer, req.file.mimetype, 'chat')
       const message = await chatService.sendMessage(roomId, req.user!.userId, imageUrl)
       emitToRoom(roomId, 'message:new', message, req.user!.userId)
       return success(res, message, 201)

@@ -1,7 +1,6 @@
 import './config/env' // 가장 먼저 로드
 import express from 'express'
 import http from 'http'
-import path from 'path'
 import { Server as SocketServer } from 'socket.io'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
@@ -28,9 +27,6 @@ setupSocket(io)
 app.use(cors({ origin: corsOrigins, credentials: true }))
 app.use(express.json())
 app.use(cookieParser())
-
-// ── 정적 파일 (업로드 이미지, 재학증명서) ──────────────────────────
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
 // ── API 라우터 ──────────────────────────────────────────────────
 app.use('/api', apiRouter)
