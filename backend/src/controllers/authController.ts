@@ -6,7 +6,7 @@ import { uploadToS3 } from '../utils/s3'
 
 const COOKIE_OPTS = {
   httpOnly: true,
-  secure: env.nodeEnv === 'production',
+  secure: false,
   sameSite: 'lax' as const,
   maxAge: 7 * 24 * 60 * 60 * 1000,
 }
