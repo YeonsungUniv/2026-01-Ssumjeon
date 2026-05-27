@@ -13,7 +13,7 @@ export const matchingApi = {
     if (filters?.departments?.length) params.departments = filters.departments.join(',')
     if (filters?.grades?.length) params.grades = filters.grades.join(',')
     if (filters?.gender) params.gender = filters.gender
-    return client.get<ApiResponse<MatchCard[]>>('/matching/cards', { params })
+    return client.get<ApiResponse<MatchCard[]>>('/matching/cards', params)
   },
 
   swipe: (targetId: string, action: 'like' | 'pass') =>
