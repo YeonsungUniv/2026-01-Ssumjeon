@@ -389,15 +389,27 @@ export default function GroupMatchingPage() {
                 </div>
               </div>
               {/* 비밀방 */}
-              <div>
-                <p className="text-xs text-gray-400 mb-2">🔒 비밀방 (선택)</p>
-                <input
-                  className="input-field font-mono text-center tracking-widest"
-                  placeholder="숫자 4자리 (비워두면 공개방)"
-                  maxLength={4}
-                  value={form.roomPassword ?? ''}
-                  onChange={(e) => setForm({ ...form, roomPassword: e.target.value.replace(/\D/g, '') })}
-                />
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded accent-primary-500"
+                    checked={!!form.roomPassword || form.roomPassword === ''}
+                    onChange={(e) => setForm({ ...form, roomPassword: e.target.checked ? '' : undefined })}
+                  />
+                  <span className="text-xs text-gray-600 font-medium">🔒 비밀방</span>
+                </label>
+                {form.roomPassword !== undefined && (
+                  <input
+                    className="input-field font-mono text-center tracking-widest"
+                    placeholder="숫자 4자리 입력해주세요"
+                    maxLength={4}
+                    inputMode="numeric"
+                    value={form.roomPassword}
+                    onChange={(e) => setForm({ ...form, roomPassword: e.target.value.replace(/\D/g, '') })}
+                    autoFocus
+                  />
+                )}
               </div>
               {createError && <p className="text-sm text-red-500 text-center">{createError}</p>}
               <div className="flex gap-2">
