@@ -21,7 +21,7 @@ export default function RegisterPage() {
   const [grade, setGrade] = useState<number | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<Step1Form>()
+  const { register, handleSubmit, formState: { errors, isSubmitting }, setError: setFieldError } = useForm<Step1Form>()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -53,8 +53,10 @@ export default function RegisterPage() {
       const msg = e instanceof Error ? e.message : '회원가입에 실패했습니다.'
       if (msg.includes('아이디')) {
         setStep(1)
+        setFieldError('username', { message: msg })
+      } else {
+        setError(msg)
       }
-      setError(msg)
     }
   }
 
