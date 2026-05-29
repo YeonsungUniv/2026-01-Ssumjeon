@@ -66,6 +66,9 @@ export interface GroupRoomRow extends RowBase {
   max_members: number
   preferred_gender: 'male' | 'female'
   status: 'waiting' | 'matched' | 'closed'
+  room_password: string | null
+  allowed_gender: 'male' | 'female' | null
+  invite_code: string | null
   created_at: Date
 }
 

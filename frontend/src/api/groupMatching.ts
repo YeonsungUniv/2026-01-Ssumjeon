@@ -6,6 +6,8 @@ export interface CreateRoomPayload {
   description?: string
   maxMembers: number
   preferredGender: 'male' | 'female'
+  roomPassword?: string
+  allowedGender?: 'male' | 'female'
 }
 
 export const groupMatchingApi = {
@@ -15,8 +17,8 @@ export const groupMatchingApi = {
   createRoom: (payload: CreateRoomPayload) =>
     client.post<ApiResponse<GroupMatchingRoom>>('/group-matching/rooms', payload),
 
-  joinRoom: (roomId: string) =>
-    client.post<ApiResponse<GroupMatchingRoom>>(`/group-matching/rooms/${roomId}/join`),
+  joinRoom: (roomId: string, password?: string) =>
+    client.post<ApiResponse<GroupMatchingRoom>>(`/group-matching/rooms/${roomId}/join`, password ? { password } : undefined),
 
   leaveRoom: (roomId: string) =>
     client.post(`/group-matching/rooms/${roomId}/leave`),
