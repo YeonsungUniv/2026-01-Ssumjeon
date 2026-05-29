@@ -8,7 +8,7 @@ export default function HomePage() {
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="space-y-4">
 
       {/* 유저 인사 카드 */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
@@ -47,7 +47,7 @@ export default function HomePage() {
               <p className="text-xs font-semibold text-rose-100 uppercase tracking-widest">1:1</p>
               <p className="text-2xl font-black text-white mt-0.5">매칭</p>
             </div>
-            <span className="text-4xl drop-shadow">💘</span>
+            <span className="text-4xl drop-shadow transition-all duration-300 group-hover:scale-125 group-hover:-translate-y-1 group-hover:drop-shadow-lg">💘</span>
           </div>
           <div className="px-5 py-4">
             <p className="text-sm text-gray-500 leading-snug">마음에 드는 상대에게 좋아요를 보내보세요</p>
@@ -62,7 +62,7 @@ export default function HomePage() {
               <p className="text-xs font-semibold text-violet-100 uppercase tracking-widest">그룹</p>
               <p className="text-2xl font-black text-white mt-0.5">과팅</p>
             </div>
-            <span className="text-4xl drop-shadow">🎉</span>
+            <span className="text-4xl drop-shadow transition-all duration-300 group-hover:scale-125 group-hover:rotate-12 group-hover:-translate-y-1 group-hover:drop-shadow-lg">🎉</span>
           </div>
           <div className="px-5 py-4">
             <p className="text-sm text-gray-500 leading-snug">팀을 꾸려 다 같이 만나보세요</p>
