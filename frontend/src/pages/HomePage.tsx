@@ -4,8 +4,8 @@ import { useAuthStore } from '@/store/authStore'
 import { useChatStore } from '@/store/chatStore'
 
 function HeartArrowIcon({ active }: { active: boolean }) {
-  // 왼쪽 위 → 오른쪽 아래 방향, 3레이어로 관통 효과
-  // 화살 경로: (10,10)→(54,54), 하트 진입 ≈(22,22), 탈출 ≈(42,42)
+  // 왼쪽 위 → 오른쪽 아래, 3레이어 관통
+  // 화살 경로: (9,9)→(55,55), 진입≈(22,22), 탈출≈(42,42)
   const arrowAnim = active
     ? { animation: 'arrow-fly-in 0.55s cubic-bezier(0.22,1,0.36,1) forwards' }
     : { opacity: 0, transform: 'translate(-44px,-44px)' }
@@ -13,13 +13,14 @@ function HeartArrowIcon({ active }: { active: boolean }) {
   return (
     <div className="relative w-14 h-14" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }}>
 
-      {/* ① 화살 뒷부분 (하트 뒤) — 깃털 + 뒷 화살대 */}
+      {/* ① 화살 뒷부분 (하트 뒤) — 꽁지깃 + 뒷 화살대 */}
       <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 1, ...arrowAnim }}>
-        {/* 뒷 화살대: 깃털 끝(10,10) → 하트 진입(22,22) */}
-        <line x1="10" y1="10" x2="22" y2="22" stroke="#d97706" strokeWidth="2" strokeLinecap="butt" />
-        {/* 깃털 — 45° 방향 기준 양쪽으로 퍼진 삼각 날개 */}
-        <polygon points="10,10 3,3 16,7"  fill="#f59e0b" />
-        <polygon points="10,10 3,3 7,16"  fill="#f59e0b" />
+        <line x1="9"  y1="9"  x2="22" y2="22" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+        {/* 꽁지깃: 화살대 방향 수직으로 퍼지는 두 선 (단방향 화살임을 명확히) */}
+        <line x1="9"  y1="9"  x2="4"  y2="16" stroke="#60a5fa" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="9"  y1="9"  x2="16" y2="4"  stroke="#60a5fa" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="13" y1="13" x2="7"  y2="19" stroke="#60a5fa" strokeWidth="2"   strokeLinecap="round" />
+        <line x1="13" y1="13" x2="19" y2="7"  stroke="#60a5fa" strokeWidth="2"   strokeLinecap="round" />
       </svg>
 
       {/* ② 하트 (12° 기울임) */}
@@ -34,12 +35,11 @@ function HeartArrowIcon({ active }: { active: boolean }) {
         </g>
       </svg>
 
-      {/* ③ 화살 앞부분 (하트 앞) — 앞 화살대 + 촉 */}
+      {/* ③ 화살 앞부분 (하트 앞) — 앞 화살대 + 뾰족한 촉 */}
       <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 3, ...arrowAnim }}>
-        {/* 앞 화살대: 하트 탈출(42,42) → 촉 직전(48,48) */}
-        <line x1="42" y1="42" x2="48" y2="48" stroke="#d97706" strokeWidth="2" strokeLinecap="butt" />
-        {/* 화살촉 — 뾰족한 삼각형 */}
-        <polygon points="54,54 43,49 49,43" fill="#f59e0b" />
+        <line x1="42" y1="42" x2="49" y2="49" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+        {/* 화살촉: 한쪽 방향만 뾰족하게 */}
+        <polygon points="55,55 44,50 50,44" fill="#2563eb" />
       </svg>
 
     </div>
