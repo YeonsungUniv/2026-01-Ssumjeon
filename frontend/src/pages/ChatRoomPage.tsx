@@ -280,7 +280,12 @@ export default function ChatRoomPage() {
                     <span className="block px-4 py-2.5">{msg.content}</span>
                   )}
                 </div>
-                <span className="text-[10px] text-gray-400">{dayjs(msg.createdAt).format('HH:mm')}</span>
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-0`}>
+                  <span className="text-[10px] text-gray-400">{dayjs(msg.createdAt).format('HH:mm')}</span>
+                  {isMe && msg.isRead && (
+                    <span className="text-[10px] text-primary-400">읽음</span>
+                  )}
+                </div>
               </div>
             </div>
           )
