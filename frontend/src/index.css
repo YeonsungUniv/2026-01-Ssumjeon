@@ -29,10 +29,10 @@
 }
 
 @keyframes arrow-fly-in {
-  0%   { transform: translate(-48px, 48px); opacity: 0; }
+  0%   { transform: translate(-44px, -44px); opacity: 0; }
   40%  { opacity: 1; }
-  80%  { transform: translate(4px, -4px); }
-  92%  { transform: translate(-1px, 1px); }
+  80%  { transform: translate(3px, 3px); }
+  92%  { transform: translate(-1px, -1px); }
   100% { transform: translate(0, 0); opacity: 1; }
 }
 

@@ -4,38 +4,42 @@ import { useAuthStore } from '@/store/authStore'
 import { useChatStore } from '@/store/chatStore'
 
 function HeartArrowIcon({ active }: { active: boolean }) {
-  // 화살이 하트를 관통하는 효과:
-  // 화살을 3개 레이어로 분리 — 깃털(하트 뒤) / 하트 / 촉(하트 앞)
-  // 화살 경로: (13,51) → (53,11), 하트 진입점 ≈(23,41), 탈출점 ≈(43,21)
+  // 왼쪽 위 → 오른쪽 아래 방향, 3레이어로 관통 효과
+  // 화살 경로: (10,10)→(54,54), 하트 진입 ≈(22,22), 탈출 ≈(42,42)
   const arrowAnim = active
     ? { animation: 'arrow-fly-in 0.55s cubic-bezier(0.22,1,0.36,1) forwards' }
-    : { opacity: 0, transform: 'translate(-48px,48px)' }
+    : { opacity: 0, transform: 'translate(-44px,-44px)' }
 
   return (
-    <div className="relative w-14 h-14" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }}>
+    <div className="relative w-14 h-14" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }}>
 
-      {/* ① 화살 뒷부분 — 하트 뒤 (깃털 + 뒷 화살대) */}
+      {/* ① 화살 뒷부분 (하트 뒤) — 깃털 + 뒷 화살대 */}
       <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 1, ...arrowAnim }}>
-        <line x1="13" y1="51" x2="24" y2="40" stroke="#fbbf24" strokeWidth="4.5" strokeLinecap="round" />
-        <line x1="13" y1="51" x2="5"  y2="59" stroke="#fbbf24" strokeWidth="3"   strokeLinecap="round" />
-        <line x1="13" y1="51" x2="7"  y2="44" stroke="#fbbf24" strokeWidth="3"   strokeLinecap="round" />
-        <line x1="13" y1="51" x2="20" y2="59" stroke="#fbbf24" strokeWidth="3"   strokeLinecap="round" />
+        {/* 뒷 화살대: 깃털 끝(10,10) → 하트 진입(22,22) */}
+        <line x1="10" y1="10" x2="22" y2="22" stroke="#d97706" strokeWidth="2" strokeLinecap="butt" />
+        {/* 깃털 — 45° 방향 기준 양쪽으로 퍼진 삼각 날개 */}
+        <polygon points="10,10 3,3 16,7"  fill="#f59e0b" />
+        <polygon points="10,10 3,3 7,16"  fill="#f59e0b" />
       </svg>
 
-      {/* ② 하트 */}
+      {/* ② 하트 (12° 기울임) */}
       <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 2 }}>
-        <path
-          d="M32 56C32 56 7 41 7 24C7 14 14 8 23 8C27.5 8 31 11 32 13C33 11 36.5 8 41 8C50 8 57 14 57 24C57 41 32 56 32 56Z"
-          fill="#e11d48"
-          style={active ? { animation: 'heart-bounce 0.65s ease-out' } : undefined}
-        />
-        <ellipse cx="22" cy="19" rx="6" ry="3.5" fill="white" opacity="0.22" transform="rotate(-30 22 19)" />
+        <g transform="rotate(12, 32, 32)">
+          <path
+            d="M32 56C32 56 7 41 7 24C7 14 14 8 23 8C27.5 8 31 11 32 13C33 11 36.5 8 41 8C50 8 57 14 57 24C57 41 32 56 32 56Z"
+            fill="#e11d48"
+            style={active ? { animation: 'heart-bounce 0.65s ease-out' } : undefined}
+          />
+          <ellipse cx="22" cy="19" rx="6" ry="3.5" fill="white" opacity="0.2" transform="rotate(-30 22 19)" />
+        </g>
       </svg>
 
-      {/* ③ 화살 앞부분 — 하트 앞 (앞 화살대 + 촉) */}
+      {/* ③ 화살 앞부분 (하트 앞) — 앞 화살대 + 촉 */}
       <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 3, ...arrowAnim }}>
-        <line x1="42" y1="22" x2="48" y2="16" stroke="#fbbf24" strokeWidth="4.5" strokeLinecap="round" />
-        <polygon points="53,11 43,13 51,21" fill="#fbbf24" />
+        {/* 앞 화살대: 하트 탈출(42,42) → 촉 직전(48,48) */}
+        <line x1="42" y1="42" x2="48" y2="48" stroke="#d97706" strokeWidth="2" strokeLinecap="butt" />
+        {/* 화살촉 — 뾰족한 삼각형 */}
+        <polygon points="54,54 43,49 49,43" fill="#f59e0b" />
       </svg>
 
     </div>
