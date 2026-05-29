@@ -3,10 +3,6 @@ import { env } from '../config/env'
 
 const s3 = new S3Client({
   region: env.aws.region,
-  credentials: {
-    accessKeyId: env.aws.accessKeyId,
-    secretAccessKey: env.aws.secretAccessKey,
-  },
 })
 
 export async function uploadToS3(
