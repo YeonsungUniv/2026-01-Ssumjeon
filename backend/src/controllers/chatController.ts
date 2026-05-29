@@ -83,9 +83,13 @@ export const chatController = {
         )
         const gr = grResult.rows[0]
         const membersResult = await query<{ id: string; nickname: string; department: string; grade: number; profile_image: string | null; is_leader: boolean }>(
-          `SELECT u.id, u.nickname, u.department, u.grade, u.profile_image, grm.is_leader
-           FROM group_room_members grm JOIN users u ON u.id = grm.user_id
-           WHERE grm.group_room_id = $1`, [room.group_room_id],
+          `SELECT u.id, u.nickname, u.department, u.grade, u.profile_image,
+                  COALESCE(bool_or(grm.is_leader), false) AS is_leader
+           FROM chat_room_members crm
+           JOIN users u ON u.id = crm.user_id
+           LEFT JOIN group_room_members grm ON grm.user_id = u.id AND grm.is_leader = true
+           WHERE crm.chat_room_id = $1
+           GROUP BY u.id, u.nickname, u.department, u.grade, u.profile_image`, [roomId],
         )
         return success(res, {
           type: 'group',
