@@ -74,4 +74,15 @@ export const authController = {
       next(err)
     }
   },
+
+  async checkUsername(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { query } = await import('../config/db')
+      const { username } = req.params
+      const result = await query('SELECT 1 FROM users WHERE username = $1', [username])
+      return success(res, { available: result.rows.length === 0 })
+    } catch (err) {
+      next(err)
+    }
+  },
 }

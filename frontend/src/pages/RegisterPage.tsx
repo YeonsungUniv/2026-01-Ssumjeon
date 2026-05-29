@@ -28,9 +28,18 @@ export default function RegisterPage() {
     if (file) setEnrollmentFile(file)
   }
 
-  const onStep1Submit = (data: Step1Form) => {
+  const onStep1Submit = async (data: Step1Form) => {
     if (!department) { setError('학과를 선택해주세요.'); return }
     if (!grade) { setError('학년을 선택해주세요.'); return }
+    try {
+      const res = await authApi.checkUsername(data.username)
+      if (!res.data.available) {
+        setFieldError('username', { message: '이미 사용중인 아이디입니다.' })
+        return
+      }
+    } catch {
+      // 체크 실패 시 최종 제출에서 검증
+    }
     setStep1Data(data)
     setError('')
     setStep(2)

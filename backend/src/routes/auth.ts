@@ -8,5 +8,6 @@ router.post('/register', uploadEnrollment, authController.register)
 router.post('/login', authController.login)
 router.post('/refresh', authController.refresh)
 router.post('/logout', authController.logout)
+router.get('/check-username/:username', authController.checkUsername)
 
 export default router

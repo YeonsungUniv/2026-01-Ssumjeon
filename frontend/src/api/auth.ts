@@ -49,6 +49,9 @@ export const authApi = {
     return client.post<ApiResponse<{ user: User }>>('/auth/register', form)
   },
 
+  checkUsername: (username: string) =>
+    client.get<{ success: boolean; data: { available: boolean } }>(`/auth/check-username/${encodeURIComponent(username)}`),
+
   logout: () =>
     client.post('/auth/logout', {}, { withCredentials: true }),
 
