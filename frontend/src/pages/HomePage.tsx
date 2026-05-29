@@ -13,13 +13,27 @@ function HeartArrowIcon({ active }: { active: boolean }) {
   return (
     <div className="relative w-14 h-14" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }}>
 
-      {/* ① 화살 뒷부분 (하트 뒤) — 깃털 날개 + 뒷 화살대 */}
+      {/* ① 화살 뒷부분 (하트 뒤) — 새꽁지깃 3장 + 뒷 화살대 */}
       <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 1, ...arrowAnim }}>
         {/* 황금 화살대 (뒷부분) */}
         <line x1="10" y1="10" x2="22" y2="22" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" />
-        {/* 깃털 날개 — 둥근 새 깃털 모양 (삼각형 아님) */}
-        <path d="M10,10 C6,6 1,9 3,14 C5,18 9,16 10,10Z"  fill="white" opacity="0.92" stroke="#e5e7eb" strokeWidth="0.5" />
-        <path d="M10,10 C6,6 9,1 14,3 C18,5 16,9 10,10Z"  fill="white" opacity="0.92" stroke="#e5e7eb" strokeWidth="0.5" />
+        {/* 새꽁지깃: 꼬리(10,10) 기준으로 rotate해 3장 부채꼴 배치 */}
+        {/* 깃털 템플릿 — 위쪽(-y)으로 뻗는 긴 타원형, rotate로 방향 조정 */}
+        {/* 왼쪽 깃털 */}
+        <g transform="rotate(-70, 10, 10)">
+          <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="white" stroke="#d97706" strokeWidth="0.6" />
+          <line x1="10" y1="9" x2="10" y2="-3" stroke="#d97706" strokeWidth="0.7" strokeLinecap="round" />
+        </g>
+        {/* 가운데 깃털 (화살 반대 방향 = 225°, rotate -45) */}
+        <g transform="rotate(-45, 10, 10)">
+          <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="white" stroke="#d97706" strokeWidth="0.6" />
+          <line x1="10" y1="9" x2="10" y2="-3" stroke="#d97706" strokeWidth="0.7" strokeLinecap="round" />
+        </g>
+        {/* 오른쪽 깃털 */}
+        <g transform="rotate(-20, 10, 10)">
+          <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="white" stroke="#d97706" strokeWidth="0.6" />
+          <line x1="10" y1="9" x2="10" y2="-3" stroke="#d97706" strokeWidth="0.7" strokeLinecap="round" />
+        </g>
       </svg>
 
       {/* ② 하트 (12° 기울임) */}
