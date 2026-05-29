@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { chatApi, type RoomInfo, type RoomMember } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
+import { useAuthStore } from '@/store/authStore'
 
 interface Props {
   roomId: string
@@ -16,6 +17,7 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onBloc
   const [nameInput, setNameInput] = useState('')
   const [confirm, setConfirm] = useState<'leave' | 'block' | null>(null)
   const { mutedRooms, toggleMute, updateRoomName } = useChatStore()
+  const { user } = useAuthStore()
   const isMuted = mutedRooms[roomId] ?? false
 
   useEffect(() => {
@@ -111,7 +113,10 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onBloc
                         <div className="text-left">
                           <p className="font-medium text-sm text-gray-800 flex items-center gap-1">
                             {m.nickname}
-                            {m.isLeader && <span className="text-[10px] bg-primary-100 text-primary-500 px-1.5 py-0.5 rounded-full">방장</span>}
+                            {m.userId === user?.id
+                              ? <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">나</span>
+                              : m.isLeader && <span className="text-[10px] bg-primary-100 text-primary-500 px-1.5 py-0.5 rounded-full">방장</span>
+                            }
                           </p>
                           <p className="text-xs text-gray-400">{m.department} · {m.grade}학년</p>
                         </div>
