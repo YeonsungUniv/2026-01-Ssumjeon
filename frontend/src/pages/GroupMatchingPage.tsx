@@ -388,7 +388,7 @@ export default function GroupMatchingPage() {
                   ))}
                 </div>
               </div>
-              {/* 비밀방 */}
+              {/* 초대코드방 */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
@@ -397,7 +397,7 @@ export default function GroupMatchingPage() {
                     checked={!!form.roomPassword || form.roomPassword === ''}
                     onChange={(e) => setForm({ ...form, roomPassword: e.target.checked ? '' : undefined })}
                   />
-                  <span className="text-xs text-gray-600 font-medium">🔒 비밀방</span>
+                  <span className="text-xs text-gray-600 font-medium">🔒 초대코드방</span>
                 </label>
                 {form.roomPassword !== undefined && (
                   <input
@@ -457,7 +457,7 @@ export default function GroupMatchingPage() {
                           </span>
                           <span className="text-xs text-gray-400">{room.members.length}/{room.maxMembers}명</span>
                           {room.hasPassword && (
-                            <span className="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">🔒 비밀방</span>
+                            <span className="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">🔒 초대코드방</span>
                           )}
                           {room.allowedGender && (
                             <span className="text-xs bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">
@@ -600,12 +600,12 @@ export default function GroupMatchingPage() {
         </div>
       )}
 
-      {/* 비밀방 비밀번호 입력 모달 */}
+      {/* 초대코드방 비밀번호 입력 모달 */}
       {passwordJoinRoom && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 text-lg">🔒 비밀방</h3>
+              <h3 className="font-bold text-gray-900 text-lg">🔒 초대코드방</h3>
               <button onClick={() => setPasswordJoinRoom(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
             <p className="text-sm text-gray-500">
