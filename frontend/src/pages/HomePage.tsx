@@ -5,30 +5,37 @@ import { useChatStore } from '@/store/chatStore'
 
 function HeartArrowIcon({ active }: { active: boolean }) {
   return (
-    <div className="relative w-14 h-14">
-      {/* Heart */}
-      <svg viewBox="0 0 56 56" className="w-full h-full">
+    <div className="relative w-14 h-14" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }}>
+      {/* 붉은 하트 */}
+      <svg viewBox="0 0 64 64" className="w-full h-full">
         <path
-          d="M28 48C20 42 6 33 6 21 6 13 12 7 20 7 24.5 7 28 11 28 11 28 11 31.5 7 36 7 44 7 50 13 50 21 50 33 36 42 28 48Z"
-          fill="white"
-          opacity="0.95"
+          d="M32 56C32 56 7 41 7 24C7 14 14 8 23 8C27.5 8 31 11 32 13C33 11 36.5 8 41 8C50 8 57 14 57 24C57 41 32 56 32 56Z"
+          fill="#e11d48"
           style={active ? { animation: 'heart-bounce 0.65s ease-out' } : undefined}
         />
+        {/* 하이라이트 */}
+        <ellipse cx="22" cy="19" rx="6" ry="3.5" fill="white" opacity="0.22" transform="rotate(-30 22 19)" />
       </svg>
-      {/* Arrow — flies in from top-right */}
+
+      {/* 화살 — 왼쪽 아래에서 날아와 하트를 관통해 오른쪽 위로 */}
+      {/* 최종 위치: 깃털(11,53), 촉(53,11) — 하트 중심(32,32)을 대각선으로 통과 */}
       <svg
-        viewBox="0 0 56 56"
+        viewBox="0 0 64 64"
         className="absolute inset-0 w-full h-full"
         style={
           active
-            ? { animation: 'arrow-fly-in 0.5s cubic-bezier(0.22,1,0.36,1) forwards' }
-            : { opacity: 0, transform: 'translate(36px,-36px)' }
+            ? { animation: 'arrow-fly-in 0.55s cubic-bezier(0.22,1,0.36,1) forwards' }
+            : { opacity: 0, transform: 'translate(-48px,48px)' }
         }
       >
-        <line x1="10" y1="10" x2="46" y2="46" stroke="white" strokeWidth="4" strokeLinecap="round" opacity="0.9" />
-        <polygon points="46,36 46,46 36,46" fill="white" opacity="0.9" />
-        <line x1="10" y1="10" x2="17" y2="3"  stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
-        <line x1="10" y1="10" x2="3"  y2="17" stroke="white" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+        {/* 화살대 */}
+        <line x1="13" y1="51" x2="47" y2="17" stroke="#fbbf24" strokeWidth="4.5" strokeLinecap="round" />
+        {/* 촉 (오른쪽 위) */}
+        <polygon points="53,11 43,13 51,21" fill="#fbbf24" />
+        {/* 깃털 (왼쪽 아래) */}
+        <line x1="13" y1="51" x2="5"  y2="59" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" />
+        <line x1="13" y1="51" x2="7"  y2="45" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" />
+        <line x1="13" y1="51" x2="19" y2="59" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round" />
       </svg>
     </div>
   )
