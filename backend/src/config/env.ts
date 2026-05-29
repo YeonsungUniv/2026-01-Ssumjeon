@@ -41,6 +41,6 @@ export const env = {
 
   aws: {
     region: process.env.AWS_REGION ?? 'ap-northeast-2',
-    s3Bucket: process.env.AWS_S3_BUCKET ?? '',
+    s3Bucket: process.env.AWS_S3_BUCKET ?? 'ssumjeon-images',
   },
 } as const

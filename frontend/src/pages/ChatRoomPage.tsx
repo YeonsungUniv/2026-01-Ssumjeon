@@ -16,7 +16,7 @@ import 'dayjs/locale/ko'
 dayjs.locale('ko')
 
 const isImageContent = (content: string) =>
-  content.startsWith('blob:') || content.includes('s3.amazonaws.com')
+  content.startsWith('blob:') || content.includes('amazonaws.com')
 
 export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
