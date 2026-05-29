@@ -46,7 +46,7 @@ export const authService = {
     if (!/^[a-zA-Z0-9_]{4,20}$/.test(payload.username)) throw new Error('아이디는 4~20자의 영문, 숫자, 밑줄(_)만 사용 가능합니다.')
 
     const usernameCheck = await query('SELECT id FROM users WHERE username = $1', [payload.username])
-    if (usernameCheck.rows.length > 0) throw new Error('이미 사용 중인 아이디입니다.')
+    if (usernameCheck.rows.length > 0) throw new Error('이미 사용중인 아이디입니다.')
 
     let nickname = payload.nickname?.trim() || ''
     if (nickname) {

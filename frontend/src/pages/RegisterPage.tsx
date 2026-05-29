@@ -50,7 +50,11 @@ export default function RegisterPage() {
       setStep('done')
       setTimeout(() => navigate('/login', { replace: true }), 2500)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '회원가입에 실패했습니다.')
+      const msg = e instanceof Error ? e.message : '회원가입에 실패했습니다.'
+      if (msg.includes('아이디')) {
+        setStep(1)
+      }
+      setError(msg)
     }
   }
 
