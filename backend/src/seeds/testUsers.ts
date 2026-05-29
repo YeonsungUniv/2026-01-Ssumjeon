@@ -49,7 +49,10 @@ export async function seedTestUsers() {
         (email, password_hash, username, nickname, student_id, department, grade, gender,
          mbti, interests, bio, is_verified, status)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true,'approved')
-       ON CONFLICT (email) DO NOTHING`,
+       ON CONFLICT (email) DO UPDATE SET
+         username = EXCLUDED.username,
+         password_hash = EXCLUDED.password_hash,
+         status = 'approved'`,
       [
         u.email, passwordHash, u.username, u.nickname,
         u.student_id, u.department, u.grade, u.gender,

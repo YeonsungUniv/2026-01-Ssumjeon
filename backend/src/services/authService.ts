@@ -72,7 +72,10 @@ export const authService = {
   },
 
   async login(username: string, password: string) {
-    const result = await query<UserRow>('SELECT * FROM users WHERE username = $1', [username])
+    const result = await query<UserRow>(
+      'SELECT * FROM users WHERE username = $1 OR (username IS NULL AND email = $1)',
+      [username],
+    )
     const user = result.rows[0]
     if (!user) throw new Error('존재하지 않는 계정입니다.')
 
