@@ -47,7 +47,7 @@ export const authController = {
       res.cookie('refreshToken', result.refreshToken, COOKIE_OPTS)
       return success(res, { user: result.user, accessToken: result.accessToken })
     } catch (err) {
-      if (err instanceof Error) return fail(res, err.message, 401)
+      if (err instanceof Error) return fail(res, err.message, 400)
       next(err)
     }
   },
