@@ -74,10 +74,10 @@ export const authService = {
   async login(username: string, password: string) {
     const result = await query<UserRow>('SELECT * FROM users WHERE username = $1', [username])
     const user = result.rows[0]
-    if (!user) throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.')
+    if (!user) throw new Error('존재하지 않는 아이디입니다.')
 
     const valid = await bcrypt.compare(password, user.password_hash)
-    if (!valid) throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.')
+    if (!valid) throw new Error('비밀번호가 틀렸습니다.')
 
     if (user.status === 'rejected') throw new Error('가입이 거절되었습니다. 관리자에게 문의하세요.')
 
