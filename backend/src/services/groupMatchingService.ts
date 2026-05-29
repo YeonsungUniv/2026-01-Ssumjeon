@@ -43,7 +43,7 @@ async function buildRoomDto(room: GroupRoomRow) {
     status: room.status,
     chatRoomId: chatRoomResult.rows[0]?.id ?? null,
     inviteCode: room.invite_code ?? null,
-    hasPassword: !!room.room_password,
+    isPrivate: !!room.is_private,
     allowedGender: room.allowed_gender ?? null,
     createdAt: room.created_at.toISOString(),
   }
@@ -73,7 +73,7 @@ export const groupMatchingService = {
   async createRoom(
     leaderId: string,
     leaderGender: 'male' | 'female',
-    payload: { title: string; description?: string; maxMembers: number; preferredGender: 'male' | 'female'; roomPassword?: string; allowedGender?: 'male' | 'female' },
+    payload: { title: string; description?: string; maxMembers: number; preferredGender: 'male' | 'female'; isPrivate?: boolean; allowedGender?: 'male' | 'female' },
   ) {
     const roomId = uuidv4()
     const chatRoomId = uuidv4()
@@ -87,9 +87,9 @@ export const groupMatchingService = {
     }
 
     await query(
-      `INSERT INTO group_rooms (id, title, description, leader_id, gender, max_members, preferred_gender, invite_code, room_password, allowed_gender)
+      `INSERT INTO group_rooms (id, title, description, leader_id, gender, max_members, preferred_gender, invite_code, is_private, allowed_gender)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [roomId, payload.title, payload.description ?? null, leaderId, leaderGender, payload.maxMembers, payload.preferredGender, inviteCode, payload.roomPassword ?? null, payload.allowedGender ?? null],
+      [roomId, payload.title, payload.description ?? null, leaderId, leaderGender, payload.maxMembers, payload.preferredGender, inviteCode, payload.isPrivate ?? false, payload.allowedGender ?? null],
     )
     await query(
       'INSERT INTO group_room_members (group_room_id, user_id, is_leader) VALUES ($1, $2, true)',
@@ -119,14 +119,14 @@ export const groupMatchingService = {
     return this.joinRoom(room.id, userId)
   },
 
-  async joinRoom(roomId: string, userId: string, password?: string) {
+  async joinRoom(roomId: string, userId: string) {
     const roomResult = await query<GroupRoomRow>('SELECT * FROM group_rooms WHERE id = $1', [roomId])
     const room = roomResult.rows[0]
     if (!room) throw new Error('방을 찾을 수 없습니다.')
     if (room.status !== 'waiting') throw new Error('참여할 수 없는 방입니다.')
 
-    if (room.room_password && room.room_password !== password) {
-      throw new Error('비밀번호가 올바르지 않습니다.')
+    if (room.is_private) {
+      throw new Error('초대코드로만 참여할 수 있는 방입니다.')
     }
 
     if (room.allowed_gender) {

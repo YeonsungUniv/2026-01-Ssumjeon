@@ -46,8 +46,7 @@ export const groupMatchingController = {
 
   async joinRoom(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { password } = req.body
-      const room = await groupMatchingService.joinRoom(req.params.roomId, req.user!.userId, password)
+      const room = await groupMatchingService.joinRoom(req.params.roomId, req.user!.userId)
       return success(res, room)
     } catch (err) {
       if (err instanceof Error) return fail(res, err.message)

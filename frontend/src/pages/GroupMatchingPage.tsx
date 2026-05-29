@@ -43,7 +43,7 @@ export default function GroupMatchingPage() {
   const [createError, setCreateError] = useState('')
   const [confirm, setConfirm] = useState<'leave' | 'cancelMatch' | null>(null)
   const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all')
-  const [form, setForm] = useState<CreateRoomPayload>({ title: '', maxMembers: 3, preferredGender: 'female', roomPassword: '', allowedGender: undefined })
+  const [form, setForm] = useState<CreateRoomPayload>({ title: '', maxMembers: 3, preferredGender: 'female', isPrivate: false, allowedGender: undefined })
   const [matchedBanner, setMatchedBanner] = useState(false)
   const [searchingBanner, setSearchingBanner] = useState(false)
   const [showJoinByCode, setShowJoinByCode] = useState(false)
@@ -52,9 +52,6 @@ export default function GroupMatchingPage() {
   const [copied, setCopied] = useState(false)
   const [profileModal, setProfileModal] = useState<UserProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(false)
-  const [passwordJoinRoom, setPasswordJoinRoom] = useState<{ id: string; title: string } | null>(null)
-  const [passwordInput, setPasswordInput] = useState('')
-  const [passwordError, setPasswordError] = useState('')
 
   const loadData = async () => {
     setLoading(true)
@@ -103,21 +100,10 @@ export default function GroupMatchingPage() {
   const createRoom = async () => {
     setCreateError('')
     if (!form.title.trim()) { setCreateError('방 제목을 입력해주세요.'); return }
-    if (form.roomPassword && !/^\d{4}$/.test(form.roomPassword)) {
-      setCreateError('비밀번호는 숫자 4자리여야 합니다.')
-      return
-    }
     try {
-      const payload: CreateRoomPayload = {
-        title: form.title,
-        maxMembers: form.maxMembers,
-        preferredGender: form.preferredGender,
-        ...(form.roomPassword ? { roomPassword: form.roomPassword } : {}),
-        ...(form.allowedGender ? { allowedGender: form.allowedGender } : {}),
-      }
-      await groupMatchingApi.createRoom(payload)
+      await groupMatchingApi.createRoom(form)
       setShowCreate(false)
-      setForm({ title: '', maxMembers: 3, preferredGender: 'female', roomPassword: '', allowedGender: undefined })
+      setForm({ title: '', maxMembers: 3, preferredGender: 'female', isPrivate: false, allowedGender: undefined })
       await loadData()
       chatApi.getRooms().then((res) => setChatRooms(res.data))
     } catch (e) {
@@ -125,33 +111,13 @@ export default function GroupMatchingPage() {
     }
   }
 
-  const joinRoom = async (room: { id: string; hasPassword: boolean; title: string }) => {
-    if (room.hasPassword) {
-      setPasswordInput('')
-      setPasswordError('')
-      setPasswordJoinRoom({ id: room.id, title: room.title })
-      return
-    }
+  const joinRoom = async (roomId: string) => {
     try {
-      await groupMatchingApi.joinRoom(room.id)
+      await groupMatchingApi.joinRoom(roomId)
       await loadData()
       chatApi.getRooms().then((res) => setChatRooms(res.data))
     } catch (e) {
       alert(e instanceof Error ? e.message : '참여에 실패했습니다.')
-    }
-  }
-
-  const handlePasswordJoin = async () => {
-    if (!passwordJoinRoom) return
-    setPasswordError('')
-    if (!/^\d{4}$/.test(passwordInput)) { setPasswordError('숫자 4자리를 입력해주세요.'); return }
-    try {
-      await groupMatchingApi.joinRoom(passwordJoinRoom.id, passwordInput)
-      setPasswordJoinRoom(null)
-      await loadData()
-      chatApi.getRooms().then((res) => setChatRooms(res.data))
-    } catch (e) {
-      setPasswordError(e instanceof Error ? e.message : '참여에 실패했습니다.')
     }
   }
 
@@ -389,28 +355,15 @@ export default function GroupMatchingPage() {
                 </div>
               </div>
               {/* 초대코드방 */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded accent-primary-500"
-                    checked={!!form.roomPassword || form.roomPassword === ''}
-                    onChange={(e) => setForm({ ...form, roomPassword: e.target.checked ? '' : undefined })}
-                  />
-                  <span className="text-xs text-gray-600 font-medium">🔒 초대코드방</span>
-                </label>
-                {form.roomPassword !== undefined && (
-                  <input
-                    className="input-field font-mono text-center tracking-widest"
-                    placeholder="숫자 4자리 입력해주세요"
-                    maxLength={4}
-                    inputMode="numeric"
-                    value={form.roomPassword}
-                    onChange={(e) => setForm({ ...form, roomPassword: e.target.value.replace(/\D/g, '') })}
-                    autoFocus
-                  />
-                )}
-              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded accent-primary-500"
+                  checked={!!form.isPrivate}
+                  onChange={(e) => setForm({ ...form, isPrivate: e.target.checked })}
+                />
+                <span className="text-xs text-gray-600 font-medium">🔒 초대코드방 (초대코드로만 입장 가능)</span>
+              </label>
               {createError && <p className="text-sm text-red-500 text-center">{createError}</p>}
               <div className="flex gap-2">
                 <button onClick={() => setShowCreate(false)} className="btn-outline flex-1">취소</button>
@@ -445,7 +398,7 @@ export default function GroupMatchingPage() {
               {filteredRooms.map((room) => {
                 const isSameGender = room.gender === user?.gender
                 const genderBlocked = room.allowedGender && room.allowedGender !== user?.gender
-                const canJoin = !myRoom && !isSameGender && !genderBlocked
+                const canJoin = !myRoom && !isSameGender && !genderBlocked && !room.isPrivate
                 const canMatch = myRoom && myRoom.id !== room.id && myRoom.gender !== room.gender && myRoom.status === 'waiting'
                 return (
                   <div key={room.id} className="card hover:shadow-md transition-shadow">
@@ -456,8 +409,8 @@ export default function GroupMatchingPage() {
                             {room.gender === 'male' ? '남성팀' : '여성팀'}
                           </span>
                           <span className="text-xs text-gray-400">{room.members.length}/{room.maxMembers}명</span>
-                          {room.hasPassword && (
-                            <span className="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full flex items-center gap-0.5">🔒 초대코드방</span>
+                          {room.isPrivate && (
+                            <span className="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full">🔒 초대코드방</span>
                           )}
                           {room.allowedGender && (
                             <span className="text-xs bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">
@@ -469,16 +422,14 @@ export default function GroupMatchingPage() {
                       </div>
                       <div className="shrink-0">
                         {canJoin && (
-                          <button onClick={() => joinRoom(room)} className="btn-primary text-sm px-4 py-2">
-                            {room.hasPassword ? '🔒 참여' : '참여'}
-                          </button>
+                          <button onClick={() => joinRoom(room.id)} className="btn-primary text-sm px-4 py-2">참여</button>
                         )}
                         {canMatch && (
                           <button onClick={() => requestMatch(room.id)} className="btn-secondary text-sm px-4 py-2">과팅 신청</button>
                         )}
                         {!canJoin && !canMatch && !myRoom && (
                           <span className="text-xs text-gray-300">
-                            {genderBlocked ? '입장 불가' : '같은 성별'}
+                            {room.isPrivate ? '초대코드 전용' : genderBlocked ? '입장 불가' : '같은 성별'}
                           </span>
                         )}
                       </div>
@@ -595,36 +546,6 @@ export default function GroupMatchingPage() {
             <div className="flex gap-2">
               <button onClick={() => setShowJoinByCode(false)} className="btn-outline flex-1">취소</button>
               <button onClick={handleJoinByCode} className="btn-primary flex-1">참여</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 초대코드방 비밀번호 입력 모달 */}
-      {passwordJoinRoom && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 text-lg">🔒 초대코드방</h3>
-              <button onClick={() => setPasswordJoinRoom(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
-            </div>
-            <p className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-700">"{passwordJoinRoom.title}"</span> 방의 비밀번호 4자리를 입력하세요.
-            </p>
-            <input
-              className="input-field font-mono text-center text-2xl tracking-widest"
-              placeholder="0000"
-              maxLength={4}
-              inputMode="numeric"
-              value={passwordInput}
-              onChange={(e) => setPasswordInput(e.target.value.replace(/\D/g, ''))}
-              onKeyDown={(e) => e.key === 'Enter' && handlePasswordJoin()}
-              autoFocus
-            />
-            {passwordError && <p className="text-sm text-red-500 text-center">{passwordError}</p>}
-            <div className="flex gap-2">
-              <button onClick={() => setPasswordJoinRoom(null)} className="btn-outline flex-1">취소</button>
-              <button onClick={handlePasswordJoin} className="btn-primary flex-1">입장</button>
             </div>
           </div>
         </div>

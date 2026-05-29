@@ -1,0 +1,1 @@
+ALTER TABLE group_rooms ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT false;

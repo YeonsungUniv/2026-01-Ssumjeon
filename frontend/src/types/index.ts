@@ -51,7 +51,7 @@ export interface GroupMatchingRoom {
   status: 'waiting' | 'matched' | 'closed'
   chatRoomId: string | null
   inviteCode: string | null
-  hasPassword: boolean
+  isPrivate: boolean
   allowedGender: 'male' | 'female' | null
   createdAt: string
 }

@@ -69,6 +69,7 @@ export interface GroupRoomRow extends RowBase {
   room_password: string | null
   allowed_gender: 'male' | 'female' | null
   invite_code: string | null
+  is_private: boolean
   created_at: Date
 }
 
