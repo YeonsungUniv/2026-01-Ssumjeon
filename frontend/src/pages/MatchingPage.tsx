@@ -26,12 +26,12 @@ function UserAvatar({ gender, profileImage, size = 'md' }: { gender: string; pro
   if (profileImage) {
     return <img src={profileImage} alt="프로필" className={`${sz} rounded-full object-cover shrink-0`} />
   }
-  const bg = gender === 'male'
-    ? 'bg-gradient-to-br from-blue-400 to-indigo-500'
-    : 'bg-gradient-to-br from-pink-400 to-rose-500'
+  const bgStyle = gender === 'male'
+    ? { background: 'linear-gradient(135deg, #60a5fa, #6366f1)' }
+    : { background: 'linear-gradient(135deg, #f472b6, #f43f5e)' }
   return (
-    <div className={`${sz} rounded-full flex items-center justify-center shrink-0 ${bg}`}>
-      <svg className={`${iconSz} text-white`} fill="currentColor" viewBox="0 0 24 24">
+    <div className={`${sz} rounded-full flex items-center justify-center shrink-0`} style={bgStyle}>
+      <svg className={`${iconSz}`} fill="white" viewBox="0 0 24 24">
         <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
       </svg>
     </div>
