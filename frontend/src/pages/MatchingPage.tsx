@@ -579,10 +579,34 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
         {/* 서브 탭 */}
         <div className="flex bg-gray-100 rounded-2xl p-1 gap-1">
           {([
-            ['list',     '둘러보기', browseTotal > 0 ? browseTotal : null,           '🔍', 'bg-blue-100'],
-            ['incoming', '받은 신청', pendingIncomingCount > 0 ? pendingIncomingCount : null, '💌', 'bg-pink-100'],
-            ['outgoing', '보낸 신청', outgoing.length > 0 ? outgoing.length : null,  '📤', 'bg-violet-100'],
-          ] as const).map(([tab, label, count, icon, iconBg]) => (
+            {
+              tab: 'list' as const, label: '둘러보기', count: browseTotal > 0 ? browseTotal : null,
+              icon: (active: boolean) => (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <circle cx="11" cy="11" r="7" stroke={active ? '#3b82f6' : '#9ca3af'} strokeWidth="2.5"/>
+                  <path d="M16.5 16.5L21 21" stroke={active ? '#3b82f6' : '#9ca3af'} strokeWidth="2.5" strokeLinecap="round"/>
+                </svg>
+              ),
+            },
+            {
+              tab: 'incoming' as const, label: '받은 신청', count: pendingIncomingCount > 0 ? pendingIncomingCount : null,
+              icon: (active: boolean) => (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="5" width="18" height="14" rx="2" fill={active ? '#ec4899' : '#d1d5db'}/>
+                  <path d="M3 8l9 6 9-6" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              ),
+            },
+            {
+              tab: 'outgoing' as const, label: '보낸 신청', count: outgoing.length > 0 ? outgoing.length : null,
+              icon: (active: boolean) => (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 2L11 13" stroke={active ? '#8b5cf6' : '#9ca3af'} strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M22 2L15 22l-4-9-9-4 20-7z" fill={active ? '#8b5cf6' : '#d1d5db'}/>
+                </svg>
+              ),
+            },
+          ]).map(({ tab, label, count, icon }) => (
             <button
               key={tab}
               onClick={() => {
@@ -594,9 +618,7 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
                 browseTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center ${browseTab === tab ? iconBg : ''}`}>
-                {icon}
-              </span>
+              {icon(browseTab === tab)}
               {label}
               {count !== null && (
                 <span className={`min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full flex items-center justify-center ${
@@ -798,11 +820,17 @@ export default function MatchingPage() {
         </button>
         <button
           onClick={() => setPageMode('browse')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1 ${
+          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
             pageMode === 'browse' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          👥 둘러보기
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="9" cy="7" r="4" fill="#a855f7"/>
+            <circle cx="17" cy="9" r="3" fill="#c084fc"/>
+            <path d="M1 21c0-4 3.6-7 8-7s8 3 8 7" fill="#a855f7"/>
+            <path d="M17 14c2.5 0 5 1.5 5 5" stroke="#c084fc" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          둘러보기
           {pendingIncomingCount > 0 && (
             <span className="min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
               {pendingIncomingCount}
