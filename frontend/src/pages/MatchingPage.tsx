@@ -4,7 +4,7 @@ import { type MatchFilters } from '@/api/matching'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
 import { useSocketInstance } from '@/hooks/useSocket'
-import { GRADES } from '@/constants'
+import { GRADES, DEPARTMENT_MAX_GRADE } from '@/constants'
 import DepartmentSelect from '@/components/DepartmentSelect'
 
 const GENDER_OPTIONS = [
@@ -258,7 +258,10 @@ export default function MatchingPage() {
           <div>
             <p className="text-sm font-medium text-gray-500 mb-3">학년</p>
             <div className="flex gap-2 flex-wrap">
-              {GRADES.map((g) => (
+              {GRADES.filter((g) =>
+                !filters.departments?.length ||
+                filters.departments.some((d) => g <= (DEPARTMENT_MAX_GRADE[d] ?? 4))
+              ).map((g) => (
                 <button
                   key={g}
                   onClick={() => toggleGrade(g)}

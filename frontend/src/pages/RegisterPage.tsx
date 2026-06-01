@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authApi } from '@/api/auth'
-import { GRADES } from '@/constants'
+import { GRADES, DEPARTMENT_MAX_GRADE } from '@/constants'
 import DepartmentSelect from '@/components/DepartmentSelect'
 
 interface Step1Form {
@@ -23,6 +23,14 @@ export default function RegisterPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, setError: setFieldError } = useForm<Step1Form>()
+
+  // 학과 변경 시 유효하지 않은 학년 자동 해제
+  useEffect(() => {
+    if (grade && department) {
+      const max = DEPARTMENT_MAX_GRADE[department] ?? 4
+      if (grade > max) setGrade(null)
+    }
+  }, [department, grade])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -153,7 +161,7 @@ export default function RegisterPage() {
             <div>
               <p className="text-sm font-medium text-gray-500 mb-2">학년 <span className="text-red-400">*</span></p>
               <div className="flex gap-2">
-                {GRADES.map((g) => (
+                {GRADES.filter((g) => g <= (DEPARTMENT_MAX_GRADE[department] ?? 4)).map((g) => (
                   <button
                     key={g}
                     type="button"
