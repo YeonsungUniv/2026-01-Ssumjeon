@@ -26,8 +26,8 @@ function UserAvatar({ gender, profileImage, size = 'md' }: { gender: string; pro
     return <img src={profileImage} alt="프로필" className={`${sz} rounded-full object-cover shrink-0`} />
   }
   const bg = gender === 'male'
-    ? 'bg-gradient-to-br from-blue-100 to-indigo-200'
-    : 'bg-gradient-to-br from-pink-100 to-rose-200'
+    ? 'bg-gradient-to-br from-blue-400 to-indigo-500'
+    : 'bg-gradient-to-br from-pink-400 to-rose-500'
   return (
     <div className={`${sz} rounded-full flex items-center justify-center shrink-0 ${bg}`}>
       <span>{gender === 'male' ? '🧑' : '👩'}</span>
