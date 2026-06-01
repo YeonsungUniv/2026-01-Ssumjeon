@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuthStore } from '@/store/authStore'
 import { useChatStore } from '@/store/chatStore'
+import { useMatchRequestStore } from '@/store/matchRequestStore'
+import { chatApi } from '@/api/chat'
 import type { ChatMessage } from '@/types'
 
 let socket: Socket | null = null
@@ -44,6 +46,15 @@ export function useSocket() {
     newSocket.on('message:new', (message: ChatMessage) => {
       appendMessage(message.roomId, message)
       updateRoomFromMessage(message)
+    })
+
+    newSocket.on('chat_request:received', () => {
+      useMatchRequestStore.getState().incrementPending()
+    })
+
+    newSocket.on('chat_request:accepted', (data: { requestId: string; chatRoomId: string }) => {
+      chatApi.getRooms().then((res) => useChatStore.getState().setRooms(res.data))
+      useMatchRequestStore.getState().setAcceptedNotification(data)
     })
 
     return () => {

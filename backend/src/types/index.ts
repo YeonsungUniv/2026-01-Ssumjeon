@@ -88,3 +88,11 @@ export interface MessageRow extends RowBase {
   is_read: boolean
   created_at: Date
 }
+
+export interface ChatRequestRow extends RowBase {
+  id: string
+  sender_id: string
+  receiver_id: string
+  status: 'pending' | 'accepted' | 'rejected'
+  created_at: Date
+}

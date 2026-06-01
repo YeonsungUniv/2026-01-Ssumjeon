@@ -1,57 +1,176 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { type MatchFilters } from '@/api/matching'
+import { chatRequestApi } from '@/api/chatRequest'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
+import { useMatchRequestStore } from '@/store/matchRequestStore'
 import { useSocketInstance } from '@/hooks/useSocket'
 import { GRADES, DEPARTMENT_MAX_GRADE } from '@/constants'
 import DepartmentSelect from '@/components/DepartmentSelect'
+import type { BrowseUser, IncomingRequest, OutgoingRequest } from '@/types'
 
 const GENDER_OPTIONS = [
   { value: 'male' as const, label: '남성' },
   { value: 'female' as const, label: '여성' },
 ]
 
-type Phase = 'idle' | 'waiting' | 'searching' | 'matched'
+type RealtimePhase = 'idle' | 'waiting' | 'searching' | 'matched'
+type BrowseTab = 'list' | 'incoming' | 'outgoing'
+type PageMode = 'realtime' | 'browse'
 
-export default function MatchingPage() {
+// ── 공통 유저 카드 ─────────────────────────────────────────────────
+function UserAvatar({ gender, profileImage, size = 'md' }: { gender: string; profileImage?: string; size?: 'sm' | 'md' | 'lg' }) {
+  const sz = size === 'lg' ? 'w-14 h-14 text-2xl' : size === 'md' ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-base'
+  if (profileImage) {
+    return <img src={profileImage} alt="프로필" className={`${sz} rounded-full object-cover shrink-0`} />
+  }
+  return (
+    <div className={`${sz} rounded-full flex items-center justify-center shrink-0 ${gender === 'male' ? 'bg-blue-50' : 'bg-pink-50'}`}>
+      <span>{gender === 'male' ? '🧑' : '👩'}</span>
+    </div>
+  )
+}
+
+// ── 필터 패널 (실시간/둘러보기 공통) ─────────────────────────────────
+function FilterPanel({
+  filters,
+  onChange,
+}: {
+  filters: MatchFilters
+  onChange: (f: MatchFilters) => void
+}) {
+  const hasFilters = !!(filters.departments?.length || filters.grades?.length || filters.gender)
+
+  const toggleGrade = (g: number) =>
+    onChange({
+      ...filters,
+      grades: (filters.grades ?? []).includes(g)
+        ? (filters.grades ?? []).filter((x) => x !== g)
+        : [...(filters.grades ?? []), g],
+    })
+
+  const toggleGender = (g: 'male' | 'female') =>
+    onChange({ ...filters, gender: filters.gender === g ? undefined : g })
+
+  return (
+    <div className="card space-y-5">
+      <div className="flex items-center justify-between">
+        <p className="text-base font-bold text-gray-700">매칭 조건</p>
+        {hasFilters && (
+          <button
+            onClick={() => onChange({ departments: [], grades: [], gender: undefined })}
+            className="text-xs text-gray-400 hover:text-red-400 transition-colors"
+          >
+            초기화
+          </button>
+        )}
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-gray-500 mb-2">성별</p>
+        <div className="flex gap-2">
+          {GENDER_OPTIONS.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => toggleGender(value)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                filters.gender === value
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-primary-300'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-gray-500 mb-2">학년</p>
+        <div className="flex gap-2 flex-wrap">
+          {GRADES.filter((g) =>
+            !filters.departments?.length ||
+            filters.departments.some((d) => g <= (DEPARTMENT_MAX_GRADE[d] ?? 4))
+          ).map((g) => (
+            <button
+              key={g}
+              onClick={() => toggleGrade(g)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                filters.grades?.includes(g)
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-primary-300'
+              }`}
+            >
+              {g}학년
+            </button>
+          ))}
+        </div>
+        {(filters.grades ?? []).map((g) => {
+          const excluded = (filters.departments ?? []).filter((d) => g > (DEPARTMENT_MAX_GRADE[d] ?? 4))
+          if (!excluded.length) return null
+          return (
+            <p key={g} className="text-xs text-amber-600 mt-1 flex items-start gap-1">
+              <span className="shrink-0">⚠️</span>
+              <span><strong>{g}학년</strong> 선택 시 <strong>{excluded.join(', ')}</strong>은(는) 매칭에서 제외됩니다</span>
+            </p>
+          )
+        })}
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-gray-500 mb-2">
+          학과
+          {filters.departments?.length
+            ? <span className="ml-2 text-primary-500 font-semibold">{filters.departments.length}개 선택</span>
+            : <span className="ml-2 text-gray-400 font-normal">(전체)</span>
+          }
+        </p>
+        <DepartmentSelect
+          multiple
+          value={filters.departments ?? []}
+          onChange={(deps) => {
+            const maxGrade = deps.length ? Math.max(...deps.map((d) => DEPARTMENT_MAX_GRADE[d] ?? 4)) : 4
+            const validGrades = (filters.grades ?? []).filter((g) => g <= maxGrade)
+            onChange({ ...filters, departments: deps, grades: validGrades })
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── 실시간 매칭 섹션 ──────────────────────────────────────────────
+function RealtimeSection({ filters, onFilterChange }: { filters: MatchFilters; onFilterChange: (f: MatchFilters) => void }) {
   const navigate = useNavigate()
   const { setRooms } = useChatStore()
   const socket = useSocketInstance()
-  const [phase, setPhase] = useState<Phase>('idle')
+  const [phase, setPhase] = useState<RealtimePhase>('idle')
   const [elapsed, setElapsed] = useState(0)
   const [matchError, setMatchError] = useState('')
-  const [filters, setFilters] = useState<MatchFilters>({ departments: [], grades: [], gender: undefined })
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const phaseRef = useRef<Phase>('idle')
+  const phaseRef = useRef<RealtimePhase>('idle')
   useEffect(() => { phaseRef.current = phase }, [phase])
 
   useEffect(() => {
     if (!socket) return
-
     const onWaiting = () => {
       setMatchError('')
       setPhase('waiting')
       setElapsed(0)
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000)
     }
-
     const onSuccess = ({ chatRoomId }: { chatRoomId: string }) => {
       clearInterval(timerRef.current!)
       setPhase('searching')
       chatApi.getRooms().then((res) => setRooms(res.data))
-      setTimeout(() => {
-        setPhase('matched')
-        setTimeout(() => navigate(`/chat/${chatRoomId}`), 1500)
-      }, 3000)
+      setTimeout(() => { setPhase('matched'); setTimeout(() => navigate(`/chat/${chatRoomId}`), 1500) }, 3000)
     }
-
     const onError = ({ message }: { message?: string } = {}) => {
       clearInterval(timerRef.current!)
       setPhase('idle')
       setMatchError(message ?? '매칭 오류가 발생했습니다.')
     }
-
     const onReconnect = () => {
       if (phaseRef.current === 'waiting') {
         clearInterval(timerRef.current!)
@@ -60,12 +179,10 @@ export default function MatchingPage() {
         setMatchError('서버와 재연결되었습니다. 다시 매칭을 시작해주세요.')
       }
     }
-
     socket.on('matching:waiting', onWaiting)
     socket.on('matching:success', onSuccess)
     socket.on('matching:error', onError)
     socket.on('connect', onReconnect)
-
     return () => {
       socket.off('matching:waiting', onWaiting)
       socket.off('matching:success', onSuccess)
@@ -76,23 +193,7 @@ export default function MatchingPage() {
 
   useEffect(() => () => { clearInterval(timerRef.current!) }, [])
 
-  // 학과 변경 시 해당 학과에서 불가능한 학년 자동 해제
-  useEffect(() => {
-    if (!filters.departments?.length) return
-    const maxGrade = Math.max(
-      ...filters.departments.map((d) => DEPARTMENT_MAX_GRADE[d] ?? 4)
-    )
-    const validGrades = (filters.grades ?? []).filter((g) => g <= maxGrade)
-    if (validGrades.length !== (filters.grades ?? []).length) {
-      setFilters((prev) => ({ ...prev, grades: validGrades }))
-    }
-  }, [filters.departments])
-
-  const handleStart = () => {
-    if (!socket) return
-    socket.emit('matching:join', filters)
-  }
-
+  const handleStart = () => { if (!socket) return; socket.emit('matching:join', filters) }
   const handleCancel = () => {
     if (!socket) return
     socket.emit('matching:cancel')
@@ -101,21 +202,9 @@ export default function MatchingPage() {
     setElapsed(0)
   }
 
-  const toggleGrade = (g: number) =>
-    setFilters((prev) => {
-      const grades = prev.grades ?? []
-      return { ...prev, grades: grades.includes(g) ? grades.filter((x) => x !== g) : [...grades, g] }
-    })
-
-  const toggleGender = (g: 'male' | 'female') =>
-    setFilters((prev) => ({ ...prev, gender: prev.gender === g ? undefined : g }))
-
-
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-
   const hasFilters = !!(filters.departments?.length || filters.grades?.length || filters.gender)
 
-  // ── 상대방 검색 중 ────────────────────────────────────────────────
   if (phase === 'searching') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8">
@@ -132,7 +221,6 @@ export default function MatchingPage() {
     )
   }
 
-  // ── 매칭 성공 ─────────────────────────────────────────────────────
   if (phase === 'matched') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -143,7 +231,6 @@ export default function MatchingPage() {
     )
   }
 
-  // ── 매칭 대기 중 ──────────────────────────────────────────────────
   if (phase === 'waiting') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8">
@@ -158,171 +245,536 @@ export default function MatchingPage() {
         </div>
         {hasFilters ? (
           <div className="flex flex-wrap gap-2 justify-center max-w-xl">
-            {filters.gender && (
-              <span className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">
-                {filters.gender === 'male' ? '남성' : '여성'}
-              </span>
-            )}
-            {filters.grades?.map((g) => (
-              <span key={g} className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">{g}학년</span>
-            ))}
-            {filters.departments?.map((d) => (
-              <span key={d} className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">{d}</span>
-            ))}
+            {filters.gender && <span className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">{filters.gender === 'male' ? '남성' : '여성'}</span>}
+            {filters.grades?.map((g) => <span key={g} className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">{g}학년</span>)}
+            {filters.departments?.map((d) => <span key={d} className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">{d}</span>)}
           </div>
         ) : (
           <p className="text-sm text-gray-400">조건 없이 전체 대상 매칭 중</p>
         )}
-        <button
-          onClick={handleCancel}
-          className="px-14 py-3.5 rounded-2xl border-2 border-gray-200 text-gray-500 font-medium text-base hover:bg-gray-50 transition-colors"
-        >
+        <button onClick={handleCancel} className="px-14 py-3.5 rounded-2xl border-2 border-gray-200 text-gray-500 font-medium text-base hover:bg-gray-50 transition-colors">
           취소
         </button>
       </div>
     )
   }
 
-  // ── 초기 화면 ─────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-800">1:1 매칭</h2>
-
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-
-        {/* 좌측: 매칭 시작 패널 */}
-        <div className="lg:col-span-2 card flex flex-col items-center gap-6 py-12">
-          <p className="text-7xl">💘</p>
-          <div className="text-center space-y-1">
-            <p className="text-xl font-bold text-gray-800">오늘의 인연을 찾아보세요</p>
-            <p className="text-sm text-gray-400">
-              {hasFilters ? '아래 조건으로 매칭합니다' : '조건 없이 전체 대상'}
-            </p>
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+      <div className="lg:col-span-2 card flex flex-col items-center gap-6 py-12">
+        <p className="text-7xl">💘</p>
+        <div className="text-center space-y-1">
+          <p className="text-xl font-bold text-gray-800">지금 바로 매칭해보세요</p>
+          <p className="text-sm text-gray-400">{hasFilters ? '아래 조건으로 매칭합니다' : '조건 없이 전체 대상'}</p>
+        </div>
+        {hasFilters && (
+          <div className="flex flex-wrap gap-2 justify-center px-2">
+            {filters.gender && <span className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">{filters.gender === 'male' ? '남성' : '여성'}</span>}
+            {filters.grades?.map((g) => <span key={g} className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">{g}학년</span>)}
+            {filters.departments?.map((d) => <span key={d} className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">{d}</span>)}
           </div>
-          {hasFilters && (
-            <div className="flex flex-wrap gap-2 justify-center px-2">
-              {filters.gender && (
-                <span className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">
-                  {filters.gender === 'male' ? '남성' : '여성'}
-                </span>
-              )}
-              {filters.grades?.map((g) => (
-                <span key={g} className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">
-                  {g}학년
-                </span>
-              ))}
-              {filters.departments?.map((d) => (
-                <span key={d} className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">
-                  {d}
-                </span>
-              ))}
+        )}
+        {matchError && <p className="text-sm text-red-500 text-center">{matchError}</p>}
+        <button
+          onClick={handleStart}
+          className="w-full max-w-xs py-4 rounded-2xl bg-primary-500 text-white text-lg font-bold hover:bg-primary-600 active:scale-95 transition-all shadow-md"
+        >
+          매칭 시작
+        </button>
+      </div>
+      <div className="lg:col-span-3">
+        <FilterPanel filters={filters} onChange={onFilterChange} />
+      </div>
+    </div>
+  )
+}
+
+// ── 둘러보기 — 유저 카드 ──────────────────────────────────────────
+function BrowseUserCard({
+  user,
+  onRequest,
+  onCancel,
+  onAcceptIncoming,
+  onRejectIncoming,
+  actionLoading,
+}: {
+  user: BrowseUser
+  onRequest: (userId: string) => void
+  onCancel: (requestId: string) => void
+  onAcceptIncoming: (requestId: string) => void
+  onRejectIncoming: (requestId: string) => void
+  actionLoading: string | null
+}) {
+  const loading = actionLoading === user.userId || actionLoading === user.outgoingRequestId || actionLoading === user.incomingRequestId
+
+  return (
+    <div className="card space-y-3 hover:shadow-md transition-shadow">
+      <div className="flex items-start gap-3">
+        <UserAvatar gender={user.gender} profileImage={user.profileImage} size="lg" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-bold text-gray-800">{user.nickname}</p>
+            {user.mbti && (
+              <span className="text-xs bg-secondary-50 text-secondary-600 px-2 py-0.5 rounded-full font-semibold">{user.mbti}</span>
+            )}
+          </div>
+          <p className="text-xs text-gray-400 mt-0.5">{user.department} · {user.grade}학년</p>
+        </div>
+      </div>
+
+      {user.bio && <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">{user.bio}</p>}
+
+      {user.interests.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {user.interests.slice(0, 4).map((i) => (
+            <span key={i} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{i}</span>
+          ))}
+          {user.interests.length > 4 && <span className="text-xs text-gray-400">+{user.interests.length - 4}</span>}
+        </div>
+      )}
+
+      <div className="pt-1">
+        {/* 상대방이 나에게 신청한 경우 */}
+        {user.incomingRequestId && !user.outgoingRequestId && (
+          <div className="space-y-2">
+            <p className="text-xs text-center text-primary-500 font-semibold">💌 나에게 채팅 신청함</p>
+            <div className="flex gap-2">
+              <button
+                disabled={loading}
+                onClick={() => onRejectIncoming(user.incomingRequestId!)}
+                className="flex-1 py-2 rounded-xl border-2 border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50 disabled:opacity-50"
+              >
+                거절
+              </button>
+              <button
+                disabled={loading}
+                onClick={() => onAcceptIncoming(user.incomingRequestId!)}
+                className="flex-1 py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 disabled:opacity-50"
+              >
+                {loading ? '처리 중...' : '수락'}
+              </button>
             </div>
-          )}
-          {matchError && (
-            <p className="text-sm text-red-500 text-center">{matchError}</p>
-          )}
+          </div>
+        )}
+
+        {/* 내가 신청한 경우 */}
+        {user.outgoingRequestId && user.outgoingRequestStatus === 'pending' && (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-primary-500 font-semibold">⏳ 신청 대기 중</span>
+            <button
+              disabled={loading}
+              onClick={() => onCancel(user.outgoingRequestId!)}
+              className="text-xs text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+            >
+              {loading ? '...' : '취소'}
+            </button>
+          </div>
+        )}
+
+        {user.outgoingRequestId && user.outgoingRequestStatus === 'rejected' && (
+          <p className="text-xs text-center text-gray-400">거절된 신청</p>
+        )}
+
+        {/* 신청 안 한 경우 */}
+        {!user.outgoingRequestId && !user.incomingRequestId && (
           <button
-            onClick={handleStart}
-            className="w-full max-w-xs py-4 rounded-2xl bg-primary-500 text-white text-lg font-bold hover:bg-primary-600 active:scale-95 transition-all shadow-md"
+            disabled={loading}
+            onClick={() => onRequest(user.userId)}
+            className="w-full py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50"
           >
-            매칭 시작
+            {loading ? '신청 중...' : '채팅 신청'}
           </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── 둘러보기 섹션 ─────────────────────────────────────────────────
+function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onFilterChange: (f: MatchFilters) => void }) {
+  const navigate = useNavigate()
+  const { setRooms } = useChatStore()
+  const { pendingIncomingCount, setPendingIncomingCount, acceptedNotification, setAcceptedNotification } = useMatchRequestStore()
+  const socket = useSocketInstance()
+
+  const [browseTab, setBrowseTab] = useState<BrowseTab>('list')
+  const [browseUsers, setBrowseUsers] = useState<BrowseUser[]>([])
+  const [browseLoading, setBrowseLoading] = useState(false)
+  const [browsePage, setBrowsePage] = useState(1)
+  const [browseHasMore, setBrowseHasMore] = useState(false)
+  const [browseTotal, setBrowseTotal] = useState(0)
+
+  const [incoming, setIncoming] = useState<IncomingRequest[]>([])
+  const [incomingLoading, setIncomingLoading] = useState(false)
+  const [outgoing, setOutgoing] = useState<OutgoingRequest[]>([])
+  const [outgoingLoading, setOutgoingLoading] = useState(false)
+
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [searchApplied, setSearchApplied] = useState(false)
+
+  const loadBrowse = useCallback(async (page: number, append = false) => {
+    setBrowseLoading(true)
+    try {
+      const res = await chatRequestApi.browse({ ...filters, page, limit: 20 })
+      setBrowseUsers((prev) => append ? [...prev, ...res.data.items] : res.data.items)
+      setBrowseHasMore(res.data.hasMore)
+      setBrowsePage(page)
+      setBrowseTotal(res.data.total)
+      setSearchApplied(true)
+    } finally {
+      setBrowseLoading(false)
+    }
+  }, [filters])
+
+  const loadIncoming = useCallback(async () => {
+    setIncomingLoading(true)
+    try {
+      const res = await chatRequestApi.getIncoming()
+      setIncoming(res.data)
+      setPendingIncomingCount(res.data.length)
+    } finally {
+      setIncomingLoading(false)
+    }
+  }, [setPendingIncomingCount])
+
+  const loadOutgoing = useCallback(async () => {
+    setOutgoingLoading(true)
+    try {
+      const res = await chatRequestApi.getOutgoing()
+      setOutgoing(res.data)
+    } finally {
+      setOutgoingLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadIncoming()
+    loadOutgoing()
+  }, [loadIncoming, loadOutgoing])
+
+  // 실시간 신청 수신
+  useEffect(() => {
+    if (!socket) return
+    const onReceived = (sender: IncomingRequest) => {
+      setIncoming((prev) => [sender, ...prev])
+      // 브라우즈 목록의 해당 유저 카드 상태 업데이트
+      setBrowseUsers((prev) => prev.map((u) =>
+        u.userId === sender.userId ? { ...u, incomingRequestId: sender.requestId } : u
+      ))
+    }
+    socket.on('chat_request:received', onReceived)
+    return () => { socket.off('chat_request:received', onReceived) }
+  }, [socket])
+
+  // 수락 알림 처리
+  useEffect(() => {
+    if (!acceptedNotification) return
+    chatApi.getRooms().then((res) => setRooms(res.data))
+    setAcceptedNotification(null)
+    // 보낸 신청 목록 갱신 후 채팅으로 이동
+    navigate(`/chat/${acceptedNotification.chatRoomId}`)
+  }, [acceptedNotification, navigate, setRooms, setAcceptedNotification])
+
+  const handleRequest = async (receiverId: string) => {
+    setActionLoading(receiverId)
+    try {
+      const res = await chatRequestApi.sendRequest(receiverId)
+      setBrowseUsers((prev) => prev.map((u) =>
+        u.userId === receiverId
+          ? { ...u, outgoingRequestId: res.data.requestId, outgoingRequestStatus: 'pending' }
+          : u
+      ))
+      loadOutgoing()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '신청에 실패했습니다.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleCancel = async (requestId: string) => {
+    setActionLoading(requestId)
+    try {
+      await chatRequestApi.cancel(requestId)
+      setBrowseUsers((prev) => prev.map((u) =>
+        u.outgoingRequestId === requestId
+          ? { ...u, outgoingRequestId: null, outgoingRequestStatus: null }
+          : u
+      ))
+      setOutgoing((prev) => prev.filter((r) => r.requestId !== requestId))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '취소에 실패했습니다.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleAcceptIncoming = async (requestId: string) => {
+    setActionLoading(requestId)
+    try {
+      const res = await chatRequestApi.respond(requestId, 'accepted')
+      chatApi.getRooms().then((r) => setRooms(r.data))
+      setIncoming((prev) => prev.filter((r) => r.requestId !== requestId))
+      setPendingIncomingCount(Math.max(0, pendingIncomingCount - 1))
+      setBrowseUsers((prev) => prev.map((u) =>
+        u.incomingRequestId === requestId ? { ...u, incomingRequestId: null } : u
+      ))
+      if (res.data.chatRoomId) navigate(`/chat/${res.data.chatRoomId}`)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '수락에 실패했습니다.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleRejectIncoming = async (requestId: string) => {
+    setActionLoading(requestId)
+    try {
+      await chatRequestApi.respond(requestId, 'rejected')
+      setIncoming((prev) => prev.filter((r) => r.requestId !== requestId))
+      setPendingIncomingCount(Math.max(0, pendingIncomingCount - 1))
+      setBrowseUsers((prev) => prev.map((u) =>
+        u.incomingRequestId === requestId ? { ...u, incomingRequestId: null } : u
+      ))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '거절에 실패했습니다.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+
+      {/* 좌측: 필터 + 검색 버튼 */}
+      <div className="lg:col-span-2 space-y-3">
+        <FilterPanel filters={filters} onChange={onFilterChange} />
+        <button
+          onClick={() => { setBrowsePage(1); setBrowseUsers([]); loadBrowse(1) }}
+          disabled={browseLoading}
+          className="w-full py-3 rounded-2xl bg-primary-500 text-white font-bold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-60 shadow-sm"
+        >
+          {browseLoading ? '검색 중...' : '🔍 조건으로 검색'}
+        </button>
+      </div>
+
+      {/* 우측: 탭 + 목록 */}
+      <div className="lg:col-span-3 space-y-4">
+
+        {/* 서브 탭 */}
+        <div className="flex bg-gray-100 rounded-2xl p-1 gap-1">
+          {([
+            ['list', '둘러보기', browseTotal > 0 ? `(${browseTotal})` : ''],
+            ['incoming', '받은 신청', pendingIncomingCount > 0 ? `(${pendingIncomingCount})` : ''],
+            ['outgoing', '보낸 신청', outgoing.length > 0 ? `(${outgoing.length})` : ''],
+          ] as const).map(([tab, label, count]) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setBrowseTab(tab)
+                if (tab === 'incoming') loadIncoming()
+                if (tab === 'outgoing') loadOutgoing()
+              }}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
+                browseTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              {label}
+              {count && <span className={`${browseTab === tab ? 'text-primary-500' : 'text-gray-400'}`}>{count}</span>}
+            </button>
+          ))}
         </div>
 
-        {/* 우측: 필터 패널 */}
-        <div className="lg:col-span-3 card space-y-6">
-          <div className="flex items-center justify-between">
-            <p className="text-base font-bold text-gray-700">매칭 조건 설정</p>
-            {hasFilters && (
+        {/* 둘러보기 탭 */}
+        {browseTab === 'list' && (
+          <div className="space-y-3">
+            {!searchApplied && !browseLoading && (
+              <div className="card text-center py-14">
+                <p className="text-4xl mb-3">🔍</p>
+                <p className="text-gray-500 font-medium">조건을 설정하고 검색해보세요</p>
+                <p className="text-sm text-gray-400 mt-1">접속 여부와 상관없이 상대를 찾을 수 있어요</p>
+              </div>
+            )}
+            {browseLoading && browseUsers.length === 0 && (
+              <div className="flex justify-center py-16">
+                <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-primary-500 rounded-full" />
+              </div>
+            )}
+            {searchApplied && !browseLoading && browseUsers.length === 0 && (
+              <div className="card text-center py-14">
+                <p className="text-4xl mb-3">😔</p>
+                <p className="text-gray-500 font-medium">조건에 맞는 상대가 없어요</p>
+                <p className="text-sm text-gray-400 mt-1">조건을 바꿔서 다시 검색해보세요</p>
+              </div>
+            )}
+            {browseUsers.length > 0 && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                {browseUsers.map((u) => (
+                  <BrowseUserCard
+                    key={u.userId}
+                    user={u}
+                    onRequest={handleRequest}
+                    onCancel={handleCancel}
+                    onAcceptIncoming={handleAcceptIncoming}
+                    onRejectIncoming={handleRejectIncoming}
+                    actionLoading={actionLoading}
+                  />
+                ))}
+              </div>
+            )}
+            {browseHasMore && (
               <button
-                onClick={() => setFilters({ departments: [], grades: [], gender: undefined })}
-                className="text-xs text-gray-400 hover:text-red-400 transition-colors flex items-center gap-1"
+                disabled={browseLoading}
+                onClick={() => loadBrowse(browsePage + 1, true)}
+                className="w-full py-3 rounded-2xl border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 disabled:opacity-50"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                초기화
+                {browseLoading ? '불러오는 중...' : '더 보기'}
               </button>
             )}
           </div>
+        )}
 
-          {/* 성별 */}
-          <div>
-            <p className="text-sm font-medium text-gray-500 mb-3">성별</p>
-            <div className="flex gap-2">
-              {GENDER_OPTIONS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => toggleGender(value)}
-                  className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    filters.gender === value
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-primary-300'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+        {/* 받은 신청 탭 */}
+        {browseTab === 'incoming' && (
+          <div className="space-y-3">
+            {incomingLoading ? (
+              <div className="flex justify-center py-16">
+                <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-primary-500 rounded-full" />
+              </div>
+            ) : incoming.length === 0 ? (
+              <div className="card text-center py-14">
+                <p className="text-4xl mb-3">💌</p>
+                <p className="text-gray-500 font-medium">받은 신청이 없어요</p>
+              </div>
+            ) : incoming.map((req) => (
+              <div key={req.requestId} className="card flex items-start gap-4">
+                <UserAvatar gender={req.gender} profileImage={req.profileImage} size="md" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <p className="font-bold text-gray-800">{req.nickname}</p>
+                    {req.mbti && <span className="text-xs bg-secondary-50 text-secondary-600 px-2 py-0.5 rounded-full">{req.mbti}</span>}
+                  </div>
+                  <p className="text-xs text-gray-400">{req.department} · {req.grade}학년</p>
+                  {req.bio && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{req.bio}</p>}
+                  {req.interests.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {req.interests.slice(0, 3).map((i) => (
+                        <span key={i} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{i}</span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      disabled={actionLoading === req.requestId}
+                      onClick={() => handleRejectIncoming(req.requestId)}
+                      className="flex-1 py-2 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      거절
+                    </button>
+                    <button
+                      disabled={actionLoading === req.requestId}
+                      onClick={() => handleAcceptIncoming(req.requestId)}
+                      className="flex-1 py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 disabled:opacity-50"
+                    >
+                      {actionLoading === req.requestId ? '처리 중...' : '수락'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
+        )}
 
-          {/* 학년 */}
-          <div>
-            <p className="text-sm font-medium text-gray-500 mb-3">학년</p>
-            <div className="flex gap-2 flex-wrap">
-              {GRADES.filter((g) =>
-                !filters.departments?.length ||
-                filters.departments.some((d) => g <= (DEPARTMENT_MAX_GRADE[d] ?? 4))
-              ).map((g) => (
-                <button
-                  key={g}
-                  onClick={() => toggleGrade(g)}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    filters.grades?.includes(g)
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-primary-300'
-                  }`}
-                >
-                  {g}학년
-                </button>
-              ))}
-            </div>
-            {/* 학년이 없는 학과 경고 */}
-            {(filters.grades ?? []).map((g) => {
-              const excluded = (filters.departments ?? []).filter(
-                (d) => g > (DEPARTMENT_MAX_GRADE[d] ?? 4)
-              )
-              if (!excluded.length) return null
-              return (
-                <p key={g} className="text-xs text-amber-600 mt-2 flex items-start gap-1">
-                  <span className="shrink-0">⚠️</span>
-                  <span>
-                    <strong>{g}학년</strong> 선택 시{' '}
-                    <strong>{excluded.join(', ')}</strong>은(는) {g}학년이 없어 매칭에서 제외됩니다
-                  </span>
-                </p>
-              )
-            })}</div>
-
-          {/* 학과 */}
-          <div>
-            <p className="text-sm font-medium text-gray-500 mb-3">
-              학과
-              {filters.departments?.length ? (
-                <span className="ml-2 text-primary-500 font-semibold">{filters.departments.length}개 선택</span>
-              ) : (
-                <span className="ml-2 text-gray-400 font-normal">(전체)</span>
-              )}
-            </p>
-            <DepartmentSelect
-              multiple
-              value={filters.departments ?? []}
-              onChange={(deps) => setFilters((prev) => ({ ...prev, departments: deps }))}
-            />
+        {/* 보낸 신청 탭 */}
+        {browseTab === 'outgoing' && (
+          <div className="space-y-3">
+            {outgoingLoading ? (
+              <div className="flex justify-center py-16">
+                <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-primary-500 rounded-full" />
+              </div>
+            ) : outgoing.length === 0 ? (
+              <div className="card text-center py-14">
+                <p className="text-4xl mb-3">📭</p>
+                <p className="text-gray-500 font-medium">보낸 신청이 없어요</p>
+              </div>
+            ) : outgoing.map((req) => (
+              <div key={req.requestId} className="card flex items-center gap-4">
+                <UserAvatar gender={req.gender} profileImage={req.profileImage} size="md" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800">{req.nickname}</p>
+                  <p className="text-xs text-gray-400">{req.department} · {req.grade}학년</p>
+                </div>
+                <div className="shrink-0 flex flex-col items-end gap-2">
+                  {req.status === 'pending' && (
+                    <>
+                      <span className="text-xs bg-yellow-50 text-yellow-600 px-2.5 py-1 rounded-full font-semibold">대기 중</span>
+                      <button
+                        disabled={actionLoading === req.requestId}
+                        onClick={() => handleCancel(req.requestId)}
+                        className="text-xs text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                      >
+                        {actionLoading === req.requestId ? '...' : '신청 취소'}
+                      </button>
+                    </>
+                  )}
+                  {req.status === 'accepted' && (
+                    <span className="text-xs bg-green-50 text-green-600 px-2.5 py-1 rounded-full font-semibold">✓ 수락됨</span>
+                  )}
+                  {req.status === 'rejected' && (
+                    <span className="text-xs bg-gray-100 text-gray-400 px-2.5 py-1 rounded-full">거절됨</span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-
+        )}
       </div>
+    </div>
+  )
+}
+
+// ── 메인 페이지 ───────────────────────────────────────────────────
+export default function MatchingPage() {
+  const [pageMode, setPageMode] = useState<PageMode>('realtime')
+  const [filters, setFilters] = useState<MatchFilters>({ departments: [], grades: [], gender: undefined })
+  const { pendingIncomingCount } = useMatchRequestStore()
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-gray-800">1:1 매칭</h2>
+      </div>
+
+      {/* 모드 탭 */}
+      <div className="flex bg-gray-100 rounded-2xl p-1 gap-1 max-w-sm">
+        <button
+          onClick={() => setPageMode('realtime')}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+            pageMode === 'realtime' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          ⚡ 실시간 매칭
+        </button>
+        <button
+          onClick={() => setPageMode('browse')}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1 ${
+            pageMode === 'browse' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          👥 둘러보기
+          {pendingIncomingCount > 0 && (
+            <span className="min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
+              {pendingIncomingCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {pageMode === 'realtime' ? (
+        <RealtimeSection filters={filters} onFilterChange={setFilters} />
+      ) : (
+        <BrowseSection filters={filters} onFilterChange={setFilters} />
+      )}
     </div>
   )
 }

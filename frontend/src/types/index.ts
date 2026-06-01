@@ -99,6 +99,48 @@ export interface Appointment {
   createdAt: string
 }
 
+// ── 채팅 신청 (둘러보기 매칭) ─────────────────────────────────────
+export interface BrowseUser {
+  userId: string
+  nickname: string
+  department: string
+  grade: number
+  gender: 'male' | 'female'
+  profileImage?: string
+  bio?: string
+  mbti?: string
+  interests: string[]
+  outgoingRequestId: string | null
+  outgoingRequestStatus: 'pending' | 'accepted' | 'rejected' | null
+  incomingRequestId: string | null
+}
+
+export interface IncomingRequest {
+  requestId: string
+  requestCreatedAt: string
+  userId: string
+  nickname: string
+  department: string
+  grade: number
+  gender: 'male' | 'female'
+  profileImage?: string
+  bio?: string
+  mbti?: string
+  interests: string[]
+}
+
+export interface OutgoingRequest {
+  requestId: string
+  status: 'pending' | 'accepted' | 'rejected'
+  requestCreatedAt: string
+  userId: string
+  nickname: string
+  department: string
+  grade: number
+  gender: 'male' | 'female'
+  profileImage?: string
+}
+
 // ── 공통 ──────────────────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean

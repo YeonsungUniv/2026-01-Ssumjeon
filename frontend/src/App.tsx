@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { useMatchRequestStore } from '@/store/matchRequestStore'
+import { chatRequestApi } from '@/api/chatRequest'
 import MainLayout from '@/components/layout/MainLayout'
 import AuthLayout from '@/components/layout/AuthLayout'
 
@@ -41,7 +43,8 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function useInitialRefresh() {
-  const { accessToken, setAccessToken, logout } = useAuthStore()
+  const { accessToken, setAccessToken, logout, isAuthenticated } = useAuthStore()
+  const { setPendingIncomingCount } = useMatchRequestStore()
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -53,6 +56,11 @@ function useInitialRefresh() {
       .finally(() => setReady(true))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    chatRequestApi.getPendingCount().then((res) => setPendingIncomingCount(res.data.count)).catch(() => {})
+  }, [isAuthenticated, setPendingIncomingCount])
 
   return ready
 }

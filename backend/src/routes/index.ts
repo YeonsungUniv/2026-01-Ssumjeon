@@ -7,6 +7,7 @@ import chatRouter from './chat'
 import supportRouter from './support'
 import appointmentRouter from './appointments'
 import adminRouter from './admin'
+import chatRequestRouter from './chatRequests'
 
 const router = Router()
 
@@ -18,5 +19,6 @@ router.use('/chat', chatRouter)
 router.use('/support', supportRouter)
 router.use('/appointments', appointmentRouter)
 router.use('/admin', adminRouter)
+router.use('/chat-requests', chatRequestRouter)
 
 export default router

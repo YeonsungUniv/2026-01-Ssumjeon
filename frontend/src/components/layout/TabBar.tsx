@@ -1,14 +1,15 @@
 import { NavLink } from 'react-router-dom'
 import { useChatStore } from '@/store/chatStore'
 import { useAuthStore } from '@/store/authStore'
+import { useMatchRequestStore } from '@/store/matchRequestStore'
 
-type Tab = { to: string; label: string; icon: ({ className }: { className?: string }) => JSX.Element; badge?: boolean }
+type Tab = { to: string; label: string; icon: ({ className }: { className?: string }) => JSX.Element; badge?: 'chat' | 'request' }
 
 const baseTabs: Tab[] = [
   { to: '/',               label: '홈',    icon: HomeIcon },
-  { to: '/matching',       label: '매칭',  icon: HeartIcon },
+  { to: '/matching',       label: '매칭',  icon: HeartIcon, badge: 'request' },
   { to: '/group-matching', label: '과팅',  icon: GroupIcon },
-  { to: '/chat',           label: '채팅',  icon: ChatIcon, badge: true },
+  { to: '/chat',           label: '채팅',  icon: ChatIcon, badge: 'chat' },
   { to: '/profile',        label: '나',    icon: PersonIcon },
 ]
 
@@ -17,6 +18,7 @@ const adminTab: Tab = { to: '/suggestions', label: '건의사항', icon: Suggest
 export default function TabBar() {
   const { rooms } = useChatStore()
   const { user } = useAuthStore()
+  const { pendingIncomingCount } = useMatchRequestStore()
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
 
   const tabs = user?.isAdmin ? [...baseTabs, adminTab] : baseTabs
@@ -28,30 +30,33 @@ export default function TabBar() {
         <p className="text-xs text-gray-400 mt-0.5">연성대학교 과팅 매칭</p>
       </div>
       <div className="flex-1 flex flex-col gap-1 py-4 px-3">
-        {tabs.map(({ to, label, icon: Icon, badge }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-primary-50 text-primary-600'
-                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-              }`
-            }
-          >
-            <div className="relative shrink-0">
-              <Icon className="w-5 h-5" />
-              {badge && totalUnread > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
-                  {totalUnread > 99 ? '99+' : totalUnread}
-                </span>
-              )}
-            </div>
-            {label}
-          </NavLink>
-        ))}
+        {tabs.map(({ to, label, icon: Icon, badge }) => {
+          const badgeCount = badge === 'chat' ? totalUnread : badge === 'request' ? pendingIncomingCount : 0
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/'}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-primary-50 text-primary-600'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                }`
+              }
+            >
+              <div className="relative shrink-0">
+                <Icon className="w-5 h-5" />
+                {badgeCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
+                    {badgeCount > 99 ? '99+' : badgeCount}
+                  </span>
+                )}
+              </div>
+              {label}
+            </NavLink>
+          )
+        })}
       </div>
     </nav>
   )
