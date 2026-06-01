@@ -5,7 +5,7 @@ export interface CreateRoomPayload {
   title: string
   description?: string
   maxMembers: number
-  preferredGender: 'male' | 'female'
+  preferredGender?: 'male' | 'female'
   isPrivate?: boolean
   allowedGender?: 'male' | 'female'
 }

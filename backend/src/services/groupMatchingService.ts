@@ -73,7 +73,7 @@ export const groupMatchingService = {
   async createRoom(
     leaderId: string,
     leaderGender: 'male' | 'female',
-    payload: { title: string; description?: string; maxMembers: number; preferredGender: 'male' | 'female'; isPrivate?: boolean; allowedGender?: 'male' | 'female' },
+    payload: { title: string; description?: string; maxMembers: number; preferredGender?: 'male' | 'female'; isPrivate?: boolean; allowedGender?: 'male' | 'female' },
   ) {
     const roomId = uuidv4()
     const chatRoomId = uuidv4()

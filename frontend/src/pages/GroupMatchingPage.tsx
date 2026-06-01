@@ -43,7 +43,7 @@ export default function GroupMatchingPage() {
   const [createError, setCreateError] = useState('')
   const [confirm, setConfirm] = useState<'leave' | 'cancelMatch' | null>(null)
   const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all')
-  const [form, setForm] = useState<CreateRoomPayload>({ title: '', maxMembers: 3, preferredGender: 'female', isPrivate: false, allowedGender: undefined })
+  const [form, setForm] = useState<CreateRoomPayload>({ title: '', maxMembers: 3, preferredGender: undefined, isPrivate: false, allowedGender: undefined })
   const [matchedBanner, setMatchedBanner] = useState(false)
   const [searchingBanner, setSearchingBanner] = useState(false)
   const [showJoinByCode, setShowJoinByCode] = useState(false)
@@ -103,7 +103,7 @@ export default function GroupMatchingPage() {
     try {
       await groupMatchingApi.createRoom(form)
       setShowCreate(false)
-      setForm({ title: '', maxMembers: 3, preferredGender: 'female', isPrivate: false, allowedGender: undefined })
+      setForm({ title: '', maxMembers: 3, preferredGender: undefined, isPrivate: false, allowedGender: undefined })
       await loadData()
       chatApi.getRooms().then((res) => setChatRooms(res.data))
     } catch (e) {
@@ -324,15 +324,15 @@ export default function GroupMatchingPage() {
               <div>
                 <p className="text-xs text-gray-400 mb-2">원하는 상대 성별</p>
                 <div className="flex gap-2">
-                  {(['male', 'female'] as const).map((g) => (
+                  {([undefined, 'male', 'female'] as const).map((g) => (
                     <button
-                      key={g}
+                      key={g ?? 'any'}
                       onClick={() => setForm({ ...form, preferredGender: g })}
                       className={`flex-1 py-2 rounded-xl border-2 text-sm font-semibold transition ${
                         form.preferredGender === g ? 'border-secondary-500 bg-secondary-50 text-secondary-600' : 'border-gray-200 text-gray-500'
                       }`}
                     >
-                      {g === 'male' ? '남성 팀' : '여성 팀'}
+                      {g === undefined ? '제한 없음' : g === 'male' ? '남성 팀' : '여성 팀'}
                     </button>
                   ))}
                 </div>
