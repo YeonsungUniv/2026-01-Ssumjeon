@@ -30,7 +30,7 @@ export default function DepartmentSelect(props: Props) {
       const curr = props.value as string[]
       props.onChange(curr.includes(d) ? curr.filter((x) => x !== d) : [...curr, d])
     } else {
-      props.onChange(d)
+      props.onChange(props.value === d ? '' : d)
     }
   }
 
