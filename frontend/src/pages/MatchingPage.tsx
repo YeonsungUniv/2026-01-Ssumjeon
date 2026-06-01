@@ -25,8 +25,11 @@ function UserAvatar({ gender, profileImage, size = 'md' }: { gender: string; pro
   if (profileImage) {
     return <img src={profileImage} alt="프로필" className={`${sz} rounded-full object-cover shrink-0`} />
   }
+  const bg = gender === 'male'
+    ? 'bg-gradient-to-br from-blue-100 to-indigo-200'
+    : 'bg-gradient-to-br from-pink-100 to-rose-200'
   return (
-    <div className={`${sz} rounded-full flex items-center justify-center shrink-0 ${gender === 'male' ? 'bg-blue-50' : 'bg-pink-50'}`}>
+    <div className={`${sz} rounded-full flex items-center justify-center shrink-0 ${bg}`}>
       <span>{gender === 'male' ? '🧑' : '👩'}</span>
     </div>
   )
@@ -337,7 +340,10 @@ function BrowseUserCard({
         {/* 상대방이 나에게 신청한 경우 */}
         {user.incomingRequestId && !user.outgoingRequestId && (
           <div className="space-y-2">
-            <p className="text-xs text-center text-primary-500 font-semibold">💌 나에게 채팅 신청함</p>
+            <div className="flex items-center justify-center gap-1.5">
+              <span className="w-5 h-5 rounded-full bg-pink-100 flex items-center justify-center text-xs">💌</span>
+              <p className="text-xs text-primary-500 font-semibold">나에게 채팅 신청함</p>
+            </div>
             <div className="flex gap-2">
               <button
                 disabled={loading}
@@ -360,11 +366,14 @@ function BrowseUserCard({
         {/* 내가 신청한 경우 */}
         {user.outgoingRequestId && user.outgoingRequestStatus === 'pending' && (
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-primary-500 font-semibold">⏳ 신청 대기 중</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center text-xs">⏳</span>
+              <span className="text-xs text-yellow-600 font-semibold">신청 대기 중</span>
+            </div>
             <button
               disabled={loading}
               onClick={() => onCancel(user.outgoingRequestId!)}
-              className="text-xs text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+              className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-400 hover:bg-red-100 transition-colors disabled:opacity-50"
             >
               {loading ? '...' : '취소'}
             </button>
@@ -372,7 +381,10 @@ function BrowseUserCard({
         )}
 
         {user.outgoingRequestId && user.outgoingRequestStatus === 'rejected' && (
-          <p className="text-xs text-center text-gray-400">거절된 신청</p>
+          <div className="flex items-center justify-center gap-1.5">
+            <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-xs">🚫</span>
+            <p className="text-xs text-gray-400">거절된 신청</p>
+          </div>
         )}
 
         {/* 신청 안 한 경우 */}
@@ -564,10 +576,10 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
         {/* 서브 탭 */}
         <div className="flex bg-gray-100 rounded-2xl p-1 gap-1">
           {([
-            ['list', '둘러보기', browseTotal > 0 ? `(${browseTotal})` : ''],
-            ['incoming', '받은 신청', pendingIncomingCount > 0 ? `(${pendingIncomingCount})` : ''],
-            ['outgoing', '보낸 신청', outgoing.length > 0 ? `(${outgoing.length})` : ''],
-          ] as const).map(([tab, label, count]) => (
+            ['list',     '둘러보기', browseTotal > 0 ? browseTotal : null,           '🔍', 'bg-blue-100'],
+            ['incoming', '받은 신청', pendingIncomingCount > 0 ? pendingIncomingCount : null, '💌', 'bg-pink-100'],
+            ['outgoing', '보낸 신청', outgoing.length > 0 ? outgoing.length : null,  '📤', 'bg-violet-100'],
+          ] as const).map(([tab, label, count, icon, iconBg]) => (
             <button
               key={tab}
               onClick={() => {
@@ -575,12 +587,21 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
                 if (tab === 'incoming') loadIncoming()
                 if (tab === 'outgoing') loadOutgoing()
               }}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1 ${
+              className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 ${
                 browseTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center ${browseTab === tab ? iconBg : ''}`}>
+                {icon}
+              </span>
               {label}
-              {count && <span className={`${browseTab === tab ? 'text-primary-500' : 'text-gray-400'}`}>{count}</span>}
+              {count !== null && (
+                <span className={`min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full flex items-center justify-center ${
+                  browseTab === tab ? 'text-white bg-primary-500' : 'text-gray-500 bg-gray-200'
+                }`}>
+                  {count}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -590,7 +611,9 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
           <div className="space-y-3">
             {!searchApplied && !browseLoading && (
               <div className="card text-center py-14">
-                <p className="text-4xl mb-3">🔍</p>
+                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">🔍</span>
+                </div>
                 <p className="text-gray-500 font-medium">조건을 설정하고 검색해보세요</p>
                 <p className="text-sm text-gray-400 mt-1">접속 여부와 상관없이 상대를 찾을 수 있어요</p>
               </div>
@@ -602,7 +625,9 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
             )}
             {searchApplied && !browseLoading && browseUsers.length === 0 && (
               <div className="card text-center py-14">
-                <p className="text-4xl mb-3">😔</p>
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">😔</span>
+                </div>
                 <p className="text-gray-500 font-medium">조건에 맞는 상대가 없어요</p>
                 <p className="text-sm text-gray-400 mt-1">조건을 바꿔서 다시 검색해보세요</p>
               </div>
@@ -643,7 +668,9 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
               </div>
             ) : incoming.length === 0 ? (
               <div className="card text-center py-14">
-                <p className="text-4xl mb-3">💌</p>
+                <div className="w-16 h-16 rounded-full bg-pink-100 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">💌</span>
+                </div>
                 <p className="text-gray-500 font-medium">받은 신청이 없어요</p>
               </div>
             ) : incoming.map((req) => (
@@ -694,7 +721,9 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
               </div>
             ) : outgoing.length === 0 ? (
               <div className="card text-center py-14">
-                <p className="text-4xl mb-3">📭</p>
+                <div className="w-16 h-16 rounded-full bg-violet-100 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl">📭</span>
+                </div>
                 <p className="text-gray-500 font-medium">보낸 신청이 없어요</p>
               </div>
             ) : outgoing.map((req) => (
@@ -707,21 +736,30 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
                 <div className="shrink-0 flex flex-col items-end gap-2">
                   {req.status === 'pending' && (
                     <>
-                      <span className="text-xs bg-yellow-50 text-yellow-600 px-2.5 py-1 rounded-full font-semibold">대기 중</span>
+                      <span className="flex items-center gap-1 text-xs bg-yellow-50 text-yellow-600 px-2.5 py-1 rounded-full font-semibold border border-yellow-100">
+                        <span className="w-3.5 h-3.5 rounded-full bg-yellow-200 flex items-center justify-center text-[9px]">⏳</span>
+                        대기 중
+                      </span>
                       <button
                         disabled={actionLoading === req.requestId}
                         onClick={() => handleCancel(req.requestId)}
-                        className="text-xs text-gray-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                        className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-400 hover:bg-red-100 transition-colors disabled:opacity-50"
                       >
-                        {actionLoading === req.requestId ? '...' : '신청 취소'}
+                        {actionLoading === req.requestId ? '...' : '취소'}
                       </button>
                     </>
                   )}
                   {req.status === 'accepted' && (
-                    <span className="text-xs bg-green-50 text-green-600 px-2.5 py-1 rounded-full font-semibold">✓ 수락됨</span>
+                    <span className="flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2.5 py-1 rounded-full font-semibold border border-green-100">
+                      <span className="w-3.5 h-3.5 rounded-full bg-green-200 flex items-center justify-center text-[9px]">✓</span>
+                      수락됨
+                    </span>
                   )}
                   {req.status === 'rejected' && (
-                    <span className="text-xs bg-gray-100 text-gray-400 px-2.5 py-1 rounded-full">거절됨</span>
+                    <span className="flex items-center gap-1 text-xs bg-gray-100 text-gray-400 px-2.5 py-1 rounded-full border border-gray-200">
+                      <span className="w-3.5 h-3.5 rounded-full bg-gray-200 flex items-center justify-center text-[9px]">✕</span>
+                      거절됨
+                    </span>
                   )}
                 </div>
               </div>
@@ -749,19 +787,21 @@ export default function MatchingPage() {
       <div className="flex bg-gray-100 rounded-2xl p-1 gap-1 max-w-sm">
         <button
           onClick={() => setPageMode('realtime')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
             pageMode === 'realtime' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          ⚡ 실시간 매칭
+          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${pageMode === 'realtime' ? 'bg-rose-100' : ''}`}>⚡</span>
+          실시간 매칭
         </button>
         <button
           onClick={() => setPageMode('browse')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1 ${
+          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
             pageMode === 'browse' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          👥 둘러보기
+          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${pageMode === 'browse' ? 'bg-violet-100' : ''}`}>👥</span>
+          둘러보기
           {pendingIncomingCount > 0 && (
             <span className="min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
               {pendingIncomingCount}
