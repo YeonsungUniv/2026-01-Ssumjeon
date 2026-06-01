@@ -787,21 +787,19 @@ export default function MatchingPage() {
       <div className="flex bg-gray-100 rounded-2xl p-1 gap-1 max-w-sm">
         <button
           onClick={() => setPageMode('realtime')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
             pageMode === 'realtime' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${pageMode === 'realtime' ? 'bg-rose-100' : ''}`}>⚡</span>
-          실시간 매칭
+          ⚡ 실시간 매칭
         </button>
         <button
           onClick={() => setPageMode('browse')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1 ${
             pageMode === 'browse' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${pageMode === 'browse' ? 'bg-violet-100' : ''}`}>👥</span>
-          둘러보기
+          👥 둘러보기
           {pendingIncomingCount > 0 && (
             <span className="min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
               {pendingIncomingCount}
