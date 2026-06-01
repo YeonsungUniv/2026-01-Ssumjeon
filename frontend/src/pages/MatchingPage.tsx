@@ -287,7 +287,22 @@ export default function MatchingPage() {
                 </button>
               ))}
             </div>
-          </div>
+            {/* 학년이 없는 학과 경고 */}
+            {(filters.grades ?? []).map((g) => {
+              const excluded = (filters.departments ?? []).filter(
+                (d) => g > (DEPARTMENT_MAX_GRADE[d] ?? 4)
+              )
+              if (!excluded.length) return null
+              return (
+                <p key={g} className="text-xs text-amber-600 mt-2 flex items-start gap-1">
+                  <span className="shrink-0">⚠️</span>
+                  <span>
+                    <strong>{g}학년</strong> 선택 시{' '}
+                    <strong>{excluded.join(', ')}</strong>은(는) {g}학년이 없어 매칭에서 제외됩니다
+                  </span>
+                </p>
+              )
+            })}</div>
 
           {/* 학과 */}
           <div>
