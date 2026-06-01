@@ -4,7 +4,8 @@ import { type MatchFilters } from '@/api/matching'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
 import { useSocketInstance } from '@/hooks/useSocket'
-import { DEPARTMENTS, GRADES } from '@/constants'
+import { GRADES } from '@/constants'
+import DepartmentSelect from '@/components/DepartmentSelect'
 
 const GENDER_OPTIONS = [
   { value: 'male' as const, label: '남성' },
@@ -97,11 +98,6 @@ export default function MatchingPage() {
   const toggleGender = (g: 'male' | 'female') =>
     setFilters((prev) => ({ ...prev, gender: prev.gender === g ? undefined : g }))
 
-  const toggleDepartment = (d: string) =>
-    setFilters((prev) => {
-      const deps = prev.departments ?? []
-      return { ...prev, departments: deps.includes(d) ? deps.filter((x) => x !== d) : [...deps, d] }
-    })
 
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
@@ -280,31 +276,19 @@ export default function MatchingPage() {
 
           {/* 학과 */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-medium text-gray-500">
-                학과
-                {filters.departments?.length ? (
-                  <span className="ml-2 text-primary-500 font-semibold">{filters.departments.length}개 선택</span>
-                ) : (
-                  <span className="ml-2 text-gray-400 font-normal">(전체)</span>
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {DEPARTMENTS.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => toggleDepartment(d)}
-                  className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
-                    filters.departments?.includes(d)
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-primary-300'
-                  }`}
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
+            <p className="text-sm font-medium text-gray-500 mb-3">
+              학과
+              {filters.departments?.length ? (
+                <span className="ml-2 text-primary-500 font-semibold">{filters.departments.length}개 선택</span>
+              ) : (
+                <span className="ml-2 text-gray-400 font-normal">(전체)</span>
+              )}
+            </p>
+            <DepartmentSelect
+              multiple
+              value={filters.departments ?? []}
+              onChange={(deps) => setFilters((prev) => ({ ...prev, departments: deps }))}
+            />
           </div>
         </div>
 

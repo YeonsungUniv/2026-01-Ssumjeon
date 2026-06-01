@@ -2,7 +2,8 @@ import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authApi } from '@/api/auth'
-import { DEPARTMENTS, GRADES } from '@/constants'
+import { GRADES } from '@/constants'
+import DepartmentSelect from '@/components/DepartmentSelect'
 
 interface Step1Form {
   username: string
@@ -141,23 +142,11 @@ export default function RegisterPage() {
 
             {/* 학과 */}
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-2">학과 <span className="text-red-400">*</span></p>
-              <div className="flex flex-wrap gap-2">
-                {DEPARTMENTS.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setDepartment(d)}
-                    className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
-                      department === d
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-primary-300'
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
+              <p className="text-sm font-medium text-gray-500 mb-2">
+                학과 <span className="text-red-400">*</span>
+                {department && <span className="ml-2 text-primary-500 font-semibold">{department}</span>}
+              </p>
+              <DepartmentSelect value={department} onChange={setDepartment} />
             </div>
 
             {/* 학년 */}
