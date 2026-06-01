@@ -76,6 +76,18 @@ export default function MatchingPage() {
 
   useEffect(() => () => { clearInterval(timerRef.current!) }, [])
 
+  // 학과 변경 시 해당 학과에서 불가능한 학년 자동 해제
+  useEffect(() => {
+    if (!filters.departments?.length) return
+    const maxGrade = Math.max(
+      ...filters.departments.map((d) => DEPARTMENT_MAX_GRADE[d] ?? 4)
+    )
+    const validGrades = (filters.grades ?? []).filter((g) => g <= maxGrade)
+    if (validGrades.length !== (filters.grades ?? []).length) {
+      setFilters((prev) => ({ ...prev, grades: validGrades }))
+    }
+  }, [filters.departments])
+
   const handleStart = () => {
     if (!socket) return
     socket.emit('matching:join', filters)
