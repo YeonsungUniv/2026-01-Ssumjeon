@@ -21,7 +21,8 @@ type PageMode = 'realtime' | 'browse'
 
 // ── 공통 유저 카드 ─────────────────────────────────────────────────
 function UserAvatar({ gender, profileImage, size = 'md' }: { gender: string; profileImage?: string; size?: 'sm' | 'md' | 'lg' }) {
-  const sz = size === 'lg' ? 'w-14 h-14 text-2xl' : size === 'md' ? 'w-10 h-10 text-lg' : 'w-8 h-8 text-base'
+  const sz = size === 'lg' ? 'w-14 h-14' : size === 'md' ? 'w-10 h-10' : 'w-8 h-8'
+  const iconSz = size === 'lg' ? 'w-7 h-7' : size === 'md' ? 'w-5 h-5' : 'w-4 h-4'
   if (profileImage) {
     return <img src={profileImage} alt="프로필" className={`${sz} rounded-full object-cover shrink-0`} />
   }
@@ -30,7 +31,9 @@ function UserAvatar({ gender, profileImage, size = 'md' }: { gender: string; pro
     : 'bg-gradient-to-br from-pink-400 to-rose-500'
   return (
     <div className={`${sz} rounded-full flex items-center justify-center shrink-0 ${bg}`}>
-      <span>{gender === 'male' ? '🧑' : '👩'}</span>
+      <svg className={`${iconSz} text-white`} fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+      </svg>
     </div>
   )
 }
