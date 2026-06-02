@@ -117,29 +117,68 @@ export default function HomePage() {
   return (
     <div className="space-y-4">
 
-      {/* 유저 인사 카드 */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-rose-400 to-pink-500 px-6 pt-6 pb-10" />
-        <div className="px-6 -mt-7 pb-5 flex items-end gap-4">
-          <div className="w-16 h-16 rounded-full bg-white ring-4 ring-white overflow-hidden flex items-center justify-center shadow">
-            {user?.profileImage
-              ? <img src={user.profileImage} alt="프로필" className="w-full h-full object-cover" />
-              : <span className="text-3xl">{user?.gender === 'male' ? '🧑' : '👩'}</span>
-            }
+      {/* 유저 프로필 카드 */}
+      <div
+        className="relative rounded-3xl overflow-hidden shadow-sm"
+        style={{ background: 'linear-gradient(135deg, #ff2d6f 0%, #a855f7 60%, #6366f1 100%)' }}
+      >
+        {/* 배경 장식 원 */}
+        <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full opacity-10" style={{ background: 'white' }} />
+        <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full opacity-10" style={{ background: 'white' }} />
+
+        <div className="relative px-6 py-5 flex items-center gap-4">
+          {/* 프로필 이미지 */}
+          <div className="shrink-0">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg">
+              {user?.profileImage
+                ? <img src={user.profileImage} alt="프로필" className="w-full h-full object-cover" />
+                : (
+                  <div
+                    className="w-full h-full flex items-center justify-center"
+                    style={{ background: user?.gender === 'male' ? 'linear-gradient(135deg,#60a5fa,#6366f1)' : 'linear-gradient(135deg,#f472b6,#f43f5e)' }}
+                  >
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+                      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                    </svg>
+                  </div>
+                )
+              }
+            </div>
           </div>
-          <div className="pb-1">
-            <p className="font-black text-xl text-gray-800 leading-tight">{user?.nickname ?? ''}</p>
-            <p className="text-xs text-gray-400 mt-0.5">
+
+          {/* 텍스트 */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-black text-lg text-white leading-tight truncate">{user?.nickname ?? ''}</p>
+              {user?.mbti && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">{user.mbti}</span>
+              )}
+            </div>
+            <p className="text-xs text-white/70 mt-0.5">
               {user?.department}{user?.grade ? ` · ${user.grade}학년` : ''}
             </p>
+            {user?.bio && (
+              <p className="text-xs text-white/60 mt-1.5 line-clamp-1">{user.bio}</p>
+            )}
           </div>
-          <Link to="/profile" className="ml-auto mb-1 text-xs text-primary-500 font-semibold border border-primary-200 bg-primary-50 px-3 py-1.5 rounded-full hover:bg-primary-100 transition-colors">
-            프로필 수정
+
+          {/* 프로필 수정 버튼 */}
+          <Link
+            to="/profile"
+            className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors backdrop-blur-sm border border-white/20"
+          >
+            수정
           </Link>
         </div>
-        {user?.bio && (
-          <div className="px-6 pb-5 -mt-1">
-            <p className="text-sm text-gray-500 leading-relaxed">{user.bio}</p>
+
+        {/* 관심사 태그 */}
+        {user?.interests && user.interests.length > 0 && (
+          <div className="px-6 pb-4 flex flex-wrap gap-1.5">
+            {user.interests.slice(0, 5).map((i) => (
+              <span key={i} className="text-[11px] px-2.5 py-0.5 rounded-full bg-white/15 text-white/80 border border-white/10">
+                {i}
+              </span>
+            ))}
           </div>
         )}
       </div>
