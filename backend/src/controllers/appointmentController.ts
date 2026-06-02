@@ -85,10 +85,10 @@ export const appointmentController = {
 
       const row = appt.rows[0]
       if (row.proposer_id !== req.user!.userId) return fail(res, '제안자만 수정할 수 있습니다.', 403)
-      if (row.status !== 'pending') return fail(res, '대기 중인 약속만 수정할 수 있습니다.')
+      if (row.status === 'cancelled') return fail(res, '취소된 약속은 수정할 수 없습니다.')
 
       const result = await query<AppointmentRow>(
-        `UPDATE appointments SET date=$1, time=$2, location=$3, updated_at=NOW() WHERE id=$4
+        `UPDATE appointments SET date=$1, time=$2, location=$3, status='pending', updated_at=NOW() WHERE id=$4
          RETURNING *, (SELECT nickname FROM users WHERE id=proposer_id) AS proposer_nickname`,
         [date, time, location.trim(), id],
       )

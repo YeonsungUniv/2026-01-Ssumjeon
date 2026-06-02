@@ -91,12 +91,20 @@ export default function AppointmentCard({ appointment, myUserId, onUpdate, onEdi
         </div>
       )}
 
-      {/* 확정됨 — 제안자가 취소 가능 */}
-      {appointment.status === 'confirmed' && isProposer && (
-        <div className="pt-1">
+      {/* 확정됨 — 양쪽 취소 가능, 제안자는 수정도 가능 */}
+      {appointment.status === 'confirmed' && (
+        <div className="flex gap-2 pt-1">
+          {isProposer && (
+            <button
+              onClick={() => onEdit(appointment)}
+              className="flex-1 py-2 rounded-xl bg-green-50 border border-green-200 text-green-600 text-sm font-semibold hover:bg-green-100 transition-colors"
+            >
+              ✏️ 수정
+            </button>
+          )}
           <button
             onClick={handleCancel}
-            className="w-full py-2 rounded-xl border border-red-200 text-red-400 text-sm font-semibold hover:bg-red-50 transition-colors"
+            className="flex-1 py-2 rounded-xl border border-red-200 text-red-400 text-sm font-semibold hover:bg-red-50 transition-colors"
           >
             약속 취소
           </button>
