@@ -110,6 +110,7 @@ function FireworksIcon({ active }: { active: boolean }) {
 export default function HomePage() {
   const [matchHover, setMatchHover] = useState(false)
   const [groupHover, setGroupHover] = useState(false)
+  const [showImageModal, setShowImageModal] = useState(false)
   const { user } = useAuthStore()
   const { rooms } = useChatStore()
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
@@ -129,7 +130,11 @@ export default function HomePage() {
         <div className="relative px-6 py-5 flex items-center gap-4">
           {/* 프로필 이미지 */}
           <div className="shrink-0">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg">
+            <button
+              className="w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg active:scale-95 transition-transform"
+              onClick={() => user?.profileImage && setShowImageModal(true)}
+              style={{ cursor: user?.profileImage ? 'pointer' : 'default' }}
+            >
               {user?.profileImage
                 ? <img src={user.profileImage} alt="프로필" className="w-full h-full object-cover" />
                 : (
@@ -143,7 +148,7 @@ export default function HomePage() {
                   </div>
                 )
               }
-            </div>
+            </button>
           </div>
 
           {/* 텍스트 */}
@@ -283,5 +288,29 @@ export default function HomePage() {
       </div>
 
     </div>
+
+    {/* 프로필 이미지 확대 모달 */}
+    {showImageModal && user?.profileImage && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+        onClick={() => setShowImageModal(false)}
+      >
+        <div className="relative max-w-sm w-full mx-6" onClick={(e) => e.stopPropagation()}>
+          <img
+            src={user.profileImage}
+            alt="프로필"
+            className="w-full rounded-3xl shadow-2xl object-cover"
+          />
+          <button
+            onClick={() => setShowImageModal(false)}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    )}
   )
 }
