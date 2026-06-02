@@ -3,6 +3,14 @@ import { query } from '../config/db'
 import { deleteMultipleFromS3 } from '../utils/s3'
 import type { MessageRow, ChatRoomRow, UserRow } from '../types'
 
+// 채팅 목록 미리보기 텍스트 변환
+function previewLastMessage(content: string | null): string | null {
+  if (!content) return null
+  if (content === '[expired_image]') return '🗑️ 만료된 이미지'
+  if (content.includes('amazonaws.com') || content.startsWith('/uploads/')) return '📷 사진을 보냈습니다'
+  return content
+}
+
 // 채팅방의 S3 이미지 메시지 전부 삭제
 async function deleteChatRoomImages(roomId: string) {
   const result = await query<{ content: string }>(
@@ -61,7 +69,7 @@ export const chatService = {
         ? { id: r.partner_id, nickname: r.partner_nickname, profileImage: r.partner_image }
         : undefined,
       groupName: r.group_name,
-      lastMessage: r.last_message,
+      lastMessage: previewLastMessage(r.last_message),
       lastMessageAt: r.last_message_at?.toISOString(),
       unreadCount: parseInt(r.unread_count, 10),
     }))

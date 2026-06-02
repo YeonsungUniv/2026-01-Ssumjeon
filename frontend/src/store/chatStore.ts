@@ -110,14 +110,18 @@ export const useChatStore = create<ChatState>()(
   updateRoomFromMessage: (message) =>
     set((state) => {
       const isActiveRoom = get().activeRoomId === message.roomId
+      const content = message.content
+      const preview =
+        content === '[expired_image]' ? '🗑️ 만료된 이미지'
+        : (content.includes('amazonaws.com') || content.startsWith('blob:')) ? '📷 사진을 보냈습니다'
+        : content
       return {
         rooms: state.rooms.map((r) =>
           r.id === message.roomId
             ? {
                 ...r,
-                lastMessage: message.content,
+                lastMessage: preview,
                 lastMessageAt: message.createdAt,
-                // 현재 열려 있는 방이면 카운트 증가 안 함
                 unreadCount: isActiveRoom ? 0 : r.unreadCount + 1,
               }
             : r,
