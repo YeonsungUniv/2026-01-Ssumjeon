@@ -149,8 +149,13 @@ export default function ProfilePage() {
           {/* 계정 정보 */}
           <div className="card space-y-3">
             <p className="text-sm font-semibold text-gray-500">계정 정보</p>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-400">학교 이메일</span>
+              <span className="text-gray-700 font-medium">
+                {user.email ?? <span className="text-gray-300">미등록</span>}
+              </span>
+            </div>
             {[
-              { label: '이메일', value: user.email },
               { label: '학번', value: user.studentId },
               { label: '성별', value: user.gender === 'male' ? '남성' : '여성' },
             ].filter(({ value }) => value).map(({ label, value }) => (
