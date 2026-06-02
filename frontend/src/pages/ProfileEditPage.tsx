@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
@@ -22,7 +22,21 @@ export default function ProfileEditPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(user?.profileImage ?? null)
   const [imageUploading, setImageUploading] = useState(false)
   const [imageError, setImageError] = useState<string | null>(null)
+  const [nicknameStatus, setNicknameStatus] = useState<'idle' | 'checking' | 'ok' | 'taken'>('idle')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const checkNickname = useCallback(async (value: string) => {
+    if (!value || value === user?.nickname) { setNicknameStatus('idle'); return }
+    setNicknameStatus('checking')
+    try {
+      const res = await client.get<{ success: boolean; data: { available: boolean } }>(
+        `/users/check-nickname/${encodeURIComponent(value)}`,
+      )
+      setNicknameStatus(res.data.available ? 'ok' : 'taken')
+    } catch {
+      setNicknameStatus('idle')
+    }
+  }, [user?.nickname])
 
   const { register, handleSubmit, formState: { isSubmitting, errors } } = useForm<EditPayload>({
     defaultValues: {
@@ -156,14 +170,19 @@ export default function ProfileEditPage() {
               <div>
                 <label className="text-sm font-medium text-gray-600 mb-1.5 block">닉네임</label>
                 <input
-                  className="input-field"
+                  className={`input-field ${nicknameStatus === 'taken' ? 'border-red-300 focus:border-red-400' : nicknameStatus === 'ok' ? 'border-green-300 focus:border-green-400' : ''}`}
                   {...register('nickname', {
                     required: '닉네임을 입력해주세요',
                     maxLength: { value: 7, message: '닉네임은 7자 이하로 입력해주세요' },
-                    pattern: { value: /^[^\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]+$/, message: '공백과 특수문자는 사용할 수 없습니다' },
+                    pattern: { value: /^[^\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/, message: '공백과 특수문자는 사용할 수 없습니다' },
+                    validate: () => nicknameStatus !== 'taken' || '이미 사용 중인 닉네임입니다.',
                   })}
+                  onBlur={(e) => checkNickname(e.target.value)}
                 />
                 {errors.nickname && <p className="text-xs text-red-500 mt-1">{errors.nickname.message}</p>}
+                {!errors.nickname && nicknameStatus === 'checking' && <p className="text-xs text-gray-400 mt-1">확인 중...</p>}
+                {!errors.nickname && nicknameStatus === 'taken' && <p className="text-xs text-red-500 mt-1">이미 사용 중인 닉네임입니다.</p>}
+                {!errors.nickname && nicknameStatus === 'ok' && <p className="text-xs text-green-500 mt-1">사용 가능한 닉네임입니다.</p>}
               </div>
 
               {/* MBTI */}
@@ -217,7 +236,7 @@ export default function ProfileEditPage() {
 
             <div className="flex gap-3 pt-1 justify-end">
               <button type="button" onClick={() => navigate(-1)} className="btn-outline px-8">취소</button>
-              <button type="submit" disabled={isSubmitting || imageUploading} className="btn-primary px-8">
+              <button type="submit" disabled={isSubmitting || imageUploading || nicknameStatus === 'taken' || nicknameStatus === 'checking'} className="btn-primary px-8">
                 {isSubmitting ? '저장 중...' : '저장'}
               </button>
             </div>

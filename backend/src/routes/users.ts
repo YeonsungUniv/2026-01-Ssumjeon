@@ -6,6 +6,7 @@ import { uploadProfile } from '../middlewares/upload'
 const router = Router()
 
 router.get('/search', authenticate, userController.searchUsers)
+router.get('/check-nickname/:nickname', authenticate, userController.checkNickname)
 router.get('/me', authenticate, userController.getMe)
 router.patch('/me', authenticate, userController.updateMe)
 router.patch('/me/password', authenticate, userController.changePassword)

@@ -98,6 +98,19 @@ export const userController = {
     }
   },
 
+  async checkNickname(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { nickname } = req.params
+      const result = await query(
+        'SELECT id FROM users WHERE nickname = $1 AND id != $2',
+        [nickname, req.user!.userId],
+      )
+      return success(res, { available: result.rows.length === 0 })
+    } catch (err) {
+      next(err)
+    }
+  },
+
   async searchUsers(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const q = ((req.query.q as string) ?? '').trim()
@@ -174,6 +187,13 @@ export const userController = {
           return fail(res, '닉네임은 7자 이하로 입력해주세요.')
         if (/[\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(nickname))
           return fail(res, '공백과 특수문자는 사용할 수 없습니다.')
+
+        // 다른 유저가 같은 닉네임을 사용 중인지 확인
+        const dupCheck = await query(
+          'SELECT id FROM users WHERE nickname = $1 AND id != $2',
+          [nickname, req.user!.userId],
+        )
+        if (dupCheck.rows.length > 0) return fail(res, '이미 사용 중인 닉네임입니다.')
       }
 
       if (grade !== undefined) {
