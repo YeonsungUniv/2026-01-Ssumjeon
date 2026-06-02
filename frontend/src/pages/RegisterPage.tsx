@@ -22,8 +22,8 @@ export default function RegisterPage() {
   const [department, setDepartment] = useState('')
   const [grade, setGrade] = useState<number | null>(null)
 
-  // 이메일 인증 상태
-  const [email, setEmail] = useState('')
+  // 이메일 인증 상태 (emailLocal = @ 앞 부분만)
+  const [emailLocal, setEmailLocal] = useState('')
   const [code, setCode] = useState('')
   const [codeSent, setCodeSent] = useState(false)
   const [emailVerified, setEmailVerified] = useState(false)
@@ -50,7 +50,7 @@ export default function RegisterPage() {
     return () => clearInterval(id)
   }, [countdown])
 
-  const isValidDomain = email.toLowerCase().endsWith(SCHOOL_DOMAIN)
+  const fullEmail = emailLocal.trim() ? `${emailLocal.trim().toLowerCase()}${SCHOOL_DOMAIN}` : ''
 
   const onStep1Submit = async (data: Step1Form) => {
     if (!department) { setError('학과를 선택해주세요.'); return }
@@ -71,7 +71,7 @@ export default function RegisterPage() {
     setEmailError('')
     setSendLoading(true)
     try {
-      await authApi.sendEmailCode(email.trim().toLowerCase())
+      await authApi.sendEmailCode(fullEmail)
       setCodeSent(true)
       setCountdown(60)
     } catch (e) {
@@ -85,7 +85,7 @@ export default function RegisterPage() {
     setCodeError('')
     setVerifyLoading(true)
     try {
-      await authApi.verifyEmailCode(email.trim().toLowerCase(), code.trim())
+      await authApi.verifyEmailCode(fullEmail, code.trim())
       setEmailVerified(true)
     } catch (e) {
       setCodeError(e instanceof Error ? e.message : '인증에 실패했습니다.')
@@ -104,7 +104,7 @@ export default function RegisterPage() {
         nickname: step1Data.nickname.trim() || undefined,
         department,
         grade,
-        email: email.trim().toLowerCase(),
+        email: fullEmail,
       })
       setStep('done')
       setTimeout(() => navigate('/login', { replace: true }), 2500)
@@ -233,37 +233,35 @@ export default function RegisterPage() {
           <p className="text-sm text-gray-400 mb-6">연성대학교 이메일로 인증해주세요.</p>
 
           <div className="space-y-4">
-            {/* 이메일 입력 + 발송 버튼 */}
+            {/* 이메일 입력 + 고정 도메인 + 발송 버튼 */}
             <div>
               <label className="text-sm font-medium text-gray-600 mb-1.5 block">학교 이메일</label>
               <div className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder={`example${SCHOOL_DOMAIN}`}
-                  className="input-field flex-1"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value)
-                    setEmailError('')
-                    if (codeSent && !emailVerified) {
-                      setCodeSent(false)
-                      setCode('')
-                    }
-                  }}
-                  disabled={emailVerified}
-                />
+                {/* 로컬파트 + 고정 도메인 */}
+                <div className={`flex items-center flex-1 rounded-2xl border bg-white overflow-hidden ${emailVerified ? 'border-gray-200 bg-gray-50' : 'border-gray-200 focus-within:border-primary-400'}`}>
+                  <input
+                    type="text"
+                    placeholder="아이디"
+                    className="flex-1 min-w-0 px-4 py-2.5 text-sm bg-transparent outline-none"
+                    value={emailLocal}
+                    onChange={(e) => {
+                      setEmailLocal(e.target.value.replace(/[@\s]/g, ''))
+                      setEmailError('')
+                      if (codeSent && !emailVerified) { setCodeSent(false); setCode('') }
+                    }}
+                    disabled={emailVerified}
+                  />
+                  <span className="pr-3 text-sm text-gray-400 shrink-0 select-none">{SCHOOL_DOMAIN}</span>
+                </div>
                 <button
                   type="button"
                   onClick={handleSendCode}
-                  disabled={!isValidDomain || sendLoading || emailVerified || countdown > 0}
+                  disabled={!emailLocal.trim() || sendLoading || emailVerified || countdown > 0}
                   className="px-4 py-2.5 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed shrink-0 transition-colors"
                 >
-                  {sendLoading ? '발송 중...' : countdown > 0 ? `재전송 (${countdown}s)` : codeSent ? '재전송' : '인증코드 발송'}
+                  {sendLoading ? '발송 중...' : countdown > 0 ? `${countdown}s` : codeSent ? '재전송' : '코드 발송'}
                 </button>
               </div>
-              {!isValidDomain && email.length > 0 && (
-                <p className="text-xs text-amber-600 mt-1.5">연성대학교 이메일({SCHOOL_DOMAIN})만 사용 가능합니다.</p>
-              )}
               {emailError && <p className="text-xs text-red-500 mt-1.5">{emailError}</p>}
             </div>
 
@@ -303,7 +301,7 @@ export default function RegisterPage() {
                 </svg>
                 <div>
                   <p className="text-sm font-semibold text-green-700">인증 완료</p>
-                  <p className="text-xs text-green-500">{email}</p>
+                  <p className="text-xs text-green-500">{fullEmail}</p>
                 </div>
               </div>
             )}
