@@ -50,7 +50,11 @@ export default function ChatListPage() {
                   </span>
                 </div>
                 <p className="text-sm text-gray-400 truncate mt-0.5">
-                  {room.lastMessage?.startsWith('/uploads/chat/') ? '📷 사진' : (room.lastMessage ?? '대화를 시작해보세요')}
+                  {room.lastMessage === '[expired_image]'
+                    ? '🗑️ 만료된 이미지'
+                    : (room.lastMessage?.includes('amazonaws.com') || room.lastMessage?.startsWith('blob:'))
+                    ? '📷 사진을 보냈습니다'
+                    : (room.lastMessage ?? '대화를 시작해보세요')}
                 </p>
               </div>
 

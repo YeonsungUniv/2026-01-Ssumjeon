@@ -224,7 +224,13 @@ export default function HomePage() {
                   <p className="text-sm font-semibold text-gray-800 truncate">
                     {room.type === 'individual' ? room.partner?.nickname : room.groupName}
                   </p>
-                  <p className="text-xs text-gray-400 truncate mt-0.5">{room.lastMessage ?? '대화를 시작해보세요'}</p>
+                  <p className="text-xs text-gray-400 truncate mt-0.5">
+                    {room.lastMessage === '[expired_image]'
+                      ? '🗑️ 만료된 이미지'
+                      : (room.lastMessage?.includes('amazonaws.com') || room.lastMessage?.startsWith('blob:'))
+                      ? '📷 사진을 보냈습니다'
+                      : (room.lastMessage ?? '대화를 시작해보세요')}
+                  </p>
                 </div>
                 {room.unreadCount > 0 && (
                   <span className="shrink-0 min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
