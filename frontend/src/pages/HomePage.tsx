@@ -116,6 +116,7 @@ export default function HomePage() {
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
 
   return (
+    <>
     <div className="space-y-4">
 
       {/* 유저 프로필 카드 */}
@@ -312,5 +313,6 @@ export default function HomePage() {
         </div>
       </div>
     )}
+    </>
   )
 }
