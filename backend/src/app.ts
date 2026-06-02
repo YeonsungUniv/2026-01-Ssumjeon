@@ -4,12 +4,14 @@ import http from 'http'
 import { Server as SocketServer } from 'socket.io'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import cron from 'node-cron'
 import { env } from './config/env'
-import { pool } from './config/db'
+import { pool, query } from './config/db'
 import apiRouter from './routes'
 import { errorHandler } from './middlewares/errorHandler'
 import { setupSocket } from './services/socketService'
 import { seedTestUsers } from './seeds/testUsers'
+import { deleteMultipleFromS3 } from './utils/s3'
 
 const app = express()
 const httpServer = http.createServer(app)
@@ -36,6 +38,33 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }))
 
 // ── 에러 핸들러 ─────────────────────────────────────────────────
 app.use(errorHandler)
+
+// ── 채팅 이미지 7일 만료 크론잡 (매일 새벽 3시) ─────────────────────
+cron.schedule('0 3 * * *', async () => {
+  try {
+    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const result = await query<{ id: string; content: string }>(
+      `SELECT id, content FROM messages
+       WHERE content LIKE '%amazonaws.com/chat/%'
+         AND content != '[expired_image]'
+         AND created_at < $1`,
+      [cutoff],
+    )
+    if (result.rows.length === 0) return
+
+    const urls = result.rows.map((r) => r.content)
+    const ids = result.rows.map((r) => r.id)
+
+    await deleteMultipleFromS3(urls)
+    await query(
+      `UPDATE messages SET content = '[expired_image]' WHERE id = ANY($1::uuid[])`,
+      [ids],
+    )
+    console.log(`[Cron] 채팅 이미지 ${ids.length}개 만료 처리`)
+  } catch (err) {
+    console.error('[Cron] 이미지 만료 처리 실패:', err)
+  }
+})
 
 // ── 서버 시작 ────────────────────────────────────────────────────
 async function bootstrap() {

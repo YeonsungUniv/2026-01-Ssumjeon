@@ -2,7 +2,7 @@ import type { Response, NextFunction } from 'express'
 import { query } from '../config/db'
 import { success, fail } from '../utils/response'
 import { getIO } from '../services/socketService'
-import { uploadToS3 } from '../utils/s3'
+import { uploadToS3, deleteFromS3 } from '../utils/s3'
 import type { AuthRequest, UserRow } from '../types'
 
 export const userController = {
@@ -56,8 +56,19 @@ export const userController = {
   async uploadProfileImage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       if (!req.file) return fail(res, '이미지를 업로드해주세요.')
+
+      // 기존 프로필 이미지 URL 조회
+      const prev = await query<{ profile_image: string | null }>(
+        'SELECT profile_image FROM users WHERE id = $1', [req.user!.userId],
+      )
+      const oldUrl = prev.rows[0]?.profile_image
+
       const imageUrl = await uploadToS3(req.file.buffer, req.file.mimetype, 'profiles')
       await query('UPDATE users SET profile_image = $1, updated_at = NOW() WHERE id = $2', [imageUrl, req.user!.userId])
+
+      // 기존 S3 이미지 삭제 (신규 업로드 성공 후)
+      if (oldUrl) deleteFromS3(oldUrl).catch(() => {})
+
       return success(res, { profileImage: imageUrl })
     } catch (err) {
       next(err)

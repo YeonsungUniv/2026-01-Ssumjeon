@@ -18,6 +18,8 @@ dayjs.locale('ko')
 const isImageContent = (content: string) =>
   content.startsWith('blob:') || content.includes('amazonaws.com')
 
+const isExpiredImage = (content: string) => content === '[expired_image]'
+
 export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const navigate = useNavigate()
@@ -269,7 +271,9 @@ export default function ChatRoomPage() {
               <div className={`max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                 {!isMe && <span className="text-xs text-gray-400">{msg.senderNickname}</span>}
                 <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
-                  {isImageContent(msg.content) ? (
+                  {isExpiredImage(msg.content) ? (
+                    <span className="block px-4 py-2.5 text-xs opacity-60">🗑️ 이미지가 만료되었습니다</span>
+                  ) : isImageContent(msg.content) ? (
                     <img
                       src={msg.content}
                       alt="사진"

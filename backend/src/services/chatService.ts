@@ -1,6 +1,17 @@
 import { v4 as uuidv4 } from 'uuid'
 import { query } from '../config/db'
+import { deleteMultipleFromS3 } from '../utils/s3'
 import type { MessageRow, ChatRoomRow, UserRow } from '../types'
+
+// 채팅방의 S3 이미지 메시지 전부 삭제
+async function deleteChatRoomImages(roomId: string) {
+  const result = await query<{ content: string }>(
+    "SELECT content FROM messages WHERE room_id = $1 AND content LIKE '%amazonaws.com/chat/%'",
+    [roomId],
+  )
+  const urls = result.rows.map((r) => r.content)
+  if (urls.length > 0) await deleteMultipleFromS3(urls)
+}
 
 export const chatService = {
   async getRooms(userId: string) {
@@ -137,6 +148,17 @@ export const chatService = {
     if (access.rows.length === 0) throw new Error('채팅방 멤버가 아닙니다.')
     await query('DELETE FROM chat_room_members WHERE chat_room_id = $1 AND user_id = $2', [roomId, userId])
 
+    // 1:1 채팅방: 두 멤버 모두 나갔으면 채팅방+이미지 삭제
+    const remaining = await query<{ count: string }>(
+      'SELECT COUNT(*) AS count FROM chat_room_members WHERE chat_room_id = $1',
+      [roomId],
+    )
+    if (parseInt(remaining.rows[0].count, 10) === 0) {
+      await deleteChatRoomImages(roomId)
+      await query('DELETE FROM chat_rooms WHERE id = $1', [roomId])
+      return
+    }
+
     // 그룹 채팅방이면 과팅방 멤버에서도 제거 (방장이면 위임 또는 방 해체)
     const chatRoom = await query<{ group_room_id: string | null }>(
       "SELECT group_room_id FROM chat_rooms WHERE id = $1 AND type = 'group'",
@@ -153,15 +175,16 @@ export const chatService = {
       await query('DELETE FROM group_room_members WHERE group_room_id = $1 AND user_id = $2', [groupRoomId, userId])
 
       if (isLeader) {
-        const remaining = await query<{ user_id: string }>(
+        const remainingMembers = await query<{ user_id: string }>(
           'SELECT user_id FROM group_room_members WHERE group_room_id = $1 LIMIT 1',
           [groupRoomId],
         )
-        if (remaining.rows.length === 0) {
+        if (remainingMembers.rows.length === 0) {
           await query("UPDATE group_rooms SET status = 'closed' WHERE id = $1", [groupRoomId])
+          await deleteChatRoomImages(roomId)
           await query('DELETE FROM chat_rooms WHERE id = $1', [roomId])
         } else {
-          const nextLeader = remaining.rows[0].user_id
+          const nextLeader = remainingMembers.rows[0].user_id
           await query(
             'UPDATE group_room_members SET is_leader = true WHERE group_room_id = $1 AND user_id = $2',
             [groupRoomId, nextLeader],

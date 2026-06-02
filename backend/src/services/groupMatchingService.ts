@@ -1,6 +1,16 @@
 import { v4 as uuidv4 } from 'uuid'
 import { query } from '../config/db'
+import { deleteMultipleFromS3 } from '../utils/s3'
 import type { GroupRoomRow, UserRow } from '../types'
+
+async function deleteChatRoomImages(roomId: string) {
+  const result = await query<{ content: string }>(
+    "SELECT content FROM messages WHERE room_id = $1 AND content LIKE '%amazonaws.com/chat/%'",
+    [roomId],
+  )
+  const urls = result.rows.map((r) => r.content)
+  if (urls.length > 0) await deleteMultipleFromS3(urls)
+}
 
 function generateInviteCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -189,6 +199,7 @@ export const groupMatchingService = {
         // 남은 멤버 없음 → 방 해체
         await query("UPDATE group_rooms SET status = 'closed' WHERE id = $1", [roomId])
         if (chatRoom.rows[0]) {
+          await deleteChatRoomImages(chatRoom.rows[0].id)
           await query('DELETE FROM chat_rooms WHERE id = $1', [chatRoom.rows[0].id])
         }
       } else {
@@ -212,7 +223,9 @@ export const groupMatchingService = {
     if (leaderCheck.rows.length === 0) throw new Error('방 해체 권한이 없습니다.')
     await query('UPDATE group_rooms SET status = \'closed\' WHERE id = $1', [roomId])
     await query('DELETE FROM group_room_members WHERE group_room_id = $1', [roomId])
-    // 팀 채팅방 삭제
+    // 팀 채팅방 이미지 삭제 후 방 삭제
+    const teamRoom = await query<{ id: string }>('SELECT id FROM chat_rooms WHERE group_room_id = $1', [roomId])
+    for (const r of teamRoom.rows) await deleteChatRoomImages(r.id)
     await query('DELETE FROM chat_rooms WHERE group_room_id = $1', [roomId])
   },
 
@@ -238,6 +251,7 @@ export const groupMatchingService = {
       if (otherRoom.rows.length > 0) {
         await query('UPDATE group_rooms SET status = \'waiting\' WHERE id = $1', [otherRoom.rows[0].id])
       }
+      await deleteChatRoomImages(chatRoom.rows[0].id)
       await query('DELETE FROM chat_rooms WHERE id = $1', [chatRoom.rows[0].id])
     }
 
