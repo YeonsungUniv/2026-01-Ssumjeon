@@ -262,33 +262,43 @@ export default function ChatRoomPage() {
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} gap-2`}>
               {!isMe && (
                 <button
-                  className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0 mt-auto"
+                  className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0 self-end mb-0.5"
                   onClick={() => openProfile(msg.senderId)}
                 >
                   <span className="text-xs text-primary-500 font-bold">{msg.senderNickname[0]}</span>
                 </button>
               )}
-              <div className={`max-w-[70%] ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-                {!isMe && <span className="text-xs text-gray-400">{msg.senderNickname}</span>}
-                <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
-                  {isExpiredImage(msg.content) ? (
-                    <span className="block px-4 py-2.5 text-xs opacity-60">🗑️ 이미지가 만료되었습니다</span>
-                  ) : isImageContent(msg.content) ? (
-                    <img
-                      src={msg.content}
-                      alt="사진"
-                      className="max-w-[220px] max-h-[280px] object-cover cursor-pointer"
-                      onClick={() => window.open(msg.content, '_blank')}
-                    />
-                  ) : (
-                    <span className="block px-4 py-2.5">{msg.content}</span>
-                  )}
+
+              {/* 버블 + 메타(시간·읽음) 가로 배치 — 내 메시지는 reverse */}
+              <div className={`max-w-[70%] flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-1.5`}>
+
+                {/* 메시지 버블 */}
+                <div className={`flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
+                  {!isMe && <span className="text-xs text-gray-400 px-1">{msg.senderNickname}</span>}
+                  <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
+                    {isExpiredImage(msg.content) ? (
+                      <span className="block px-4 py-2.5 text-xs opacity-60">🗑️ 이미지가 만료되었습니다</span>
+                    ) : isImageContent(msg.content) ? (
+                      <img
+                        src={msg.content}
+                        alt="사진"
+                        className="max-w-[220px] max-h-[280px] object-cover cursor-pointer"
+                        onClick={() => window.open(msg.content, '_blank')}
+                      />
+                    ) : (
+                      <span className="block px-4 py-2.5">{msg.content}</span>
+                    )}
+                  </div>
                 </div>
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-0`}>
-                  <span className="text-[10px] text-gray-400">{dayjs(msg.createdAt).format('HH:mm')}</span>
-                  {isMe && msg.isRead && (
-                    <span className="text-[10px] text-primary-400">읽음</span>
+
+                {/* 읽음 "1" + 시간 — 버블 옆에 세로 배치 */}
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} shrink-0 gap-0.5 pb-0.5`}>
+                  {isMe && !msg.isRead && (
+                    <span className="text-[10px] text-primary-400 font-bold leading-none">1</span>
                   )}
+                  <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">
+                    {dayjs(msg.createdAt).format('HH:mm')}
+                  </span>
                 </div>
               </div>
             </div>

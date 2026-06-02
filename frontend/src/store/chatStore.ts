@@ -94,8 +94,9 @@ export const useChatStore = create<ChatState>()(
     set((state) => ({
       messages: {
         ...state.messages,
+        // byUserId = 읽은 사람 → 읽은 사람이 보내지 않은 메시지(= 상대방 메시지)를 읽음 처리
         [roomId]: (state.messages[roomId] ?? []).map((m) =>
-          m.senderId === byUserId ? { ...m, isRead: true } : m,
+          m.senderId !== byUserId ? { ...m, isRead: true } : m,
         ),
       },
     })),
