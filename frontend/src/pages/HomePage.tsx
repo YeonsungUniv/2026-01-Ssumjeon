@@ -60,67 +60,57 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* 1:1 매칭 메인 CTA */}
-        <Link to="/matching" className="block group">
-          <div className="rounded-3xl p-6 relative overflow-hidden" style={{ background: '#111' }}>
-            <div className="relative z-10">
-              <span className="inline-block text-xs font-semibold text-primary-400 bg-primary-400/10 px-2.5 py-1 rounded-full mb-3">
-                1:1 매칭
-              </span>
-              <p className="text-white text-xl font-black leading-snug">
-                마음에 드는 상대를<br/>지금 바로 찾아보세요
-              </p>
-              <div className="flex items-center gap-1.5 mt-4">
-                <span className="text-sm text-gray-400 font-medium">매칭 시작하기</span>
-                <svg className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
-            {/* 핑크 블러 원 */}
-            <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full opacity-20"
-              style={{ background: 'radial-gradient(circle, #ff2d6f, transparent)' }} />
-            <div className="absolute -right-4 bottom-4 w-24 h-24 rounded-full opacity-10"
-              style={{ background: 'radial-gradient(circle, #a855f7, transparent)' }} />
-          </div>
-        </Link>
-
-        {/* 보조 기능 */}
-        <div className="grid grid-cols-2 gap-3">
-          <Link to="/group-matching" className="rounded-2xl bg-gray-50 p-4 flex flex-col gap-3 hover:bg-gray-100 transition-colors border border-gray-100">
-            <div className="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#7c3aed">
-                <circle cx="9" cy="7" r="3" />
-                <circle cx="16" cy="8.5" r="2.5" opacity=".6" />
-                <path d="M2 19c0-3.3 3.1-6 7-6s7 2.7 7 6" />
-                <path d="M17 14c1.9.5 4 1.9 4 5" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity=".6" />
+        {/* 메뉴 */}
+        <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50 overflow-hidden">
+          <Link to="/matching" className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+            <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                <path d="M12 21C12 21 3 15.5 3 9.5C3 6.46 5.46 4 8.5 4C10.24 4 11.91 4.81 13 6.08C14.09 4.81 15.76 4 17.5 4C20.54 4 23 6.46 23 9.5C23 15.5 12 21 12 21Z"/>
               </svg>
             </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">과팅</p>
-              <p className="text-xs text-gray-400 mt-0.5">팀으로 만나요</p>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-900">1:1 매칭</p>
+              <p className="text-xs text-gray-400 mt-0.5">지금 바로 인연을 찾아보세요</p>
             </div>
+            <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
 
-          <Link to="/chat" className="rounded-2xl bg-gray-50 p-4 flex flex-col gap-3 hover:bg-gray-100 transition-colors border border-gray-100">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-primary-50 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff2d6f">
-                  <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
-                </svg>
-              </div>
-              {totalUnread > 0 && (
-                <span className="text-[10px] font-bold text-white bg-primary-500 rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
-                  {totalUnread}
-                </span>
-              )}
+          <Link to="/group-matching" className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+            <div className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                <circle cx="9" cy="7" r="3"/>
+                <circle cx="16" cy="8" r="2.5" opacity=".7"/>
+                <path d="M2 19c0-3.3 3.1-6 7-6s7 2.7 7 6"/>
+                <path d="M17 14c2 .5 4 2 4 5" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity=".7"/>
+              </svg>
             </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">채팅</p>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-900">과팅</p>
+              <p className="text-xs text-gray-400 mt-0.5">팀을 꾸려 함께 만나보세요</p>
+            </div>
+            <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+
+          <Link to="/chat" className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+            <div className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-900">채팅</p>
               <p className="text-xs text-gray-400 mt-0.5">
-                {rooms.length > 0 ? `${rooms.length}개의 대화` : '대화 없음'}
+                {rooms.length > 0 ? `${rooms.length}개의 대화` : '아직 대화가 없어요'}
               </p>
             </div>
+            {totalUnread > 0
+              ? <span className="min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">{totalUnread}</span>
+              : <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            }
           </Link>
         </div>
 
