@@ -1,8 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import { authService } from '../services/authService'
 import { success, fail } from '../utils/response'
-import { env } from '../config/env'
-import { uploadToS3 } from '../utils/s3'
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -12,13 +10,35 @@ const COOKIE_OPTS = {
 }
 
 export const authController = {
+  async sendEmailCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body
+      if (!email) return fail(res, '이메일을 입력해주세요.')
+      const result = await authService.sendEmailCode(email.trim().toLowerCase())
+      return success(res, result)
+    } catch (err) {
+      if (err instanceof Error) return fail(res, err.message)
+      next(err)
+    }
+  },
+
+  async verifyEmailCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, code } = req.body
+      if (!email || !code) return fail(res, '이메일과 인증 코드를 입력해주세요.')
+      const result = await authService.verifyEmailCode(email.trim().toLowerCase(), code.trim())
+      return success(res, result)
+    } catch (err) {
+      if (err instanceof Error) return fail(res, err.message)
+      next(err)
+    }
+  },
+
   async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { username, password, nickname, gender, department, grade } = req.body
-      const enrollmentDocPath = req.file
-        ? await uploadToS3(req.file.buffer, req.file.mimetype, 'enrollments')
-        : null
+      const { username, password, nickname, gender, department, grade, email } = req.body
 
+      if (!email) return fail(res, '이메일을 입력해주세요.')
       if (!department) return fail(res, '학과를 선택해주세요.')
       const gradeNum = parseInt(grade, 10)
       if (![1, 2, 3, 4].includes(gradeNum)) return fail(res, '학년을 선택해주세요.')
@@ -30,7 +50,7 @@ export const authController = {
         gender,
         department,
         grade: gradeNum,
-        enrollmentDocPath,
+        email: email.trim().toLowerCase(),
       })
 
       return success(res, { user: result.user }, 201)

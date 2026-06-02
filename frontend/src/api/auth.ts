@@ -13,7 +13,7 @@ export interface RegisterPayload {
   gender: 'male' | 'female'
   department: string
   grade: number
-  enrollmentDoc?: File
+  email: string
 }
 
 export interface AuthTokens {
@@ -37,17 +37,14 @@ export const authApi = {
   login: (payload: LoginPayload) =>
     client.post<ApiResponse<AuthTokens>>('/auth/login', payload),
 
-  register: (payload: RegisterPayload) => {
-    const form = new FormData()
-    form.append('username', payload.username)
-    form.append('password', payload.password)
-    if (payload.nickname) form.append('nickname', payload.nickname)
-    form.append('gender', payload.gender)
-    form.append('department', payload.department)
-    form.append('grade', String(payload.grade))
-    if (payload.enrollmentDoc) form.append('enrollmentDoc', payload.enrollmentDoc)
-    return client.post<ApiResponse<{ user: User }>>('/auth/register', form)
-  },
+  register: (payload: RegisterPayload) =>
+    client.post<ApiResponse<{ user: User }>>('/auth/register', payload),
+
+  sendEmailCode: (email: string) =>
+    client.post<ApiResponse<{ sent: boolean }>>('/auth/send-email-code', { email }),
+
+  verifyEmailCode: (email: string, code: string) =>
+    client.post<ApiResponse<{ verified: boolean }>>('/auth/verify-email-code', { email, code }),
 
   checkUsername: (username: string) =>
     client.get<{ success: boolean; data: { available: boolean } }>(`/auth/check-username/${encodeURIComponent(username)}`),

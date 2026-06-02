@@ -1,8 +1,41 @@
 import bcrypt from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
+import nodemailer from 'nodemailer'
 import { query } from '../config/db'
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt'
+import { env } from '../config/env'
 import type { UserRow } from '../types'
+
+const SCHOOL_DOMAIN = '@yeonsung.ac.kr'
+
+function createTransport() {
+  return nodemailer.createTransport({
+    host: env.smtp.host,
+    port: env.smtp.port,
+    secure: false,
+    auth: { user: env.smtp.user, pass: env.smtp.pass },
+  })
+}
+
+async function sendVerificationEmail(to: string, code: string) {
+  const target = env.devEmailOverride || to
+  const transporter = createTransport()
+  await transporter.sendMail({
+    from: `"썸전" <${env.smtp.user}>`,
+    to: target,
+    subject: '[썸전] 이메일 인증 코드',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;border:1px solid #eee;border-radius:12px;">
+        <h2 style="color:#ff2d6f;margin-bottom:8px;">썸전 이메일 인증</h2>
+        <p style="color:#555;margin-bottom:24px;">아래 인증 코드를 입력해주세요. 코드는 <strong>10분</strong> 동안 유효합니다.</p>
+        <div style="background:#fff0f3;border-radius:8px;padding:20px;text-align:center;">
+          <span style="font-size:36px;font-weight:900;letter-spacing:12px;color:#ff2d6f;">${code}</span>
+        </div>
+        <p style="color:#aaa;font-size:12px;margin-top:24px;">본인이 요청하지 않은 경우 이 메일을 무시해주세요.</p>
+      </div>
+    `,
+  })
+}
 
 function toUserDto(row: UserRow) {
   return {
@@ -33,6 +66,39 @@ async function generateUniqueNickname(): Promise<string> {
 }
 
 export const authService = {
+  // 인증 코드 발송
+  async sendEmailCode(email: string) {
+    if (!email.endsWith(SCHOOL_DOMAIN))
+      throw new Error(`연성대학교 이메일(${SCHOOL_DOMAIN})만 사용 가능합니다.`)
+
+    const dup = await query('SELECT id FROM users WHERE email = $1', [email])
+    if (dup.rows.length > 0) throw new Error('이미 가입된 이메일입니다.')
+
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    await query(
+      `INSERT INTO email_verification_codes (id, email, code, expires_at)
+       VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes')`,
+      [uuidv4(), email, code],
+    )
+
+    await sendVerificationEmail(email, code)
+    return { sent: true }
+  },
+
+  // 인증 코드 확인
+  async verifyEmailCode(email: string, code: string) {
+    const result = await query<{ id: string }>(
+      `SELECT id FROM email_verification_codes
+       WHERE email = $1 AND code = $2 AND verified = false AND expires_at > NOW()
+       ORDER BY created_at DESC LIMIT 1`,
+      [email, code],
+    )
+    if (result.rows.length === 0) throw new Error('인증 코드가 올바르지 않거나 만료되었습니다.')
+
+    await query('UPDATE email_verification_codes SET verified = true WHERE id = $1', [result.rows[0].id])
+    return { verified: true }
+  },
+
   async register(payload: {
     username: string
     password: string
@@ -40,18 +106,30 @@ export const authService = {
     gender: 'male' | 'female'
     department: string
     grade: number
-    enrollmentDocPath: string | null
+    email: string
   }) {
     if (!payload.username || payload.username.trim().length === 0) throw new Error('아이디를 입력해주세요.')
     if (!/^[a-zA-Z0-9_]{4,20}$/.test(payload.username)) throw new Error('아이디는 4~20자의 영문, 숫자, 밑줄(_)만 사용 가능합니다.')
 
+    // 이메일 인증 완료 여부 확인 (10분 내 verified된 코드)
+    const verified = await query(
+      `SELECT id FROM email_verification_codes
+       WHERE email = $1 AND verified = true AND expires_at > NOW() - INTERVAL '1 hour'
+       ORDER BY created_at DESC LIMIT 1`,
+      [payload.email],
+    )
+    if (verified.rows.length === 0) throw new Error('이메일 인증을 먼저 완료해주세요.')
+
     const usernameCheck = await query('SELECT id FROM users WHERE username = $1', [payload.username])
     if (usernameCheck.rows.length > 0) throw new Error('이미 사용중인 아이디입니다.')
+
+    const emailCheck = await query('SELECT id FROM users WHERE email = $1', [payload.email])
+    if (emailCheck.rows.length > 0) throw new Error('이미 가입된 이메일입니다.')
 
     let nickname = payload.nickname?.trim() || ''
     if (nickname) {
       if (nickname.length > 7) throw new Error('닉네임은 7자 이하로 입력해주세요.')
-      if (/[\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(nickname)) throw new Error('공백과 특수문자는 사용할 수 없습니다.')
+      if (/[\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(nickname)) throw new Error('공백과 특수문자는 사용할 수 없습니다.')
       const nicknameCheck = await query('SELECT id FROM users WHERE nickname = $1', [nickname])
       if (nicknameCheck.rows.length > 0) throw new Error('이미 사용 중인 닉네임입니다.')
     } else {
@@ -62,10 +140,10 @@ export const authService = {
     const id = uuidv4()
 
     const result = await query<UserRow>(
-      `INSERT INTO users (id, username, password_hash, nickname, gender, department, grade, interests, status, is_verified, enrollment_doc)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'approved', true, $9)
+      `INSERT INTO users (id, username, email, password_hash, nickname, gender, department, grade, interests, status, is_verified)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'approved', true)
        RETURNING *`,
-      [id, payload.username, passwordHash, nickname, payload.gender, payload.department, payload.grade, [], payload.enrollmentDocPath],
+      [id, payload.username, payload.email, passwordHash, nickname, payload.gender, payload.department, payload.grade, []],
     )
 
     return { user: toUserDto(result.rows[0]) }
