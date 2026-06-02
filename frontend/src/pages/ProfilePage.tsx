@@ -149,9 +149,9 @@ export default function ProfilePage() {
           {/* 계정 정보 */}
           <div className="card space-y-3">
             <p className="text-sm font-semibold text-gray-500">계정 정보</p>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-400">학교 이메일</span>
-              <span className="text-gray-700 font-medium">
+            <div className="flex items-center justify-between gap-2 text-sm">
+              <span className="text-gray-400 shrink-0">학교 이메일</span>
+              <span className="text-gray-700 font-medium truncate text-right">
                 {user.email ?? <span className="text-gray-300">미등록</span>}
               </span>
             </div>
