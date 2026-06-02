@@ -11,182 +11,150 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-5">
 
-        {/* ── 프로필 카드 ───────────────────────── */}
-        <div className="bg-white rounded-3xl overflow-hidden border border-gray-100">
-          {/* 상단 컬러 배너 */}
-          <div className="h-20 bg-primary-50 relative">
-            <div className="absolute bottom-0 left-0 right-0 h-8"
-              style={{ background: 'linear-gradient(to bottom, transparent, white)' }} />
+        {/* 인사 + 프로필 */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-400 mb-0.5">안녕하세요</p>
+            <p className="text-xl font-black text-gray-900">{user?.nickname ?? ''} 님</p>
           </div>
-
-          <div className="px-5 pb-5 -mt-8 flex flex-col">
-            <div className="flex items-end justify-between mb-3">
-              {/* 아바타 */}
-              <button
-                onClick={() => user?.profileImage && setShowImageModal(true)}
-                style={{ cursor: user?.profileImage ? 'pointer' : 'default' }}
-                className="w-16 h-16 rounded-2xl overflow-hidden border-4 border-white shadow-md shrink-0"
-              >
-                {user?.profileImage ? (
-                  <img src={user.profileImage} alt="프로필" className="w-full h-full object-cover" />
-                ) : (
-                  <div className={`w-full h-full flex items-center justify-center ${user?.gender === 'male' ? 'bg-blue-100' : 'bg-pink-100'}`}>
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill={user?.gender === 'male' ? '#60a5fa' : '#f472b6'}>
-                      <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-                    </svg>
-                  </div>
-                )}
-              </button>
-
-              {/* 수정 버튼 */}
-              <Link
-                to="/profile"
-                className="mb-1 text-xs font-medium text-gray-500 border border-gray-200 px-3 py-1.5 rounded-full hover:bg-gray-50 transition-colors"
-              >
-                프로필 수정
-              </Link>
-            </div>
-
-            {/* 이름 + 정보 */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-bold text-gray-900 text-lg leading-tight">{user?.nickname ?? ''}</p>
-              {user?.mbti && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-50 text-primary-500 border border-primary-100">
-                  {user.mbti}
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-gray-400 mt-0.5">
-              {user?.department}{user?.grade ? ` · ${user.grade}학년` : ''}
-            </p>
-            {user?.bio && (
-              <p className="text-sm text-gray-500 mt-2 leading-relaxed">{user.bio}</p>
-            )}
-
-            {/* 관심사 */}
-            {user?.interests && user.interests.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {user.interests.slice(0, 6).map((i) => (
-                  <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-gray-50 text-gray-500 border border-gray-100">
-                    {i}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── 기능 카드 ─────────────────────────── */}
-        <div className="grid grid-cols-2 gap-3">
-
-          {/* 1:1 매칭 */}
-          <Link to="/matching" className="group relative bg-white rounded-3xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="p-5">
-              <div className="w-10 h-10 rounded-2xl bg-rose-500 flex items-center justify-center mb-4 shadow-sm">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                  <path d="M12 21C12 21 3 15.5 3 9.5C3 6.46 5.46 4 8.5 4C10.24 4 11.91 4.81 13 6.08C14.09 4.81 15.76 4 17.5 4C20.54 4 23 6.46 23 9.5C23 15.5 12 21 12 21Z"/>
+          <button
+            onClick={() => user?.profileImage && setShowImageModal(true)}
+            style={{ cursor: user?.profileImage ? 'pointer' : 'default' }}
+            className="w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-md shrink-0"
+          >
+            {user?.profileImage ? (
+              <img src={user.profileImage} alt="프로필" className="w-full h-full object-cover" />
+            ) : (
+              <div className={`w-full h-full flex items-center justify-center ${user?.gender === 'male' ? 'bg-blue-100' : 'bg-pink-100'}`}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill={user?.gender === 'male' ? '#93c5fd' : '#f9a8d4'}>
+                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
                 </svg>
               </div>
-              <p className="font-bold text-gray-900 text-sm">1:1 매칭</p>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">인연을<br/>찾아보세요</p>
-            </div>
-            <div className="absolute bottom-4 right-4 w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center group-hover:bg-rose-100 transition-colors">
-              <svg className="w-3.5 h-3.5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </Link>
-
-          {/* 과팅 */}
-          <Link to="/group-matching" className="group relative bg-white rounded-3xl border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="p-5">
-              <div className="w-10 h-10 rounded-2xl bg-violet-500 flex items-center justify-center mb-4 shadow-sm">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                  <circle cx="9" cy="7" r="3.5"/>
-                  <circle cx="16.5" cy="8.5" r="2.5"/>
-                  <path d="M2 19c0-3.3 3.1-6 7-6s7 2.7 7 6"/>
-                  <path d="M17 14c2 .5 4 2 4 5" strokeWidth="1.5" strokeLinecap="round" stroke="white" fill="none"/>
-                </svg>
-              </div>
-              <p className="font-bold text-gray-900 text-sm">과팅</p>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">팀으로<br/>만나보세요</p>
-            </div>
-            <div className="absolute bottom-4 right-4 w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
-              <svg className="w-3.5 h-3.5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </Link>
-
+            )}
+          </button>
         </div>
 
-        {/* ── 채팅 ──────────────────────────────── */}
-        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden">
-          <div className="px-5 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <p className="font-bold text-gray-900 text-sm">최근 채팅</p>
+        {/* 메인 기능 카드 — 비대칭 그리드 */}
+        <div className="grid grid-cols-5 grid-rows-2 gap-3" style={{ height: '240px' }}>
+
+          {/* 1:1 매칭 — 왼쪽 큰 카드 */}
+          <Link
+            to="/matching"
+            className="col-span-3 row-span-2 rounded-3xl overflow-hidden relative flex flex-col justify-between p-5"
+            style={{ background: 'linear-gradient(145deg, #ff2d6f, #ff6b9d)' }}
+          >
+            <div>
+              <p className="text-white/70 text-xs font-medium tracking-wide">MATCHING</p>
+              <p className="text-white font-black text-2xl mt-1 leading-tight">1:1<br/>매칭</p>
+            </div>
+            <div className="flex items-end justify-between">
+              <p className="text-white/80 text-xs leading-relaxed">조건에 맞는<br/>인연을 찾아보세요</p>
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+            {/* 배경 장식 */}
+            <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
+          </Link>
+
+          {/* 과팅 — 오른쪽 위 */}
+          <Link
+            to="/group-matching"
+            className="col-span-2 rounded-3xl overflow-hidden relative flex flex-col justify-between p-4"
+            style={{ background: 'linear-gradient(145deg, #7c3aed, #a855f7)' }}
+          >
+            <p className="text-white font-black text-base leading-tight">과팅</p>
+            <div className="flex items-end justify-between">
+              <p className="text-white/70 text-[11px]">팀 매칭</p>
+              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+            <div className="absolute -right-4 -top-4 w-16 h-16 rounded-full bg-white/10" />
+          </Link>
+
+          {/* 채팅 바로가기 — 오른쪽 아래 */}
+          <Link
+            to="/chat"
+            className="col-span-2 rounded-3xl bg-gray-900 relative flex flex-col justify-between p-4 overflow-hidden"
+          >
+            <div className="flex items-start justify-between">
+              <p className="text-white font-black text-base leading-tight">채팅</p>
               {totalUnread > 0 && (
                 <span className="min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
-                  {totalUnread > 99 ? '99+' : totalUnread}
+                  {totalUnread}
                 </span>
               )}
             </div>
-            <Link to="/chat" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-              전체 보기
-            </Link>
-          </div>
+            <p className="text-gray-400 text-[11px]">
+              {rooms.length > 0 ? `${rooms.length}개의 대화` : '대화 없음'}
+            </p>
+            <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/5" />
+          </Link>
 
-          <div className="border-t border-gray-50">
-            {rooms.length === 0 ? (
-              <div className="py-10 flex flex-col items-center gap-3 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-400">아직 채팅이 없어요</p>
-                  <p className="text-xs text-gray-300 mt-0.5">매칭 후 채팅을 시작해보세요</p>
-                </div>
-              </div>
-            ) : (
-              <div>
-                {rooms.slice(0, 5).map((room, i) => (
-                  <Link
-                    key={room.id}
-                    to={`/chat/${room.id}`}
-                    className={`flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors ${i !== 0 ? 'border-t border-gray-50' : ''}`}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center shrink-0 border border-primary-100">
-                      <span className="text-xs font-bold text-primary-400">
-                        {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">
-                        {room.type === 'individual' ? room.partner?.nickname : room.groupName}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate mt-0.5">
-                        {room.lastMessage === '[expired_image]'
-                          ? '만료된 이미지'
-                          : (room.lastMessage?.includes('amazonaws.com') || room.lastMessage?.startsWith('blob:'))
-                          ? '📷 사진을 보냈습니다'
-                          : (room.lastMessage ?? '대화를 시작해보세요')}
-                      </p>
-                    </div>
-                    {room.unreadCount > 0 && (
-                      <span className="shrink-0 min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
-                        {room.unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
+
+        {/* 프로필 한줄 정보 */}
+        <div className="flex items-center gap-3 px-1">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <span className="text-xs text-gray-400">{user?.department}</span>
+            {user?.grade && <span className="text-xs text-gray-300">·</span>}
+            {user?.grade && <span className="text-xs text-gray-400">{user.grade}학년</span>}
+            {user?.mbti && <span className="text-xs text-gray-300">·</span>}
+            {user?.mbti && <span className="text-xs font-semibold text-primary-400">{user.mbti}</span>}
+          </div>
+          <Link to="/profile" className="text-xs text-gray-400 hover:text-gray-600 transition-colors shrink-0">
+            프로필 수정
+          </Link>
+        </div>
+
+        {/* 최근 채팅 리스트 */}
+        {rooms.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <p className="text-sm font-bold text-gray-900">최근 대화</p>
+              <Link to="/chat" className="text-xs text-gray-400">전체 보기</Link>
+            </div>
+            <div className="space-y-1">
+              {rooms.slice(0, 4).map((room) => (
+                <Link
+                  key={room.id}
+                  to={`/chat/${room.id}`}
+                  className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center shrink-0 border border-primary-100">
+                    <span className="text-xs font-bold text-primary-400">
+                      {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">
+                      {room.type === 'individual' ? room.partner?.nickname : room.groupName}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate mt-0.5">
+                      {room.lastMessage === '[expired_image]'
+                        ? '만료된 이미지'
+                        : (room.lastMessage?.includes('amazonaws.com') || room.lastMessage?.startsWith('blob:'))
+                        ? '📷 사진을 보냈습니다'
+                        : (room.lastMessage ?? '대화를 시작해보세요')}
+                    </p>
+                  </div>
+                  {room.unreadCount > 0 && (
+                    <span className="shrink-0 min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
+                      {room.unreadCount}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
 
