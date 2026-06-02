@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/api/auth'
 import { chatApi } from '@/api/chat'
+import { userApi } from '@/api/user'
 import client from '@/api/client'
 import type { ApiResponse } from '@/types'
 
@@ -18,6 +19,10 @@ export default function ProfilePage() {
   const navigate = useNavigate()
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [pwSuccess, setPwSuccess] = useState(false)
+  const [showWithdraw, setShowWithdraw] = useState(false)
+  const [withdrawPassword, setWithdrawPassword] = useState('')
+  const [withdrawError, setWithdrawError] = useState('')
+  const [withdrawLoading, setWithdrawLoading] = useState(false)
   const [imgUploading, setImgUploading] = useState(false)
   const [showBlockedList, setShowBlockedList] = useState(false)
   const [blockedUsers, setBlockedUsers] = useState<{ id: string; nickname: string }[]>([])
@@ -30,6 +35,21 @@ export default function ProfilePage() {
     await authApi.logout()
     logout()
     navigate('/login', { replace: true })
+  }
+
+  const handleWithdraw = async () => {
+    if (!withdrawPassword) { setWithdrawError('비밀번호를 입력해주세요.'); return }
+    setWithdrawLoading(true)
+    setWithdrawError('')
+    try {
+      await userApi.deleteAccount(withdrawPassword)
+      logout()
+      navigate('/login', { replace: true })
+    } catch (e) {
+      setWithdrawError(e instanceof Error ? e.message : '탈퇴에 실패했습니다.')
+    } finally {
+      setWithdrawLoading(false)
+    }
   }
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -299,9 +319,61 @@ export default function ProfilePage() {
           >
             로그아웃
           </button>
+
+          {/* 회원 탈퇴 */}
+          <button
+            onClick={() => { setShowWithdraw(true); setWithdrawPassword(''); setWithdrawError('') }}
+            className="w-full py-2.5 text-xs text-gray-300 hover:text-gray-400 transition-colors"
+          >
+            회원 탈퇴
+          </button>
         </div>
 
       </div>
+
+      {/* 회원 탈퇴 모달 */}
+      {showWithdraw && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl space-y-4">
+            <div className="text-center space-y-1">
+              <p className="text-2xl">😢</p>
+              <h3 className="font-bold text-gray-900 text-lg">정말 탈퇴하시겠어요?</h3>
+              <p className="text-sm text-gray-400">
+                탈퇴 시 프로필, 채팅, 매칭 등<br />모든 데이터가 즉시 삭제됩니다.
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1.5 block">비밀번호 확인</label>
+              <input
+                type="password"
+                placeholder="현재 비밀번호 입력"
+                className="input-field"
+                value={withdrawPassword}
+                onChange={(e) => { setWithdrawPassword(e.target.value); setWithdrawError('') }}
+                autoFocus
+              />
+              {withdrawError && <p className="text-xs text-red-500 mt-1.5">{withdrawError}</p>}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWithdraw(false)}
+                className="flex-1 py-3 rounded-2xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleWithdraw}
+                disabled={withdrawLoading}
+                className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-50 transition-colors"
+              >
+                {withdrawLoading ? '처리 중...' : '탈퇴하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -10,6 +10,7 @@ router.get('/me', authenticate, userController.getMe)
 router.patch('/me', authenticate, userController.updateMe)
 router.patch('/me/password', authenticate, userController.changePassword)
 router.post('/me/profile-image', authenticate, uploadProfile, userController.uploadProfileImage)
+router.delete('/me', authenticate, userController.deleteMe)
 router.get('/:userId', authenticate, userController.getUser)
 
 export default router

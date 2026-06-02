@@ -2,7 +2,7 @@ import type { Response, NextFunction } from 'express'
 import { query } from '../config/db'
 import { success, fail } from '../utils/response'
 import { getIO } from '../services/socketService'
-import { uploadToS3, deleteFromS3 } from '../utils/s3'
+import { uploadToS3, deleteFromS3, deleteMultipleFromS3 } from '../utils/s3'
 import type { AuthRequest, UserRow } from '../types'
 
 export const userController = {
@@ -118,6 +118,46 @@ export const userController = {
         gender: u.gender,
         profileImage: u.profile_image,
       })))
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  async deleteMe(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId
+      const { password } = req.body
+      if (!password) return fail(res, '비밀번호를 입력해주세요.')
+
+      // 비밀번호 확인
+      const userResult = await query<UserRow>('SELECT * FROM users WHERE id = $1', [userId])
+      const user = userResult.rows[0]
+      if (!user) return fail(res, '사용자를 찾을 수 없습니다.', 404)
+
+      const bcrypt = await import('bcryptjs')
+      const valid = await bcrypt.compare(password, user.password_hash)
+      if (!valid) return fail(res, '비밀번호가 올바르지 않습니다.')
+
+      // S3 파일 수집 (프로필 이미지 + 채팅 이미지)
+      const s3Urls: string[] = []
+      if (user.profile_image) s3Urls.push(user.profile_image)
+
+      const chatImages = await query<{ content: string }>(
+        `SELECT content FROM messages
+         WHERE sender_id = $1 AND content LIKE '%amazonaws.com/chat/%'`,
+        [userId],
+      )
+      chatImages.rows.forEach((r) => s3Urls.push(r.content))
+
+      // DB 삭제 (CASCADE로 연관 데이터 전부 삭제)
+      await query('DELETE FROM users WHERE id = $1', [userId])
+
+      // S3 파일 삭제 (DB 삭제 후 비동기로)
+      if (s3Urls.length > 0) deleteMultipleFromS3(s3Urls).catch(() => {})
+
+      // 리프레시 토큰 쿠키 제거
+      res.clearCookie('refreshToken')
+      return success(res, null)
     } catch (err) {
       next(err)
     }

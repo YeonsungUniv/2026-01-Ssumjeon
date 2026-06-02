@@ -28,4 +28,7 @@ export const userApi = {
 
   searchUsers: (q: string) =>
     client.get<ApiResponse<UserSearchResult[]>>('/users/search', { q }),
+
+  deleteAccount: (password: string) =>
+    client.delete<ApiResponse<null>>('/users/me', { password }),
 }
