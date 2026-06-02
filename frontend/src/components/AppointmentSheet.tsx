@@ -6,12 +6,14 @@ interface Props {
   roomId: string
   onClose: () => void
   onProposed: (a: Appointment) => void
+  editAppointment?: Appointment
 }
 
-export default function AppointmentSheet({ roomId, onClose, onProposed }: Props) {
-  const [date, setDate] = useState('')
-  const [time, setTime] = useState('')
-  const [location, setLocation] = useState('')
+export default function AppointmentSheet({ roomId, onClose, onProposed, editAppointment }: Props) {
+  const isEdit = !!editAppointment
+  const [date, setDate] = useState(editAppointment?.date ?? '')
+  const [time, setTime] = useState(editAppointment?.time ?? '')
+  const [location, setLocation] = useState(editAppointment?.location ?? '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -19,7 +21,9 @@ export default function AppointmentSheet({ roomId, onClose, onProposed }: Props)
     if (!date || !time || !location.trim()) { setError('날짜, 시간, 장소를 모두 입력해주세요.'); return }
     setLoading(true)
     try {
-      const res = await appointmentApi.propose(roomId, { date, time, location })
+      const res = isEdit
+        ? await appointmentApi.edit(editAppointment!.id, { date, time, location })
+        : await appointmentApi.propose(roomId, { date, time, location })
       onProposed(res.data)
       onClose()
     } catch (e: unknown) {
@@ -37,7 +41,9 @@ export default function AppointmentSheet({ roomId, onClose, onProposed }: Props)
           <div className="w-10 h-1 bg-gray-200 rounded-full" />
         </div>
         <div className="px-5 pb-8 pt-3 space-y-4">
-          <h3 className="font-bold text-gray-800 text-center">약속 제안</h3>
+          <h3 className="font-bold text-gray-800 text-center">
+            {isEdit ? '약속 수정' : '약속 제안'}
+          </h3>
 
           <div className="space-y-3">
             <div>
@@ -75,7 +81,7 @@ export default function AppointmentSheet({ roomId, onClose, onProposed }: Props)
           <div className="flex gap-3">
             <button onClick={onClose} className="btn-outline flex-1">취소</button>
             <button onClick={submit} disabled={loading} className="btn-primary flex-1">
-              {loading ? '전송 중...' : '제안하기'}
+              {loading ? (isEdit ? '수정 중...' : '전송 중...') : (isEdit ? '수정하기' : '제안하기')}
             </button>
           </div>
         </div>

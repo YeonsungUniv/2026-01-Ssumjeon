@@ -70,6 +70,34 @@ export const appointmentController = {
     } catch (err) { next(err) }
   },
 
+  async edit(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params
+      const { date, time, location } = req.body
+      if (!date || !time || !location?.trim()) return fail(res, '날짜, 시간, 장소를 모두 입력해주세요.')
+
+      const appt = await query<AppointmentRow & { proposer_nickname: string }>(
+        `SELECT a.*, u.nickname AS proposer_nickname FROM appointments a
+         JOIN users u ON u.id = a.proposer_id WHERE a.id = $1`,
+        [id],
+      )
+      if (appt.rows.length === 0) return fail(res, '약속을 찾을 수 없습니다.', 404)
+
+      const row = appt.rows[0]
+      if (row.proposer_id !== req.user!.userId) return fail(res, '제안자만 수정할 수 있습니다.', 403)
+      if (row.status !== 'pending') return fail(res, '대기 중인 약속만 수정할 수 있습니다.')
+
+      const result = await query<AppointmentRow>(
+        `UPDATE appointments SET date=$1, time=$2, location=$3, updated_at=NOW() WHERE id=$4
+         RETURNING *, (SELECT nickname FROM users WHERE id=proposer_id) AS proposer_nickname`,
+        [date, time, location.trim(), id],
+      )
+      const dto = toDto(result.rows[0])
+      emitToRoom(row.room_id, 'appointment:updated', dto)
+      return success(res, dto)
+    } catch (err) { next(err) }
+  },
+
   async updateStatus(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params
@@ -85,9 +113,9 @@ export const appointmentController = {
       if (appt.rows.length === 0) return fail(res, '약속을 찾을 수 없습니다.', 404)
 
       const row = appt.rows[0]
-      // 본인이 제안한 약속은 취소만 가능, 상대방은 확정/취소 가능
       const isProposer = row.proposer_id === req.user!.userId
       if (isProposer && status === 'confirmed') return fail(res, '본인이 제안한 약속은 직접 확정할 수 없습니다.')
+      if (row.status === 'cancelled') return fail(res, '이미 취소된 약속입니다.')
 
       const result = await query<AppointmentRow>(
         `UPDATE appointments SET status = $1, updated_at = NOW() WHERE id = $2

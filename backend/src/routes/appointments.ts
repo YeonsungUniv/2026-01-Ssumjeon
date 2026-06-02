@@ -7,6 +7,7 @@ router.use(authenticate)
 
 router.get('/rooms/:roomId', appointmentController.getByRoom)
 router.post('/rooms/:roomId', appointmentController.propose)
+router.put('/:id', appointmentController.edit)
 router.patch('/:id', appointmentController.updateStatus)
 
 export default router

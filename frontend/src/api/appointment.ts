@@ -13,4 +13,7 @@ export const appointmentApi = {
 
   cancel: (id: string) =>
     client.patch<ApiResponse<Appointment>>(`/appointments/${id}`, { status: 'cancelled' }),
+
+  edit: (id: string, data: { date: string; time: string; location: string }) =>
+    client.put<ApiResponse<Appointment>>(`/appointments/${id}`, data),
 }

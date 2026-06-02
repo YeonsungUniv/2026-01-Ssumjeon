@@ -30,6 +30,7 @@ export default function ChatRoomPage() {
   const [profileUserId, setProfileUserId] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showAppointment, setShowAppointment] = useState(false)
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -252,6 +253,7 @@ export default function ChatRoomPage() {
             appointment={a}
             myUserId={user?.id ?? ''}
             onUpdate={(updated) => setAppointments((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
+            onEdit={(appt) => setEditingAppointment(appt)}
           />
         ))}
         {appointments.length > 0 && <div className="border-t border-dashed border-gray-200 my-1" />}
@@ -378,6 +380,19 @@ export default function ChatRoomPage() {
           roomId={roomId}
           onClose={() => setShowAppointment(false)}
           onProposed={(a) => setAppointments((prev) => [a, ...prev])}
+        />
+      )}
+
+      {/* 약속 수정 시트 */}
+      {editingAppointment && roomId && (
+        <AppointmentSheet
+          roomId={roomId}
+          editAppointment={editingAppointment}
+          onClose={() => setEditingAppointment(null)}
+          onProposed={(updated) => {
+            setAppointments((prev) => prev.map((p) => p.id === updated.id ? updated : p))
+            setEditingAppointment(null)
+          }}
         />
       )}
 
