@@ -12,7 +12,83 @@ function getGreeting() {
   return '좋은 저녁이에요 🌆'
 }
 
+function HeartArrowIcon({ active }: { active: boolean }) {
+  const arrowAnim = active
+    ? { animation: 'arrow-fly-in 0.55s cubic-bezier(0.22,1,0.36,1) forwards' }
+    : { opacity: 0, transform: 'translate(-44px,-44px)' }
+
+  return (
+    <div className="relative w-14 h-14" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }}>
+      <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 1, ...arrowAnim }}>
+        <line x1="10" y1="10" x2="22" y2="22" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" />
+        <g transform="rotate(-70, 10, 10)">
+          <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="white" stroke="#d97706" strokeWidth="0.6" />
+          <line x1="10" y1="9" x2="10" y2="-3" stroke="#d97706" strokeWidth="0.7" strokeLinecap="round" />
+        </g>
+        <g transform="rotate(-45, 10, 10)">
+          <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="white" stroke="#d97706" strokeWidth="0.6" />
+          <line x1="10" y1="9" x2="10" y2="-3" stroke="#d97706" strokeWidth="0.7" strokeLinecap="round" />
+        </g>
+        <g transform="rotate(-20, 10, 10)">
+          <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="white" stroke="#d97706" strokeWidth="0.6" />
+          <line x1="10" y1="9" x2="10" y2="-3" stroke="#d97706" strokeWidth="0.7" strokeLinecap="round" />
+        </g>
+      </svg>
+      <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 2 }}>
+        <g transform="rotate(12, 32, 32)">
+          <path
+            d="M32 56C32 56 7 41 7 24C7 14 14 8 23 8C27.5 8 31 11 32 13C33 11 36.5 8 41 8C50 8 57 14 57 24C57 41 32 56 32 56Z"
+            fill="#e11d48"
+            style={active ? { animation: 'heart-bounce 0.65s ease-out' } : undefined}
+          />
+          <ellipse cx="22" cy="19" rx="6" ry="3.5" fill="white" opacity="0.2" transform="rotate(-30 22 19)" />
+        </g>
+      </svg>
+      <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 3, ...arrowAnim }}>
+        <line x1="42" y1="42" x2="50" y2="50" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" />
+        <g transform="translate(53,53) rotate(45)">
+          <path d="M0,6 C-8,1 -8,-5 -3,-5 C-1,-5 0,-3 0,-2 C0,-3 1,-5 3,-5 C8,-5 8,1 0,6Z" fill="#e11d48" />
+        </g>
+      </svg>
+    </div>
+  )
+}
+
+const FIREWORK_PARTICLES = [
+  { angle: 0,   color: '#fbbf24' },
+  { angle: 45,  color: '#f472b6' },
+  { angle: 90,  color: '#60a5fa' },
+  { angle: 135, color: '#4ade80' },
+  { angle: 180, color: '#c084fc' },
+  { angle: 225, color: '#fb923c' },
+  { angle: 270, color: '#38bdf8' },
+  { angle: 315, color: '#f87171' },
+]
+
+function FireworksIcon({ active }: { active: boolean }) {
+  return (
+    <div className="relative w-14 h-14 flex items-center justify-center">
+      {FIREWORK_PARTICLES.map((p, i) => (
+        <div key={i} style={{ position: 'absolute', top: '50%', left: '50%', transform: `rotate(${p.angle}deg)` }}>
+          <div style={{
+            width: 10, height: 10, borderRadius: '50%', backgroundColor: p.color,
+            marginTop: -5, marginLeft: -5,
+            opacity: active ? 1 : 0,
+            animation: active ? `particle-out 0.6s ease-out ${i * 45}ms forwards` : 'none',
+          }} />
+        </div>
+      ))}
+      <span className="text-4xl relative z-10 drop-shadow"
+        style={active ? { animation: 'firework-center 0.55s ease-out' } : undefined}>
+        🎉
+      </span>
+    </div>
+  )
+}
+
 export default function HomePage() {
+  const [matchHover, setMatchHover] = useState(false)
+  const [groupHover, setGroupHover] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const { user } = useAuthStore()
   const { rooms } = useChatStore()
@@ -20,7 +96,7 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-5">
 
         {/* 상단 프로필 바 */}
         <div className="flex items-center justify-between">
@@ -60,76 +136,77 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* 메뉴 */}
-        <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-          <Link to="/matching" className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-            <div className="w-9 h-9 rounded-full bg-primary-500 flex items-center justify-center shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                <path d="M12 21C12 21 3 15.5 3 9.5C3 6.46 5.46 4 8.5 4C10.24 4 11.91 4.81 13 6.08C14.09 4.81 15.76 4 17.5 4C20.54 4 23 6.46 23 9.5C23 15.5 12 21 12 21Z"/>
-              </svg>
+        {/* 기능 카드 2열 */}
+        <div className="grid grid-cols-2 gap-4">
+
+          <Link
+            to="/matching"
+            className="group bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+            onMouseEnter={() => setMatchHover(true)}
+            onMouseLeave={() => setMatchHover(false)}
+          >
+            <div className="bg-gradient-to-br from-rose-400 to-pink-500 px-5 py-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-rose-100 uppercase tracking-widest">1:1</p>
+                <p className="text-2xl font-black text-white mt-0.5">매칭</p>
+              </div>
+              <HeartArrowIcon active={matchHover} />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">1:1 매칭</p>
-              <p className="text-xs text-gray-400 mt-0.5">지금 바로 인연을 찾아보세요</p>
+            <div className="px-5 py-4">
+              <p className="text-sm text-gray-500 leading-snug">마음에 드는 상대에게 좋아요를 보내보세요</p>
+              <p className="text-xs font-bold text-rose-400 mt-3 group-hover:translate-x-1 transition-transform">시작하기 →</p>
             </div>
-            <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
           </Link>
 
-          <Link to="/group-matching" className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-            <div className="w-9 h-9 rounded-full bg-violet-500 flex items-center justify-center shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                <circle cx="9" cy="7" r="3"/>
-                <circle cx="16" cy="8" r="2.5" opacity=".7"/>
-                <path d="M2 19c0-3.3 3.1-6 7-6s7 2.7 7 6"/>
-                <path d="M17 14c2 .5 4 2 4 5" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none" opacity=".7"/>
-              </svg>
+          <Link
+            to="/group-matching"
+            className="group bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+            onMouseEnter={() => setGroupHover(true)}
+            onMouseLeave={() => setGroupHover(false)}
+          >
+            <div className="bg-gradient-to-br from-violet-400 to-purple-500 px-5 py-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-violet-100 uppercase tracking-widest">그룹</p>
+                <p className="text-2xl font-black text-white mt-0.5">과팅</p>
+              </div>
+              <FireworksIcon active={groupHover} />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">과팅</p>
-              <p className="text-xs text-gray-400 mt-0.5">팀을 꾸려 함께 만나보세요</p>
+            <div className="px-5 py-4">
+              <p className="text-sm text-gray-500 leading-snug">팀을 꾸려 다 같이 만나보세요</p>
+              <p className="text-xs font-bold text-violet-400 mt-3 group-hover:translate-x-1 transition-transform">참여하기 →</p>
             </div>
-            <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
           </Link>
 
-          <Link to="/chat" className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-            <div className="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-              </svg>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900">채팅</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {rooms.length > 0 ? `${rooms.length}개의 대화` : '아직 대화가 없어요'}
-              </p>
-            </div>
-            {totalUnread > 0
-              ? <span className="min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">{totalUnread}</span>
-              : <svg className="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-            }
-          </Link>
         </div>
 
-        {/* 최근 대화 */}
-        {rooms.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-bold text-gray-900">최근 대화</p>
-              <Link to="/chat" className="text-xs text-gray-400">더 보기</Link>
+        {/* 최근 채팅 */}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm">
+          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-50">
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-gray-800">채팅</p>
+              {totalUnread > 0 && (
+                <span className="min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
+                  {totalUnread > 99 ? '99+' : totalUnread}
+                </span>
+              )}
             </div>
-            <div className="space-y-1">
-              {rooms.slice(0, 3).map((room) => (
+            <Link to="/chat" className="text-xs text-primary-500 font-semibold">전체 보기</Link>
+          </div>
+          {rooms.length === 0 ? (
+            <div className="py-10 flex flex-col items-center gap-2 text-gray-300">
+              <span className="text-3xl">💬</span>
+              <p className="text-xs">아직 채팅이 없어요</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {rooms.slice(0, 5).map((room) => (
                 <Link
                   key={room.id}
                   to={`/chat/${room.id}`}
-                  className="flex items-center gap-3 px-1 py-2.5 rounded-2xl hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-gray-500">
+                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-bold text-primary-500">
                       {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
                     </span>
                   </div>
@@ -139,9 +216,9 @@ export default function HomePage() {
                     </p>
                     <p className="text-xs text-gray-400 truncate mt-0.5">
                       {room.lastMessage === '[expired_image]'
-                        ? '만료된 이미지'
+                        ? '🗑️ 만료된 이미지'
                         : (room.lastMessage?.includes('amazonaws.com') || room.lastMessage?.startsWith('blob:'))
-                        ? '📷 사진'
+                        ? '📷 사진을 보냈습니다'
                         : (room.lastMessage ?? '대화를 시작해보세요')}
                     </p>
                   </div>
@@ -153,18 +230,18 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
       </div>
 
       {/* 이미지 모달 */}
       {showImageModal && user?.profileImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setShowImageModal(false)}>
-          <div className="relative max-w-xs w-full mx-6" onClick={(e) => e.stopPropagation()}>
-            <img src={user.profileImage} alt="프로필" className="w-full rounded-2xl shadow-2xl object-cover" />
-            <button onClick={() => setShowImageModal(false)} className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowImageModal(false)}>
+          <div className="relative max-w-sm w-full mx-6" onClick={(e) => e.stopPropagation()}>
+            <img src={user.profileImage} alt="프로필" className="w-full rounded-3xl shadow-2xl object-cover" />
+            <button onClick={() => setShowImageModal(false)} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
