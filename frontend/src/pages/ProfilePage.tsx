@@ -151,7 +151,7 @@ export default function ProfilePage() {
             <p className="text-sm font-semibold text-gray-500">계정 정보</p>
             <div className="flex items-center justify-between gap-2 text-sm">
               <span className="text-gray-400 shrink-0">학교 이메일</span>
-              <span className="text-gray-700 font-medium truncate text-right">
+              <span className="text-gray-700 font-medium truncate text-right cursor-default" title={user.email ?? ''}>
                 {user.email ?? <span className="text-gray-300">미등록</span>}
               </span>
             </div>
