@@ -22,6 +22,7 @@ jobs:
             source "$NVM_DIR/nvm.sh"
 
             cd ~/app
+            git reset --hard HEAD
             git pull origin main 2>&1
 
             # 백엔드 빌드
