@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useChatStore } from '@/store/chatStore'
@@ -6,10 +6,13 @@ import dayjs from 'dayjs'
 
 function getGreeting() {
   const h = dayjs().hour()
-  if (h < 6) return '늦은 밤이에요 🌙'
+  if (h < 5)  return '늦은 밤이에요 🌙'
+  if (h < 8)  return '이른 아침이에요 🌅'
   if (h < 12) return '좋은 아침이에요 ☀️'
+  if (h < 14) return '점심 시간이에요 🍽️'
   if (h < 18) return '좋은 오후예요 🌤'
-  return '좋은 저녁이에요 🌆'
+  if (h < 21) return '좋은 저녁이에요 🌆'
+  return '밤이 되었어요 🌃'
 }
 
 function HeartArrowIcon({ active }: { active: boolean }) {
@@ -90,8 +93,14 @@ export default function HomePage() {
   const [matchHover, setMatchHover] = useState(false)
   const [groupHover, setGroupHover] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
+  const [greeting, setGreeting] = useState(getGreeting)
   const { user } = useAuthStore()
   const { rooms } = useChatStore()
+
+  useEffect(() => {
+    const id = setInterval(() => setGreeting(getGreeting()), 60_000)
+    return () => clearInterval(id)
+  }, [])
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
 
   return (
@@ -130,7 +139,7 @@ export default function HomePage() {
 
         {/* 인사 */}
         <div>
-          <p className="text-[13px] text-gray-400">{getGreeting()}</p>
+          <p className="text-[13px] text-gray-400">{greeting}</p>
           <p className="text-2xl font-black text-gray-900 mt-0.5 leading-tight">
             오늘 새로운<br/>인연을 만나볼까요?
           </p>
