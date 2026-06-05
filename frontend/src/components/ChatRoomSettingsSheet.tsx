@@ -58,7 +58,7 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onView
                     className="flex items-center gap-3 w-full py-1"
                     onClick={() => { onClose(); onViewProfile(info.partner!.userId) }}
                   >
-                    <Avatar name={info.partner.nickname} />
+                    <Avatar name={info.partner.nickname} profileImage={info.partner.profileImage} />
                     <div className="text-left">
                       <p className="font-semibold text-gray-800">{info.partner.nickname}</p>
                       <p className="text-xs text-gray-400">{info.partner.department} · {info.partner.grade}학년</p>
@@ -108,7 +108,7 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onView
                         className="flex items-center gap-3 w-full py-1"
                         onClick={() => { onClose(); onViewProfile(m.userId) }}
                       >
-                        <Avatar name={m.nickname} />
+                        <Avatar name={m.nickname} profileImage={m.profileImage} />
                         <div className="text-left">
                           <p className="font-medium text-sm text-gray-800 flex items-center gap-1">
                             {m.nickname}
@@ -181,10 +181,14 @@ function Section({ title, children }: { title?: string; children: React.ReactNod
   )
 }
 
-function Avatar({ name }: { name: string }) {
+function Avatar({ name, profileImage }: { name: string; profileImage?: string }) {
   return (
-    <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-      <span className="text-sm font-bold text-primary-500">{name[0]}</span>
+    <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 overflow-hidden">
+      {profileImage ? (
+        <img src={profileImage} alt={name} className="w-full h-full object-cover" />
+      ) : (
+        <span className="text-sm font-bold text-primary-500">{name[0]}</span>
+      )}
     </div>
   )
 }

@@ -200,10 +200,14 @@ export default function ChatRoomPage() {
           className="flex items-center gap-2 flex-1 text-left"
           onClick={() => room?.type === 'individual' && room.partner?.id && openProfile(room.partner.id)}
         >
-          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-            <span className="text-xs font-bold text-primary-500">
-              {room?.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
-            </span>
+          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0 overflow-hidden">
+            {room?.type === 'individual' && room.partner?.profileImage ? (
+              <img src={room.partner.profileImage} alt={room.partner.nickname} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xs font-bold text-primary-500">
+                {room?.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
+              </span>
+            )}
           </div>
           <div>
             <p className="font-bold text-gray-800 leading-tight">
