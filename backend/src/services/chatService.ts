@@ -90,9 +90,12 @@ export const chatService = {
        FROM messages m
        JOIN users u ON u.id = m.sender_id
        WHERE m.room_id = $1
+         AND m.sender_id NOT IN (
+           SELECT blocked_id FROM user_blocks WHERE blocker_id = $4
+         )
        ORDER BY m.created_at DESC
        LIMIT $2 OFFSET $3`,
-      [roomId, limit, offset],
+      [roomId, limit, offset, userId],
     )
 
     const countResult = await query<{ count: string }>('SELECT COUNT(*) FROM messages WHERE room_id = $1', [roomId])
@@ -123,16 +126,6 @@ export const chatService = {
     )
     if (access.rows.length === 0) throw new Error('접근 권한이 없습니다.')
 
-    // 차단 여부 확인 (나 → 상대 또는 상대 → 나)
-    const blocked = await query(
-      `SELECT 1 FROM user_blocks ub
-       JOIN chat_room_members crm ON crm.chat_room_id = $1 AND crm.user_id != $2
-       WHERE (ub.blocker_id = $2 AND ub.blocked_id = crm.user_id)
-          OR (ub.blocker_id = crm.user_id AND ub.blocked_id = $2)
-       LIMIT 1`,
-      [roomId, senderId],
-    )
-    if (blocked.rows.length > 0) throw new Error('차단된 상대에게는 메시지를 보낼 수 없습니다.')
 
     const id = uuidv4()
     const result = await query<MessageRow & { sender_nickname: string; sender_profile_image: string | null }>(

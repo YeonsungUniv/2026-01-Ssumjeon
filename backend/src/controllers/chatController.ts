@@ -1,8 +1,9 @@
 import type { Response, NextFunction } from 'express'
 import { chatService } from '../services/chatService'
-import { emitToRoom } from '../services/socketService'
+import { emitToRoom, emitToUser } from '../services/socketService'
 import { success, fail } from '../utils/response'
 import { uploadToS3 } from '../utils/s3'
+import { query } from '../config/db'
 import type { AuthRequest } from '../types'
 
 export const chatController = {
@@ -31,8 +32,9 @@ export const chatController = {
     try {
       const { roomId } = req.params
       const { content } = req.body
-      const message = await chatService.sendMessage(roomId, req.user!.userId, content)
-      emitToRoom(roomId, 'message:new', message, req.user!.userId)
+      const senderId = req.user!.userId
+      const message = await chatService.sendMessage(roomId, senderId, content)
+      await emitMessageToNonBlockers(roomId, senderId, message)
       return success(res, message, 201)
     } catch (err) {
       next(err)
@@ -43,9 +45,10 @@ export const chatController = {
     try {
       const { roomId } = req.params
       if (!req.file) return fail(res, '이미지 파일이 없습니다.')
+      const senderId = req.user!.userId
       const imageUrl = await uploadToS3(req.file.buffer, req.file.mimetype, 'chat')
-      const message = await chatService.sendMessage(roomId, req.user!.userId, imageUrl)
-      emitToRoom(roomId, 'message:new', message, req.user!.userId)
+      const message = await chatService.sendMessage(roomId, senderId, imageUrl)
+      await emitMessageToNonBlockers(roomId, senderId, message)
       return success(res, message, 201)
     } catch (err) {
       next(err)
@@ -177,4 +180,21 @@ export const chatController = {
       next(err)
     }
   },
+}
+
+// 차단한 멤버를 제외하고 메시지 소켓 전송
+async function emitMessageToNonBlockers(roomId: string, senderId: string, message: unknown) {
+  const members = await query<{ user_id: string }>(
+    'SELECT user_id FROM chat_room_members WHERE chat_room_id = $1 AND user_id != $2',
+    [roomId, senderId],
+  )
+  for (const { user_id } of members.rows) {
+    const isBlocking = await query(
+      'SELECT 1 FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2',
+      [user_id, senderId],
+    )
+    if (isBlocking.rows.length === 0) {
+      emitToUser(user_id, 'message:new', message)
+    }
+  }
 }
