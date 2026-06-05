@@ -164,6 +164,15 @@ export default function ChatRoomPage() {
     e.target.value = ''
   }
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items)
+    const imageItem = items.find((item) => item.type.startsWith('image/'))
+    if (!imageItem) return
+    e.preventDefault()
+    const file = imageItem.getAsFile()
+    if (file) sendImageFile(file)
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
   }
@@ -373,6 +382,7 @@ export default function ChatRoomPage() {
             value={input}
             onChange={(e) => { setInput(e.target.value); adjustTextarea(e.target) }}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder="메시지를 입력하세요..."
             className="input-field flex-1 resize-none py-2.5 leading-5 overflow-y-auto"
             style={{ maxHeight: '120px' }}
