@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
+import { getSocket } from '@/hooks/useSocket'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/ko'
@@ -12,9 +13,20 @@ dayjs.locale('ko')
 export default function ChatListPage() {
   const { rooms, setRooms } = useChatStore()
 
+  const fetchRooms = () => chatApi.getRooms().then((res) => setRooms(res.data))
+
   useEffect(() => {
-    chatApi.getRooms().then((res) => setRooms(res.data))
-  }, [setRooms])
+    fetchRooms()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+    socket.on('profile:updated', fetchRooms)
+    return () => { socket.off('profile:updated', fetchRooms) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="space-y-4">

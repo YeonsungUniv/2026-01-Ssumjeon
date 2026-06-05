@@ -34,10 +34,10 @@ export const chatService = {
         unread_count: string
       }
     >(
-      `SELECT
+      `SELECT DISTINCT ON (cr.id)
          cr.id,
          cr.type,
-         -- 1:1 상대방 정보
+         -- 1:1 상대방 정보 (LATERAL로 정확히 1명만)
          partner.id AS partner_id,
          partner.nickname AS partner_nickname,
          partner.profile_image AS partner_image,
@@ -51,8 +51,13 @@ export const chatService = {
           WHERE m2.room_id = cr.id AND m2.sender_id != $1 AND m2.is_read = false) AS unread_count
        FROM chat_rooms cr
        JOIN chat_room_members crm ON crm.chat_room_id = cr.id AND crm.user_id = $1
-       LEFT JOIN chat_room_members crm2 ON crm2.chat_room_id = cr.id AND crm2.user_id != $1
-       LEFT JOIN users partner ON partner.id = crm2.user_id AND cr.type = 'individual'
+       LEFT JOIN LATERAL (
+         SELECT u.id, u.nickname, u.profile_image
+         FROM chat_room_members crm2
+         JOIN users u ON u.id = crm2.user_id
+         WHERE crm2.chat_room_id = cr.id AND crm2.user_id != $1 AND cr.type = 'individual'
+         LIMIT 1
+       ) partner ON true
        LEFT JOIN group_rooms gr ON gr.id = cr.group_room_id
        LEFT JOIN LATERAL (
          SELECT content, created_at FROM messages m_last
@@ -62,7 +67,7 @@ export const chatService = {
            )
          ORDER BY m_last.created_at DESC LIMIT 1
        ) last_msg ON true
-       ORDER BY last_msg.created_at DESC NULLS LAST`,
+       ORDER BY cr.id, last_msg.created_at DESC NULLS LAST`,
       [userId],
     )
 
