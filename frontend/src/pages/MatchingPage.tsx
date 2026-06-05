@@ -299,14 +299,12 @@ function RealtimeSection({ filters, onFilterChange }: { filters: MatchFilters; o
 function BrowseUserCard({
   user,
   onRequest,
-  onCancel,
   onAcceptIncoming,
   onRejectIncoming,
   actionLoading,
 }: {
   user: BrowseUser
   onRequest: (userId: string) => void
-  onCancel: (requestId: string) => void
   onAcceptIncoming: (requestId: string) => void
   onRejectIncoming: (requestId: string) => void
   actionLoading: string | null
@@ -649,7 +647,6 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
                     key={u.userId}
                     user={u}
                     onRequest={handleRequest}
-                    onCancel={handleCancel}
                     onAcceptIncoming={handleAcceptIncoming}
                     onRejectIncoming={handleRejectIncoming}
                     actionLoading={actionLoading}
