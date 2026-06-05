@@ -309,7 +309,7 @@ function BrowseUserCard({
   onRejectIncoming: (requestId: string) => void
   actionLoading: string | null
 }) {
-  const loading = actionLoading === user.userId || actionLoading === user.outgoingRequestId || actionLoading === user.incomingRequestId
+  const loading = actionLoading !== null && (actionLoading === user.userId || actionLoading === user.incomingRequestId)
 
   return (
     <div className="card space-y-3 hover:shadow-md transition-shadow">
