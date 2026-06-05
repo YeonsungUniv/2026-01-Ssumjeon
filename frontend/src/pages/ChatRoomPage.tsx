@@ -320,7 +320,7 @@ export default function ChatRoomPage() {
       {/* 차단된 대화 배너 */}
       {room?.isBlocked && (
         <div className="bg-red-50 border-t border-red-100 px-4 py-3 text-center">
-          <p className="text-xs text-red-500 font-semibold">차단한 상대방입니다. 채팅 내역은 증거 보존을 위해 유지됩니다.</p>
+          <p className="text-xs text-red-500 font-semibold">차단한 상대방입니다.</p>
         </div>
       )}
 
