@@ -39,17 +39,21 @@ function toBrowseCard(row: BrowseRow) {
 export const chatRequestService = {
   async browseUsers(
     userId: string,
-    userGender: 'male' | 'female',
+    _userGender: 'male' | 'female',
     filters?: { departments?: string[]; grades?: number[]; gender?: 'male' | 'female' },
     page = 1,
-    limit = 20,
+    limit = 6,
   ) {
-    const targetGender = filters?.gender ?? (userGender === 'male' ? 'female' : 'male')
     const offset = (page - 1) * limit
-    const params: unknown[] = [userId, targetGender]
+    const params: unknown[] = [userId]
     const extra: string[] = []
-    let idx = 3
+    let idx = 2
 
+    if (filters?.gender) {
+      extra.push(`u.gender = $${idx}`)
+      params.push(filters.gender)
+      idx++
+    }
     if (filters?.departments?.length) {
       extra.push(`u.department = ANY($${idx}::text[])`)
       params.push(filters.departments)
@@ -71,21 +75,19 @@ export const chatRequestService = {
       LEFT JOIN chat_requests in_req
         ON in_req.receiver_id = $1 AND in_req.sender_id = u.id AND in_req.status = 'pending'
       WHERE u.id != $1
-        AND u.gender = $2
         AND u.status = 'approved'
         AND u.id NOT IN (
           SELECT CASE WHEN m.user1_id = $1 THEN m.user2_id ELSE m.user1_id END
           FROM matches m WHERE m.user1_id = $1 OR m.user2_id = $1
         )
         ${where}
-      ORDER BY u.created_at DESC
+      ORDER BY RANDOM()
       LIMIT $${idx} OFFSET $${idx + 1}
     `
 
     const countSql = `
       SELECT COUNT(*) AS count FROM users u
       WHERE u.id != $1
-        AND u.gender = $2
         AND u.status = 'approved'
         AND u.id NOT IN (
           SELECT CASE WHEN m.user1_id = $1 THEN m.user2_id ELSE m.user1_id END

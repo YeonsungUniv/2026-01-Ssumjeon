@@ -363,8 +363,8 @@ function BrowseUserCard({
             </div>
           </div>
         ) : user.outgoingRequestId === 'sent' ? (
-          <div className="w-full py-2 rounded-xl bg-green-50 text-green-600 text-sm font-semibold text-center">
-            ✓ 신청됨
+          <div className="w-full py-2 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-600 text-sm font-semibold text-center">
+            ⏳ 신청 중
           </div>
         ) : (
           <button
@@ -405,7 +405,7 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   const loadBrowse = useCallback(async (page: number, append = false) => {
     setBrowseLoading(true)
     try {
-      const res = await chatRequestApi.browse({ ...filters, page, limit: 20 })
+      const res = await chatRequestApi.browse({ ...filters, page, limit: 6 })
       const items = res.data.items.map((u) => ({ ...u, outgoingRequestId: null, outgoingRequestStatus: null }))
       setBrowseUsers((prev) => append ? [...prev, ...items] : items)
       setBrowseHasMore(res.data.hasMore)
@@ -473,15 +473,9 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
     try {
       await chatRequestApi.sendRequest(receiverId)
       loadOutgoing()
-      // 신청 완료 표시 후 2초 뒤 버튼 복원
       setBrowseUsers((prev) => prev.map((u) =>
         u.userId === receiverId ? { ...u, outgoingRequestId: 'sent' } : u
       ))
-      setTimeout(() => {
-        setBrowseUsers((prev) => prev.map((u) =>
-          u.userId === receiverId ? { ...u, outgoingRequestId: null } : u
-        ))
-      }, 2000)
     } catch (e) {
       alert(e instanceof Error ? e.message : '신청에 실패했습니다.')
     } finally {
