@@ -7,15 +7,14 @@ interface Props {
   roomId: string
   onClose: () => void
   onLeave: () => void
-  onBlock: () => void
   onViewProfile: (userId: string) => void
 }
 
-export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onBlock, onViewProfile }: Props) {
+export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onViewProfile }: Props) {
   const [info, setInfo] = useState<RoomInfo | null>(null)
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
-  const [confirm, setConfirm] = useState<'leave' | 'block' | null>(null)
+  const [confirm, setConfirm] = useState<'leave' | null>(null)
   const { mutedRooms, toggleMute, updateRoomName } = useChatStore()
   const { user } = useAuthStore()
   const isMuted = mutedRooms[roomId] ?? false
@@ -145,14 +144,6 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onBloc
                 >
                   대화방 나가기
                 </button>
-                {info.type === 'individual' && (
-                  <button
-                    className="w-full py-3 text-sm text-red-500 text-left border-t border-gray-50"
-                    onClick={() => setConfirm('block')}
-                  >
-                    {info.partner?.nickname}님 차단하기
-                  </button>
-                )}
               </Section>
             </div>
           )}
@@ -160,24 +151,18 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onBloc
       </div>
 
       {/* 확인 다이얼로그 */}
-      {confirm && (
+      {confirm === 'leave' && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
           <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-xl">
-            <p className="font-bold text-gray-900 text-center mb-2">
-              {confirm === 'leave' ? '대화방 나가기' : '차단하기'}
-            </p>
-            <p className="text-sm text-gray-500 text-center mb-6">
-              {confirm === 'leave'
-                ? '대화방을 나가면 목록에서 삭제됩니다.'
-                : `${info?.partner?.nickname}님을 차단하면 대화방이 삭제되고 매칭에서도 제외됩니다.`}
-            </p>
+            <p className="font-bold text-gray-900 text-center mb-2">대화방 나가기</p>
+            <p className="text-sm text-gray-500 text-center mb-6">대화방을 나가면 목록에서 삭제됩니다.</p>
             <div className="flex gap-3">
               <button className="flex-1 py-2.5 rounded-2xl border border-gray-200 text-sm text-gray-600" onClick={() => setConfirm(null)}>취소</button>
               <button
-                className={`flex-1 py-2.5 rounded-2xl text-sm text-white ${confirm === 'block' ? 'bg-red-500' : 'bg-primary-500'}`}
-                onClick={() => { setConfirm(null); confirm === 'leave' ? onLeave() : onBlock() }}
+                className="flex-1 py-2.5 rounded-2xl text-sm text-white bg-primary-500"
+                onClick={() => { setConfirm(null); onLeave() }}
               >
-                {confirm === 'leave' ? '나가기' : '차단'}
+                나가기
               </button>
             </div>
           </div>

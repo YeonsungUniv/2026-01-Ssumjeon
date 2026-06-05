@@ -402,7 +402,6 @@ export default function ChatRoomPage() {
           roomId={roomId}
           onClose={() => setShowSettings(false)}
           onLeave={handleLeave}
-          onBlock={handleBlock}
           onViewProfile={(userId) => { setShowSettings(false); openProfile(userId) }}
         />
       )}
