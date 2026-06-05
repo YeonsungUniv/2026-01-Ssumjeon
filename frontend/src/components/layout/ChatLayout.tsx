@@ -44,10 +44,14 @@ export default function ChatLayout() {
                       isActive ? 'bg-primary-50 border-r-2 border-primary-500' : 'hover:bg-gray-50'
                     }`}
                   >
-                    <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                      <span className={`font-bold text-sm ${isActive ? 'text-primary-600' : 'text-primary-400'}`}>
-                        {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
-                      </span>
+                    <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0 overflow-hidden">
+                      {room.type === 'individual' && room.partner?.profileImage ? (
+                        <img src={room.partner.profileImage} alt={room.partner.nickname} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className={`font-bold text-sm ${isActive ? 'text-primary-600' : 'text-primary-400'}`}>
+                          {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
+                        </span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline gap-1">
