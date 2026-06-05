@@ -341,7 +341,7 @@ function BrowseUserCard({
 
       <div className="pt-1">
         {/* 상대방이 나에게 신청한 경우 */}
-        {user.incomingRequestId && !user.outgoingRequestId && (
+        {user.incomingRequestId ? (
           <div className="space-y-2">
             <div className="flex items-center justify-center gap-1.5">
               <span className="w-5 h-5 rounded-full bg-pink-100 flex items-center justify-center text-xs">💌</span>
@@ -364,11 +364,9 @@ function BrowseUserCard({
               </button>
             </div>
           </div>
-        )}
-
-        {/* 신청 대기 중: 상태 배지 + 채팅 신청 버튼 모두 노출 */}
-        {user.outgoingRequestId && user.outgoingRequestStatus === 'pending' && (
-          <div className="space-y-2">
+        ) : (
+          /* 신청 버튼 — 신청 후에는 "신청 대기 중"으로 표시 */
+          user.outgoingRequestId ? (
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <span className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center text-xs">⏳</span>
@@ -382,6 +380,7 @@ function BrowseUserCard({
                 {loading ? '...' : '취소'}
               </button>
             </div>
+          ) : (
             <button
               disabled={loading}
               onClick={() => onRequest(user.userId)}
@@ -389,32 +388,7 @@ function BrowseUserCard({
             >
               {loading ? '신청 중...' : '채팅 신청'}
             </button>
-          </div>
-        )}
-
-        {user.outgoingRequestId && user.outgoingRequestStatus === 'rejected' && (
-          <div className="flex items-center justify-center gap-1.5">
-            <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-xs">🚫</span>
-            <p className="text-xs text-gray-400">거절된 신청</p>
-          </div>
-        )}
-
-        {user.outgoingRequestId && user.outgoingRequestStatus === 'accepted' && (
-          <div className="flex items-center justify-center gap-1.5">
-            <span className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-xs">💬</span>
-            <p className="text-xs text-green-500 font-semibold">이미 채팅 중</p>
-          </div>
-        )}
-
-        {/* 신청 안 한 경우 */}
-        {!user.outgoingRequestId && !user.incomingRequestId && (
-          <button
-            disabled={loading}
-            onClick={() => onRequest(user.userId)}
-            className="w-full py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50"
-          >
-            {loading ? '신청 중...' : '채팅 신청'}
-          </button>
+          )
         )}
       </div>
     </div>
