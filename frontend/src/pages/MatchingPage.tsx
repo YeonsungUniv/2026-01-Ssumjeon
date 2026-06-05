@@ -391,7 +391,6 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   const [browseUsers, setBrowseUsers] = useState<BrowseUser[]>([])
   const [browseLoading, setBrowseLoading] = useState(false)
   const [browsePage, setBrowsePage] = useState(1)
-  const [browseHasMore, setBrowseHasMore] = useState(false)
   const [browseTotal, setBrowseTotal] = useState(0)
 
   const [incoming, setIncoming] = useState<IncomingRequest[]>([])
@@ -402,13 +401,12 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [searchApplied, setSearchApplied] = useState(true)
 
-  const loadBrowse = useCallback(async (page: number, append = false) => {
+  const loadBrowse = useCallback(async (page: number) => {
     setBrowseLoading(true)
     try {
       const res = await chatRequestApi.browse({ ...filters, page, limit: 6 })
       const items = res.data.items.map((u) => ({ ...u, outgoingRequestId: null, outgoingRequestStatus: null }))
-      setBrowseUsers((prev) => append ? [...prev, ...items] : items)
-      setBrowseHasMore(res.data.hasMore)
+      setBrowseUsers(items)
       setBrowsePage(page)
       setBrowseTotal(res.data.total)
       setSearchApplied(true)
@@ -648,14 +646,51 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
                 ))}
               </div>
             )}
-            {browseHasMore && (
-              <button
-                disabled={browseLoading}
-                onClick={() => loadBrowse(browsePage + 1, true)}
-                className="w-full py-3 rounded-2xl border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 disabled:opacity-50"
-              >
-                {browseLoading ? '불러오는 중...' : '더 보기'}
-              </button>
+            {browseTotal > 6 && (
+              <div className="flex items-center justify-center gap-1.5 pt-1">
+                <button
+                  disabled={browseLoading || browsePage === 1}
+                  onClick={() => loadBrowse(browsePage - 1)}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
+                >
+                  ‹
+                </button>
+                {Array.from({ length: Math.ceil(browseTotal / 6) }, (_, i) => i + 1)
+                  .filter((p) => {
+                    const total = Math.ceil(browseTotal / 6)
+                    return p === 1 || p === total || Math.abs(p - browsePage) <= 1
+                  })
+                  .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                    if (i > 0 && typeof arr[i - 1] === 'number' && (p as number) - (arr[i - 1] as number) > 1) acc.push('...')
+                    acc.push(p)
+                    return acc
+                  }, [])
+                  .map((p, i) =>
+                    p === '...' ? (
+                      <span key={`ellipsis-${i}`} className="w-8 text-center text-gray-400 text-sm">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        disabled={browseLoading}
+                        onClick={() => loadBrowse(p as number)}
+                        className={`w-8 h-8 rounded-xl text-sm font-semibold transition-colors ${
+                          browsePage === p
+                            ? 'bg-primary-500 text-white'
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                <button
+                  disabled={browseLoading || browsePage === Math.ceil(browseTotal / 6)}
+                  onClick={() => loadBrowse(browsePage + 1)}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
+                >
+                  ›
+                </button>
+              </div>
             )}
           </div>
         )}
