@@ -403,6 +403,7 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
 
   const loadBrowse = useCallback(async (page: number) => {
     setBrowseLoading(true)
+    setBrowseUsers([])
     try {
       const res = await chatRequestApi.browse({ ...filters, page, limit: 6 })
       const items = res.data.items.map((u) => ({ ...u, outgoingRequestId: null, outgoingRequestStatus: null }))
@@ -542,9 +543,9 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
       <div className="lg:col-span-2 space-y-3">
         <FilterPanel filters={filters} onChange={onFilterChange} />
         <button
-          onClick={() => { setBrowsePage(1); setBrowseUsers([]); loadBrowse(1) }}
+          onClick={() => loadBrowse(1)}
           disabled={browseLoading}
-          className="w-full py-3 rounded-2xl border-2 border-primary-400 text-primary-500 font-bold hover:bg-primary-50 active:scale-95 transition-all disabled:opacity-60"
+          className="w-full py-3 rounded-2xl bg-primary-500 text-white font-bold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-60 shadow-sm"
         >
           {browseLoading ? '검색 중...' : '검색'}
         </button>
@@ -612,6 +613,9 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
         {/* 둘러보기 탭 */}
         {browseTab === 'list' && (
           <div className="space-y-3">
+            {browseTotal > 0 && !browseLoading && (
+              <p className="text-xs text-gray-400 text-right">총 {browseTotal}명</p>
+            )}
             {!searchApplied && !browseLoading && (
               <div className="card text-center py-14">
                 <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
