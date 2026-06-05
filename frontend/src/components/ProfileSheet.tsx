@@ -5,10 +5,12 @@ import { getSocket } from '@/hooks/useSocket'
 interface Props {
   userId: string
   onClose: () => void
+  onBlock?: () => void
 }
 
-export default function ProfileSheet({ userId, onClose }: Props) {
+export default function ProfileSheet({ userId, onClose, onBlock }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [confirmBlock, setConfirmBlock] = useState(false)
 
   useEffect(() => {
     userApi.getProfile(userId).then((res) => setProfile(res.data))
@@ -91,6 +93,40 @@ export default function ProfileSheet({ userId, onClose }: Props) {
                   ))}
                 </div>
               </div>
+            )}
+
+            {onBlock && (
+              confirmBlock ? (
+                <div className="border border-red-100 rounded-2xl p-4 space-y-3 bg-red-50">
+                  <p className="text-sm text-red-600 font-semibold text-center">
+                    {profile?.nickname}님을 차단할까요?
+                  </p>
+                  <p className="text-xs text-red-400 text-center">
+                    차단하면 대화방이 삭제되고 매칭에서도 제외됩니다.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setConfirmBlock(false)}
+                      className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={onBlock}
+                      className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold"
+                    >
+                      차단
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmBlock(true)}
+                  className="w-full py-2.5 rounded-2xl border border-red-200 text-red-400 text-sm font-semibold hover:bg-red-50 transition-colors"
+                >
+                  {profile?.nickname}님 차단하기
+                </button>
+              )
             )}
 
             <div className="pb-4" />

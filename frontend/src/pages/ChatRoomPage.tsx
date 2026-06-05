@@ -409,7 +409,11 @@ export default function ChatRoomPage() {
 
       {/* 프로필 시트 */}
       {showProfile && profileUserId && (
-        <ProfileSheet userId={profileUserId} onClose={() => { setShowProfile(false); setProfileUserId(null) }} />
+        <ProfileSheet
+          userId={profileUserId}
+          onClose={() => { setShowProfile(false); setProfileUserId(null) }}
+          onBlock={room?.type === 'individual' && profileUserId === room?.partner?.id ? handleBlock : undefined}
+        />
       )}
     </div>
   )
