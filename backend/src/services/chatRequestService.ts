@@ -213,17 +213,28 @@ export const chatRequestService = {
 
     if (action !== 'accepted') return { senderId: req.sender_id }
 
-    const existingRoom = await query<{ id: string }>(
-      `SELECT cr.id FROM chat_rooms cr
+    const existingRoom = await query<{ id: string; stale: boolean }>(
+      `SELECT cr.id,
+         EXISTS(
+           SELECT 1 FROM chat_room_members m
+           WHERE m.chat_room_id = cr.id AND m.left_at IS NOT NULL
+         ) AS stale
+       FROM chat_rooms cr
        JOIN chat_room_members m1 ON m1.chat_room_id = cr.id AND m1.user_id = $1
        JOIN chat_room_members m2 ON m2.chat_room_id = cr.id AND m2.user_id = $2
        WHERE cr.type = 'individual'`,
       [req.sender_id, userId],
     )
 
+    const room = existingRoom.rows[0]
+    // 이전에 누군가 나간 방(stale)은 삭제하고 새 방을 만든다 → 깨끗한 대화 시작
+    if (room && room.stale) {
+      await query('DELETE FROM chat_rooms WHERE id = $1', [room.id])
+    }
+
     let chatRoomId: string
-    if (existingRoom.rows.length > 0) {
-      chatRoomId = existingRoom.rows[0].id
+    if (room && !room.stale) {
+      chatRoomId = room.id
     } else {
       chatRoomId = uuidv4()
       await query("INSERT INTO chat_rooms (id, type) VALUES ($1,'individual')", [chatRoomId])

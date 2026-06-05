@@ -191,6 +191,21 @@ export const chatService = {
 
     // ── 1:1 채팅방 ──────────────────────────────────────────────
     if (roomType.rows[0]?.type === 'individual') {
+      // 상대방 id 조회 후, 두 사람 간 채팅 신청 기록 삭제 → 나중에 재신청 가능
+      const partnerRes = await query<{ user_id: string }>(
+        'SELECT user_id FROM chat_room_members WHERE chat_room_id = $1 AND user_id != $2 LIMIT 1',
+        [roomId, userId],
+      )
+      const partnerId = partnerRes.rows[0]?.user_id
+      if (partnerId) {
+        await query(
+          `DELETE FROM chat_requests
+           WHERE (sender_id = $1 AND receiver_id = $2)
+              OR (sender_id = $2 AND receiver_id = $1)`,
+          [userId, partnerId],
+        )
+      }
+
       // 상대방이 이미 나간 상태면(= 나만 남음) 채팅방을 완전히 삭제
       const otherLeft = await query<{ count: string }>(
         'SELECT COUNT(*) AS count FROM chat_room_members WHERE chat_room_id = $1 AND user_id != $2 AND left_at IS NOT NULL',
