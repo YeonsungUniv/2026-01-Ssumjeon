@@ -55,8 +55,12 @@ export const chatService = {
        LEFT JOIN users partner ON partner.id = crm2.user_id AND cr.type = 'individual'
        LEFT JOIN group_rooms gr ON gr.id = cr.group_room_id
        LEFT JOIN LATERAL (
-         SELECT content, created_at FROM messages
-         WHERE room_id = cr.id ORDER BY created_at DESC LIMIT 1
+         SELECT content, created_at FROM messages m_last
+         WHERE m_last.room_id = cr.id
+           AND m_last.sender_id NOT IN (
+             SELECT blocked_id FROM user_blocks WHERE blocker_id = $1
+           )
+         ORDER BY m_last.created_at DESC LIMIT 1
        ) last_msg ON true
        ORDER BY last_msg.created_at DESC NULLS LAST`,
       [userId],
