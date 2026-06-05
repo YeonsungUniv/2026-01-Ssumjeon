@@ -646,52 +646,46 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
                 ))}
               </div>
             )}
-            {browseTotal > 6 && (
-              <div className="flex items-center justify-center gap-1.5 pt-1">
-                <button
-                  disabled={browseLoading || browsePage === 1}
-                  onClick={() => loadBrowse(browsePage - 1)}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
-                >
-                  ‹
-                </button>
-                {Array.from({ length: Math.ceil(browseTotal / 6) }, (_, i) => i + 1)
-                  .filter((p) => {
-                    const total = Math.ceil(browseTotal / 6)
-                    return p === 1 || p === total || Math.abs(p - browsePage) <= 1
-                  })
-                  .reduce<(number | '...')[]>((acc, p, i, arr) => {
-                    if (i > 0 && typeof arr[i - 1] === 'number' && (p as number) - (arr[i - 1] as number) > 1) acc.push('...')
-                    acc.push(p)
-                    return acc
-                  }, [])
-                  .map((p, i) =>
-                    p === '...' ? (
-                      <span key={`ellipsis-${i}`} className="w-8 text-center text-gray-400 text-sm">…</span>
-                    ) : (
-                      <button
-                        key={p}
-                        disabled={browseLoading}
-                        onClick={() => loadBrowse(p as number)}
-                        className={`w-8 h-8 rounded-xl text-sm font-semibold transition-colors ${
-                          browsePage === p
-                            ? 'bg-primary-500 text-white'
-                            : 'text-gray-500 hover:bg-gray-100'
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    )
-                  )}
-                <button
-                  disabled={browseLoading || browsePage === Math.ceil(browseTotal / 6)}
-                  onClick={() => loadBrowse(browsePage + 1)}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors"
-                >
-                  ›
-                </button>
-              </div>
-            )}
+            {browseTotal > 6 && (() => {
+              const totalPages = Math.ceil(browseTotal / 6)
+              const groupSize = 5
+              const groupIdx = Math.floor((browsePage - 1) / groupSize)
+              const groupStart = groupIdx * groupSize + 1
+              const groupEnd = Math.min(groupStart + groupSize - 1, totalPages)
+              const pages = Array.from({ length: groupEnd - groupStart + 1 }, (_, i) => groupStart + i)
+              return (
+                <div className="flex items-center justify-center gap-1.5 pt-1">
+                  <button
+                    disabled={browseLoading || groupStart === 1}
+                    onClick={() => loadBrowse(groupStart - 1)}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors text-lg"
+                  >
+                    ‹
+                  </button>
+                  {pages.map((p) => (
+                    <button
+                      key={p}
+                      disabled={browseLoading}
+                      onClick={() => loadBrowse(p)}
+                      className={`w-8 h-8 rounded-xl text-sm font-semibold transition-colors ${
+                        browsePage === p
+                          ? 'bg-primary-500 text-white'
+                          : 'text-gray-500 hover:bg-gray-100'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    disabled={browseLoading || groupEnd === totalPages}
+                    onClick={() => loadBrowse(groupEnd + 1)}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-default transition-colors text-lg"
+                  >
+                    ›
+                  </button>
+                </div>
+              )
+            })()}
           </div>
         )}
 
