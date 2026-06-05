@@ -437,11 +437,14 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   }, [])
 
   useEffect(() => {
-    loadBrowse(1)
     loadIncoming()
     loadOutgoing()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    loadBrowse(1)
+  }, [loadBrowse])
 
   // 실시간 신청 수신
   useEffect(() => {
@@ -543,7 +546,7 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
           disabled={browseLoading}
           className="w-full py-3 rounded-2xl border-2 border-primary-400 text-primary-500 font-bold hover:bg-primary-50 active:scale-95 transition-all disabled:opacity-60"
         >
-          {browseLoading ? '검색 중...' : '🔍 필터 재검색'}
+          {browseLoading ? '검색 중...' : '검색'}
         </button>
       </div>
 
