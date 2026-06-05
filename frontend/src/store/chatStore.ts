@@ -21,6 +21,7 @@ interface ChatState {
   markRoomMessagesRead: (roomId: string, byUserId: string) => void
   updateRoomFromMessage: (message: ChatMessage) => void
   markRoomAsBlocked: (roomId: string) => void
+  markRoomAsUnblocked: (roomId: string) => void
 }
 
 export const useChatStore = create<ChatState>()(
@@ -112,6 +113,11 @@ export const useChatStore = create<ChatState>()(
   markRoomAsBlocked: (roomId) =>
     set((state) => ({
       rooms: state.rooms.map((r) => r.id === roomId ? { ...r, isBlocked: true } : r),
+    })),
+
+  markRoomAsUnblocked: (roomId) =>
+    set((state) => ({
+      rooms: state.rooms.map((r) => r.id === roomId ? { ...r, isBlocked: false } : r),
     })),
 
   updateRoomFromMessage: (message) =>

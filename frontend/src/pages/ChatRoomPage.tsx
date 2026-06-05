@@ -24,7 +24,7 @@ export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { messages, setMessages, prependMessages, appendMessage, replaceMessage, removeMessage, markRoomAsRead, markRoomMessagesRead, setActiveRoom, removeRoom, markRoomAsBlocked, rooms } = useChatStore()
+  const { messages, setMessages, prependMessages, appendMessage, replaceMessage, removeMessage, markRoomAsRead, markRoomMessagesRead, setActiveRoom, removeRoom, markRoomAsBlocked, markRoomAsUnblocked, rooms } = useChatStore()
   const [input, setInput] = useState('')
   const [showProfile, setShowProfile] = useState(false)
   const [profileUserId, setProfileUserId] = useState<string | null>(null)
@@ -427,6 +427,9 @@ export default function ChatRoomPage() {
           userId={profileUserId}
           onClose={() => { setShowProfile(false); setProfileUserId(null) }}
           onBlock={room?.type === 'individual' && profileUserId === room?.partner?.id ? handleBlock : undefined}
+          onUnblock={room?.type === 'individual' && profileUserId === room?.partner?.id ? () => {
+            if (roomId) markRoomAsUnblocked(roomId)
+          } : undefined}
         />
       )}
     </div>

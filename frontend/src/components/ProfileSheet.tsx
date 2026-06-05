@@ -1,40 +1,52 @@
 import { useEffect, useState } from 'react'
 import { userApi, type UserProfile } from '@/api/user'
+import { chatApi } from '@/api/chat'
 import { getSocket } from '@/hooks/useSocket'
 
 interface Props {
   userId: string
   onClose: () => void
   onBlock?: () => void
+  onUnblock?: () => void
 }
 
-export default function ProfileSheet({ userId, onClose, onBlock }: Props) {
+export default function ProfileSheet({ userId, onClose, onBlock, onUnblock }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [confirmBlock, setConfirmBlock] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
+  const [confirmUnblock, setConfirmUnblock] = useState(false)
 
   useEffect(() => {
     userApi.getProfile(userId).then((res) => setProfile(res.data))
-  }, [userId])
+    // 차단 여부 확인
+    if (onBlock || onUnblock) {
+      chatApi.getBlockedUsers().then((res) => {
+        setIsBlocked(res.data.some((u: { id: string }) => u.id === userId))
+      }).catch(() => {})
+    }
+  }, [userId, onBlock, onUnblock])
 
   useEffect(() => {
     const socket = getSocket()
     if (!socket) return
-
     const handleUpdate = (updated: UserProfile) => {
       if (updated.id === userId) setProfile(updated)
     }
-
     socket.on('profile:updated', handleUpdate)
     return () => { socket.off('profile:updated', handleUpdate) }
   }, [userId])
 
+  const handleUnblock = async () => {
+    await chatApi.unblockUser(userId)
+    setIsBlocked(false)
+    setConfirmUnblock(false)
+    onUnblock?.()
+  }
+
   return (
     <>
       {/* 배경 딤 */}
-      <div
-        className="fixed inset-0 bg-black/40 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
 
       {/* 바텀시트 */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl z-50 pb-safe animate-slide-up">
@@ -95,37 +107,69 @@ export default function ProfileSheet({ userId, onClose, onBlock }: Props) {
               </div>
             )}
 
-            {onBlock && (
-              confirmBlock ? (
-                <div className="border border-red-100 rounded-2xl p-4 space-y-3 bg-red-50">
-                  <p className="text-sm text-red-600 font-semibold text-center">
-                    {profile?.nickname}님을 차단할까요?
-                  </p>
-                  <p className="text-xs text-red-400 text-center">
-                    차단하면 대화방이 삭제되고 매칭에서도 제외됩니다.
-                  </p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setConfirmBlock(false)}
-                      className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold"
-                    >
-                      취소
-                    </button>
-                    <button
-                      onClick={onBlock}
-                      className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold"
-                    >
-                      차단
-                    </button>
+            {/* 차단 / 차단 해제 */}
+            {(onBlock || onUnblock) && (
+              isBlocked ? (
+                confirmUnblock ? (
+                  <div className="border border-gray-200 rounded-2xl p-4 space-y-3 bg-gray-50">
+                    <p className="text-sm text-gray-700 font-semibold text-center">
+                      {profile.nickname}님 차단을 해제할까요?
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setConfirmUnblock(false)}
+                        className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={handleUnblock}
+                        className="flex-1 py-2.5 rounded-xl bg-primary-500 text-white text-sm font-semibold"
+                      >
+                        차단 해제
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmUnblock(true)}
+                    className="w-full py-2.5 rounded-2xl border border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    {profile.nickname}님 차단 해제
+                  </button>
+                )
               ) : (
-                <button
-                  onClick={() => setConfirmBlock(true)}
-                  className="w-full py-2.5 rounded-2xl border border-red-200 text-red-400 text-sm font-semibold hover:bg-red-50 transition-colors"
-                >
-                  {profile?.nickname}님 차단하기
-                </button>
+                confirmBlock ? (
+                  <div className="border border-red-100 rounded-2xl p-4 space-y-3 bg-red-50">
+                    <p className="text-sm text-red-600 font-semibold text-center">
+                      {profile.nickname}님을 차단할까요?
+                    </p>
+                    <p className="text-xs text-red-400 text-center">
+                      차단하면 매칭에서 제외됩니다.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setConfirmBlock(false)}
+                        className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold"
+                      >
+                        취소
+                      </button>
+                      <button
+                        onClick={onBlock}
+                        className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold"
+                      >
+                        차단
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmBlock(true)}
+                    className="w-full py-2.5 rounded-2xl border border-red-200 text-red-400 text-sm font-semibold hover:bg-red-50 transition-colors"
+                  >
+                    {profile.nickname}님 차단하기
+                  </button>
+                )
               )
             )}
 
