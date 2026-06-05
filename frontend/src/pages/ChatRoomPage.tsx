@@ -24,7 +24,7 @@ export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { messages, setMessages, prependMessages, appendMessage, replaceMessage, removeMessage, markRoomAsRead, markRoomMessagesRead, setActiveRoom, removeRoom, rooms } = useChatStore()
+  const { messages, setMessages, prependMessages, appendMessage, replaceMessage, removeMessage, markRoomAsRead, markRoomMessagesRead, setActiveRoom, removeRoom, markRoomAsBlocked, rooms } = useChatStore()
   const [input, setInput] = useState('')
   const [showProfile, setShowProfile] = useState(false)
   const [profileUserId, setProfileUserId] = useState<string | null>(null)
@@ -178,8 +178,8 @@ export default function ChatRoomPage() {
   const handleBlock = async () => {
     if (!roomId || !room?.partner?.id) return
     await chatApi.blockUser(room.partner.id)
-    removeRoom(roomId)
-    navigate('/chat', { replace: true })
+    markRoomAsBlocked(roomId)
+    setShowProfile(false)
   }
 
   const openProfile = (userId: string) => {
@@ -317,8 +317,15 @@ export default function ChatRoomPage() {
         <div ref={bottomRef} />
       </div>
 
+      {/* 차단된 대화 배너 */}
+      {room?.isBlocked && (
+        <div className="bg-red-50 border-t border-red-100 px-4 py-3 text-center">
+          <p className="text-xs text-red-500 font-semibold">차단한 상대방입니다. 채팅 내역은 증거 보존을 위해 유지됩니다.</p>
+        </div>
+      )}
+
       {/* 입력창 */}
-      <div className="border-t border-gray-100 bg-white">
+      <div className={`border-t border-gray-100 bg-white ${room?.isBlocked ? 'opacity-40 pointer-events-none' : ''}`}>
         <div className="flex gap-2 px-4 py-3">
           {/* 숨겨진 파일 입력 */}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />

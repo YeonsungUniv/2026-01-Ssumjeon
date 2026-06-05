@@ -72,6 +72,7 @@ export const chatService = {
       lastMessage: previewLastMessage(r.last_message),
       lastMessageAt: r.last_message_at?.toISOString(),
       unreadCount: parseInt(r.unread_count, 10),
+      isBlocked: false, // 차단 여부는 개별 room 조회 시 판단
     }))
   },
 
@@ -121,6 +122,17 @@ export const chatService = {
       [roomId, senderId],
     )
     if (access.rows.length === 0) throw new Error('접근 권한이 없습니다.')
+
+    // 차단 여부 확인 (나 → 상대 또는 상대 → 나)
+    const blocked = await query(
+      `SELECT 1 FROM user_blocks ub
+       JOIN chat_room_members crm ON crm.chat_room_id = $1 AND crm.user_id != $2
+       WHERE (ub.blocker_id = $2 AND ub.blocked_id = crm.user_id)
+          OR (ub.blocker_id = crm.user_id AND ub.blocked_id = $2)
+       LIMIT 1`,
+      [roomId, senderId],
+    )
+    if (blocked.rows.length > 0) throw new Error('차단된 상대에게는 메시지를 보낼 수 없습니다.')
 
     const id = uuidv4()
     const result = await query<MessageRow & { sender_nickname: string; sender_profile_image: string | null }>(
@@ -213,16 +225,7 @@ export const chatService = {
       'INSERT INTO user_blocks (blocker_id, blocked_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
       [blockerId, blockedId],
     )
-    await query(
-      `DELETE FROM chat_room_members
-       WHERE user_id = $1
-         AND chat_room_id IN (
-           SELECT cr.id FROM chat_rooms cr
-           JOIN chat_room_members crm ON crm.chat_room_id = cr.id AND crm.user_id = $2
-           WHERE cr.type = 'individual'
-         )`,
-      [blockerId, blockedId],
-    )
+    // 채팅 내역은 증거 보존을 위해 삭제하지 않음
   },
 
   async unblockUser(blockerId: string, blockedId: string) {
