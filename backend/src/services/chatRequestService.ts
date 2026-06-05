@@ -122,10 +122,12 @@ export const chatRequestService = {
       [senderId, receiverId],
     )
     if (existing.rows.length > 0) {
-      const { status } = existing.rows[0]
-      if (status === 'pending') throw new Error('이미 신청을 보냈습니다.')
+      const { id: existingId, status } = existing.rows[0]
       if (status === 'accepted') throw new Error('이미 채팅 중인 상대입니다.')
       if (status === 'rejected') throw new Error('상대방이 이미 신청을 거절했습니다.')
+      if (status === 'pending') {
+        await query('DELETE FROM chat_requests WHERE id=$1', [existingId])
+      }
     }
 
     const [receiverRes, senderRes] = await Promise.all([

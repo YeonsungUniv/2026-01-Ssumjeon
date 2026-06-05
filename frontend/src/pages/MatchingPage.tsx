@@ -447,7 +447,8 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
     setBrowseLoading(true)
     try {
       const res = await chatRequestApi.browse({ ...filters, page, limit: 20 })
-      setBrowseUsers((prev) => append ? [...prev, ...res.data.items] : res.data.items)
+      const items = res.data.items.map((u) => ({ ...u, outgoingRequestId: null, outgoingRequestStatus: null }))
+      setBrowseUsers((prev) => append ? [...prev, ...items] : items)
       setBrowseHasMore(res.data.hasMore)
       setBrowsePage(page)
       setBrowseTotal(res.data.total)
@@ -511,11 +512,6 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   const handleRequest = async (receiverId: string) => {
     setActionLoading(receiverId)
     try {
-      // 기존 pending 요청이 있으면 먼저 취소 (stale state면 무시)
-      const existing = browseUsers.find((u) => u.userId === receiverId)
-      if (existing?.outgoingRequestId && existing.outgoingRequestStatus === 'pending') {
-        await chatRequestApi.cancel(existing.outgoingRequestId).catch(() => {})
-      }
       const res = await chatRequestApi.sendRequest(receiverId)
       setBrowseUsers((prev) => prev.map((u) =>
         u.userId === receiverId
