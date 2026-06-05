@@ -294,20 +294,22 @@ export default function ChatRoomPage() {
                 {/* 메시지 버블 */}
                 <div className={`flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
                   {!isMe && <span className="text-xs text-gray-400 px-1">{msg.senderNickname}</span>}
-                  <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
-                    {isExpiredImage(msg.content) ? (
+                  {isExpiredImage(msg.content) ? (
+                    <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
                       <span className="block px-4 py-2.5 text-xs opacity-60">🗑️ 이미지가 만료되었습니다</span>
-                    ) : isImageContent(msg.content) ? (
-                      <img
-                        src={msg.content}
-                        alt="사진"
-                        className="max-w-[220px] max-h-[280px] object-cover cursor-pointer"
-                        onClick={() => window.open(msg.content, '_blank')}
-                      />
-                    ) : (
+                    </div>
+                  ) : isImageContent(msg.content) ? (
+                    <img
+                      src={msg.content}
+                      alt="사진"
+                      className={`block max-w-[260px] max-h-[320px] object-contain cursor-pointer rounded-2xl shadow-sm ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`}
+                      onClick={() => window.open(msg.content, '_blank')}
+                    />
+                  ) : (
+                    <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
                       <span className="block px-4 py-2.5">{msg.content}</span>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 읽음 "1" + 시간 — 버블 옆에 세로 배치 */}
