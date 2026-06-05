@@ -823,8 +823,14 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
 // ── 메인 페이지 ───────────────────────────────────────────────────
 export default function MatchingPage() {
   const [pageMode, setPageMode] = useState<PageMode>('realtime')
+  const [browseKey, setBrowseKey] = useState(0)
   const [filters, setFilters] = useState<MatchFilters>({ departments: [], grades: [], gender: undefined })
   const { pendingIncomingCount } = useMatchRequestStore()
+
+  const handleBrowseClick = () => {
+    setPageMode('browse')
+    setBrowseKey((k) => k + 1)
+  }
 
   return (
     <div className="space-y-6">
@@ -843,7 +849,7 @@ export default function MatchingPage() {
           ⚡ 실시간 매칭
         </button>
         <button
-          onClick={() => setPageMode('browse')}
+          onClick={handleBrowseClick}
           className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
             pageMode === 'browse' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
           }`}
@@ -866,7 +872,7 @@ export default function MatchingPage() {
       {pageMode === 'realtime' ? (
         <RealtimeSection filters={filters} onFilterChange={setFilters} />
       ) : (
-        <BrowseSection filters={filters} onFilterChange={setFilters} />
+        <BrowseSection key={browseKey} filters={filters} onFilterChange={setFilters} />
       )}
     </div>
   )
