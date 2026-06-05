@@ -366,19 +366,28 @@ function BrowseUserCard({
           </div>
         )}
 
-        {/* 내가 신청한 경우 */}
+        {/* 신청 대기 중: 상태 배지 + 채팅 신청 버튼 모두 노출 */}
         {user.outgoingRequestId && user.outgoingRequestStatus === 'pending' && (
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center text-xs">⏳</span>
-              <span className="text-xs text-yellow-600 font-semibold">신청 대기 중</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center text-xs">⏳</span>
+                <span className="text-xs text-yellow-600 font-semibold">신청 대기 중</span>
+              </div>
+              <button
+                disabled={loading}
+                onClick={() => onCancel(user.outgoingRequestId!)}
+                className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-400 hover:bg-red-100 transition-colors disabled:opacity-50"
+              >
+                {loading ? '...' : '취소'}
+              </button>
             </div>
             <button
               disabled={loading}
-              onClick={() => onCancel(user.outgoingRequestId!)}
-              className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-400 hover:bg-red-100 transition-colors disabled:opacity-50"
+              onClick={() => onRequest(user.userId)}
+              className="w-full py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50"
             >
-              {loading ? '...' : '취소'}
+              {loading ? '신청 중...' : '채팅 신청'}
             </button>
           </div>
         )}
@@ -502,6 +511,11 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   const handleRequest = async (receiverId: string) => {
     setActionLoading(receiverId)
     try {
+      // 기존 pending 요청이 있으면 먼저 취소
+      const existing = browseUsers.find((u) => u.userId === receiverId)
+      if (existing?.outgoingRequestId && existing.outgoingRequestStatus === 'pending') {
+        await chatRequestApi.cancel(existing.outgoingRequestId)
+      }
       const res = await chatRequestApi.sendRequest(receiverId)
       setBrowseUsers((prev) => prev.map((u) =>
         u.userId === receiverId
