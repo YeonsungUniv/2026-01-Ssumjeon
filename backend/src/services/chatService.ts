@@ -6,6 +6,7 @@ import type { MessageRow, ChatRoomRow, UserRow } from '../types'
 // 채팅 목록 미리보기 텍스트 변환
 function previewLastMessage(content: string | null): string | null {
   if (!content) return null
+  if (content === '[system:partner_left]') return '상대방이 채팅방을 나갔습니다'
   if (content === '[expired_image]') return '🗑️ 만료된 이미지'
   if (content.includes('amazonaws.com') || content.startsWith('/uploads/')) return '📷 사진을 보냈습니다'
   return content
@@ -28,6 +29,7 @@ export const chatService = {
         partner_id: string | null
         partner_nickname: string | null
         partner_image: string | null
+        partner_left: boolean | null
         group_name: string | null
         last_message: string | null
         last_message_at: Date | null
@@ -37,10 +39,11 @@ export const chatService = {
       `SELECT DISTINCT ON (cr.id)
          cr.id,
          cr.type,
-         -- 1:1 상대방 정보 (LATERAL로 정확히 1명만)
+         -- 1:1 상대방 정보 (나간 사람도 포함 → 프로필 보존)
          partner.id AS partner_id,
          partner.nickname AS partner_nickname,
          partner.profile_image AS partner_image,
+         partner.left_at IS NOT NULL AS partner_left,
          -- 그룹 방 이름
          gr.title AS group_name,
          -- 마지막 메시지
@@ -52,7 +55,7 @@ export const chatService = {
        FROM chat_rooms cr
        JOIN chat_room_members crm ON crm.chat_room_id = cr.id AND crm.user_id = $1
        LEFT JOIN LATERAL (
-         SELECT u.id, u.nickname, u.profile_image
+         SELECT u.id, u.nickname, u.profile_image, crm2.left_at
          FROM chat_room_members crm2
          JOIN users u ON u.id = crm2.user_id
          WHERE crm2.chat_room_id = cr.id AND crm2.user_id != $1 AND cr.type = 'individual'
@@ -67,6 +70,8 @@ export const chatService = {
            )
          ORDER BY m_last.created_at DESC LIMIT 1
        ) last_msg ON true
+       -- 내가 나간 1:1 방은 목록에서 숨김
+       WHERE crm.left_at IS NULL
        ORDER BY cr.id, last_msg.created_at DESC NULLS LAST`,
       [userId],
     )
@@ -82,6 +87,7 @@ export const chatService = {
       lastMessageAt: r.last_message_at?.toISOString(),
       unreadCount: parseInt(r.unread_count, 10),
       isBlocked: false, // 차단 여부는 개별 room 조회 시 판단
+      partnerLeft: r.partner_left ?? false,
     }))
   },
 
@@ -130,11 +136,17 @@ export const chatService = {
 
   async sendMessage(roomId: string, senderId: string, content: string) {
     const access = await query(
-      'SELECT 1 FROM chat_room_members WHERE chat_room_id = $1 AND user_id = $2',
+      'SELECT 1 FROM chat_room_members WHERE chat_room_id = $1 AND user_id = $2 AND left_at IS NULL',
       [roomId, senderId],
     )
     if (access.rows.length === 0) throw new Error('접근 권한이 없습니다.')
 
+    // 상대방이 나간 1:1 방에는 전송 불가
+    const partnerLeft = await query(
+      'SELECT 1 FROM chat_room_members WHERE chat_room_id = $1 AND user_id != $2 AND left_at IS NOT NULL',
+      [roomId, senderId],
+    )
+    if (partnerLeft.rows.length > 0) throw new Error('상대방이 채팅방을 나가 메시지를 보낼 수 없습니다.')
 
     const id = uuidv4()
     const result = await query<MessageRow & { sender_nickname: string; sender_profile_image: string | null }>(
@@ -172,9 +184,57 @@ export const chatService = {
       [roomId, userId],
     )
     if (access.rows.length === 0) throw new Error('채팅방 멤버가 아닙니다.')
+
+    const roomType = await query<{ type: string }>(
+      'SELECT type FROM chat_rooms WHERE id = $1', [roomId],
+    )
+
+    // ── 1:1 채팅방 ──────────────────────────────────────────────
+    if (roomType.rows[0]?.type === 'individual') {
+      // 상대방이 이미 나간 상태면(= 나만 남음) 채팅방을 완전히 삭제
+      const otherLeft = await query<{ count: string }>(
+        'SELECT COUNT(*) AS count FROM chat_room_members WHERE chat_room_id = $1 AND user_id != $2 AND left_at IS NOT NULL',
+        [roomId, userId],
+      )
+      if (parseInt(otherLeft.rows[0].count, 10) > 0) {
+        await deleteChatRoomImages(roomId)
+        await query('DELETE FROM chat_rooms WHERE id = $1', [roomId])
+        return
+      }
+
+      // 나간 시각만 기록 (멤버 행은 유지 → 상대방에게 내 프로필/내역 보존)
+      await query(
+        'UPDATE chat_room_members SET left_at = NOW() WHERE chat_room_id = $1 AND user_id = $2',
+        [roomId, userId],
+      )
+
+      // 상대방에게 보여줄 시스템 메시지 삽입
+      const msgId = uuidv4()
+      const leaverRes = await query<{ nickname: string; profile_image: string | null }>(
+        'SELECT nickname, profile_image FROM users WHERE id = $1', [userId],
+      )
+      await query(
+        `INSERT INTO messages (id, room_id, sender_id, content) VALUES ($1,$2,$3,'[system:partner_left]')`,
+        [msgId, roomId, userId],
+      )
+      const leaver = leaverRes.rows[0]
+      return {
+        systemMessage: {
+          id: msgId,
+          roomId,
+          senderId: userId,
+          senderNickname: leaver?.nickname ?? '',
+          senderProfileImage: leaver?.profile_image ?? undefined,
+          content: '[system:partner_left]',
+          createdAt: new Date().toISOString(),
+          isRead: false,
+        },
+      }
+    }
+
+    // ── 그룹 채팅방 ──────────────────────────────────────────────
     await query('DELETE FROM chat_room_members WHERE chat_room_id = $1 AND user_id = $2', [roomId, userId])
 
-    // 1:1 채팅방: 두 멤버 모두 나갔으면 채팅방+이미지 삭제
     const remaining = await query<{ count: string }>(
       'SELECT COUNT(*) AS count FROM chat_room_members WHERE chat_room_id = $1',
       [roomId],

@@ -20,6 +20,8 @@ const isImageContent = (content: string) =>
 
 const isExpiredImage = (content: string) => content === '[expired_image]'
 
+const isSystemMessage = (content: string) => content.startsWith('[system:')
+
 export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const navigate = useNavigate()
@@ -272,6 +274,16 @@ export default function ChatRoomPage() {
         {appointments.length > 0 && <div className="border-t border-dashed border-gray-200 my-1" />}
 
         {roomMessages.map((msg) => {
+          // 시스템 메시지(상대방 나감 등)는 중앙 안내로 표시
+          if (isSystemMessage(msg.content)) {
+            return (
+              <div key={msg.id} className="flex justify-center my-2">
+                <span className="text-[11px] text-gray-400 bg-gray-200/60 px-3 py-1 rounded-full">
+                  상대방이 채팅방을 나갔습니다
+                </span>
+              </div>
+            )
+          }
           const isMe = msg.senderId === user?.id
           return (
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} gap-2`}>
@@ -335,8 +347,15 @@ export default function ChatRoomPage() {
         </div>
       )}
 
+      {/* 상대방이 나간 대화 배너 */}
+      {!room?.isBlocked && room?.partnerLeft && (
+        <div className="bg-gray-50 border-t border-gray-100 px-4 py-3 text-center">
+          <p className="text-xs text-gray-500 font-semibold">상대방이 채팅방을 나가 더 이상 대화할 수 없습니다.</p>
+        </div>
+      )}
+
       {/* 입력창 */}
-      <div className={`border-t border-gray-100 bg-white ${room?.isBlocked ? 'opacity-40 pointer-events-none' : ''}`}>
+      <div className={`border-t border-gray-100 bg-white ${room?.isBlocked || room?.partnerLeft ? 'opacity-40 pointer-events-none' : ''}`}>
         <div className="flex gap-2 px-4 py-3">
           {/* 숨겨진 파일 입력 */}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />

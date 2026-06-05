@@ -46,6 +46,9 @@ export function useSocket() {
     newSocket.on('message:new', (message: ChatMessage) => {
       appendMessage(message.roomId, message)
       updateRoomFromMessage(message)
+      if (message.content === '[system:partner_left]') {
+        useChatStore.getState().markRoomPartnerLeft(message.roomId)
+      }
     })
 
     newSocket.on('chat_request:received', () => {

@@ -145,7 +145,11 @@ export const chatController = {
 
   async leaveRoom(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      await chatService.leaveRoom(req.params.roomId, req.user!.userId)
+      const result = await chatService.leaveRoom(req.params.roomId, req.user!.userId)
+      // 1:1 채팅방 나가기 → 남은 상대에게 시스템 메시지 전송
+      if (result?.systemMessage) {
+        emitToRoom(req.params.roomId, 'message:new', result.systemMessage, req.user!.userId)
+      }
       return success(res, null)
     } catch (err) {
       if (err instanceof Error) return fail(res, err.message)

@@ -22,6 +22,7 @@ interface ChatState {
   updateRoomFromMessage: (message: ChatMessage) => void
   markRoomAsBlocked: (roomId: string) => void
   markRoomAsUnblocked: (roomId: string) => void
+  markRoomPartnerLeft: (roomId: string) => void
 }
 
 export const useChatStore = create<ChatState>()(
@@ -47,6 +48,11 @@ export const useChatStore = create<ChatState>()(
   updateRoomName: (roomId, name) =>
     set((state) => ({
       rooms: state.rooms.map((r) => r.id === roomId ? { ...r, groupName: name } : r),
+    })),
+
+  markRoomPartnerLeft: (roomId) =>
+    set((state) => ({
+      rooms: state.rooms.map((r) => r.id === roomId ? { ...r, partnerLeft: true } : r),
     })),
 
   appendMessage: (roomId, message) =>

@@ -75,6 +75,7 @@ export interface ChatRoom {
   lastMessageAt?: string
   unreadCount: number
   isBlocked?: boolean
+  partnerLeft?: boolean
 }
 
 export interface ChatMessage {
