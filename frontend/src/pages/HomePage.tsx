@@ -214,10 +214,14 @@ export default function HomePage() {
                   to={`/chat/${room.id}`}
                   className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-primary-500">
-                      {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
-                    </span>
+                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0 overflow-hidden">
+                    {room.type === 'individual' && room.partner?.profileImage ? (
+                      <img src={room.partner.profileImage} alt={room.partner.nickname} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-bold text-primary-500">
+                        {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">

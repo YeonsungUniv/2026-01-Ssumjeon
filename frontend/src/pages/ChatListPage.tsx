@@ -34,10 +34,14 @@ export default function ChatListPage() {
               to={`/chat/${room.id}`}
               className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 hover:bg-gray-50 transition-colors"
             >
-              <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                <span className="text-primary-500 font-bold">
-                  {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
-                </span>
+              <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0 overflow-hidden">
+                {room.type === 'individual' && room.partner?.profileImage ? (
+                  <img src={room.partner.profileImage} alt={room.partner.nickname} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-primary-500 font-bold">
+                    {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
+                  </span>
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
