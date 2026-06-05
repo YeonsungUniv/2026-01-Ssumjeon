@@ -268,10 +268,14 @@ export default function ChatRoomPage() {
             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} gap-2`}>
               {!isMe && (
                 <button
-                  className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0 self-end mb-0.5"
+                  className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0 self-end mb-0.5 overflow-hidden"
                   onClick={() => openProfile(msg.senderId)}
                 >
-                  <span className="text-xs text-primary-500 font-bold">{msg.senderNickname[0]}</span>
+                  {msg.senderProfileImage ? (
+                    <img src={msg.senderProfileImage} alt={msg.senderNickname} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs text-primary-500 font-bold">{msg.senderNickname[0]}</span>
+                  )}
                 </button>
               )}
 

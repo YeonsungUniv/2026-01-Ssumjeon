@@ -81,6 +81,7 @@ export interface ChatMessage {
   roomId: string
   senderId: string
   senderNickname: string
+  senderProfileImage?: string
   content: string
   createdAt: string
   isRead: boolean

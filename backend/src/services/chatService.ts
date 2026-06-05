@@ -84,8 +84,8 @@ export const chatService = {
     if (access.rows.length === 0) throw new Error('접근 권한이 없습니다.')
 
     const offset = (page - 1) * limit
-    const result = await query<MessageRow & { sender_nickname: string }>(
-      `SELECT m.*, u.nickname AS sender_nickname
+    const result = await query<MessageRow & { sender_nickname: string; sender_profile_image: string | null }>(
+      `SELECT m.*, u.nickname AS sender_nickname, u.profile_image AS sender_profile_image
        FROM messages m
        JOIN users u ON u.id = m.sender_id
        WHERE m.room_id = $1
@@ -103,6 +103,7 @@ export const chatService = {
         roomId: m.room_id,
         senderId: m.sender_id,
         senderNickname: m.sender_nickname,
+        senderProfileImage: m.sender_profile_image ?? undefined,
         content: m.content,
         createdAt: m.created_at.toISOString(),
         isRead: m.is_read,
@@ -122,10 +123,12 @@ export const chatService = {
     if (access.rows.length === 0) throw new Error('접근 권한이 없습니다.')
 
     const id = uuidv4()
-    const result = await query<MessageRow & { sender_nickname: string }>(
+    const result = await query<MessageRow & { sender_nickname: string; sender_profile_image: string | null }>(
       `INSERT INTO messages (id, room_id, sender_id, content)
        VALUES ($1, $2, $3, $4)
-       RETURNING *, (SELECT nickname FROM users WHERE id = $3) AS sender_nickname`,
+       RETURNING *,
+         (SELECT nickname FROM users WHERE id = $3) AS sender_nickname,
+         (SELECT profile_image FROM users WHERE id = $3) AS sender_profile_image`,
       [id, roomId, senderId, content],
     )
 
@@ -135,6 +138,7 @@ export const chatService = {
       roomId: m.room_id,
       senderId: m.sender_id,
       senderNickname: m.sender_nickname,
+      senderProfileImage: m.sender_profile_image ?? undefined,
       content: m.content,
       createdAt: m.created_at.toISOString(),
       isRead: m.is_read,
