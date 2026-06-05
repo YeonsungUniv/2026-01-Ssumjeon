@@ -364,31 +364,18 @@ function BrowseUserCard({
               </button>
             </div>
           </div>
+        ) : user.outgoingRequestId === 'sent' ? (
+          <div className="w-full py-2 rounded-xl bg-green-50 text-green-600 text-sm font-semibold text-center">
+            ✓ 신청됨
+          </div>
         ) : (
-          /* 신청 버튼 — 신청 후에는 "신청 대기 중"으로 표시 */
-          user.outgoingRequestId ? (
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center text-xs">⏳</span>
-                <span className="text-xs text-yellow-600 font-semibold">신청 대기 중</span>
-              </div>
-              <button
-                disabled={loading}
-                onClick={() => onCancel(user.outgoingRequestId!)}
-                className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-400 hover:bg-red-100 transition-colors disabled:opacity-50"
-              >
-                {loading ? '...' : '취소'}
-              </button>
-            </div>
-          ) : (
-            <button
-              disabled={loading}
-              onClick={() => onRequest(user.userId)}
-              className="w-full py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50"
-            >
-              {loading ? '신청 중...' : '채팅 신청'}
-            </button>
-          )
+          <button
+            disabled={loading}
+            onClick={() => onRequest(user.userId)}
+            className="w-full py-2 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-50"
+          >
+            {loading ? '신청 중...' : '채팅 신청'}
+          </button>
         )}
       </div>
     </div>
@@ -415,7 +402,7 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   const [outgoingLoading, setOutgoingLoading] = useState(false)
 
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const [searchApplied, setSearchApplied] = useState(false)
+  const [searchApplied, setSearchApplied] = useState(true)
 
   const loadBrowse = useCallback(async (page: number, append = false) => {
     setBrowseLoading(true)
@@ -486,13 +473,17 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   const handleRequest = async (receiverId: string) => {
     setActionLoading(receiverId)
     try {
-      const res = await chatRequestApi.sendRequest(receiverId)
-      setBrowseUsers((prev) => prev.map((u) =>
-        u.userId === receiverId
-          ? { ...u, outgoingRequestId: res.data.requestId, outgoingRequestStatus: 'pending' }
-          : u
-      ))
+      await chatRequestApi.sendRequest(receiverId)
       loadOutgoing()
+      // 신청 완료 표시 후 2초 뒤 버튼 복원
+      setBrowseUsers((prev) => prev.map((u) =>
+        u.userId === receiverId ? { ...u, outgoingRequestId: 'sent' } : u
+      ))
+      setTimeout(() => {
+        setBrowseUsers((prev) => prev.map((u) =>
+          u.userId === receiverId ? { ...u, outgoingRequestId: null } : u
+        ))
+      }, 2000)
     } catch (e) {
       alert(e instanceof Error ? e.message : '신청에 실패했습니다.')
     } finally {
