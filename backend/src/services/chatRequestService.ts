@@ -30,8 +30,8 @@ function toBrowseCard(row: BrowseRow) {
     bio: row.bio ?? undefined,
     mbti: row.mbti ?? undefined,
     interests: row.interests,
-    outgoingRequestId: row.request_id ?? null,
-    outgoingRequestStatus: (row.request_status as 'pending' | 'accepted' | 'rejected' | null) ?? null,
+    outgoingRequestId: null,
+    outgoingRequestStatus: null,
     incomingRequestId: row.incoming_request_id ?? null,
   }
 }
@@ -66,14 +66,10 @@ export const chatRequestService = {
 
     const browseSql = `
       SELECT u.*,
-        out_req.id     AS request_id,
-        out_req.status AS request_status,
-        in_req.id      AS incoming_request_id
+        in_req.id AS incoming_request_id
       FROM users u
-      LEFT JOIN chat_requests out_req
-        ON out_req.sender_id   = $1 AND out_req.receiver_id = u.id
       LEFT JOIN chat_requests in_req
-        ON in_req.receiver_id  = $1 AND in_req.sender_id    = u.id AND in_req.status = 'pending'
+        ON in_req.receiver_id = $1 AND in_req.sender_id = u.id AND in_req.status = 'pending'
       WHERE u.id != $1
         AND u.gender = $2
         AND u.status = 'approved'
