@@ -390,6 +390,13 @@ function BrowseUserCard({
           </div>
         )}
 
+        {user.outgoingRequestId && user.outgoingRequestStatus === 'accepted' && (
+          <div className="flex items-center justify-center gap-1.5">
+            <span className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-xs">💬</span>
+            <p className="text-xs text-green-500 font-semibold">이미 채팅 중</p>
+          </div>
+        )}
+
         {/* 신청 안 한 경우 */}
         {!user.outgoingRequestId && !user.incomingRequestId && (
           <button
@@ -463,9 +470,11 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   }, [])
 
   useEffect(() => {
+    loadBrowse(1)
     loadIncoming()
     loadOutgoing()
-  }, [loadIncoming, loadOutgoing])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // 실시간 신청 수신
   useEffect(() => {
@@ -567,9 +576,9 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
         <button
           onClick={() => { setBrowsePage(1); setBrowseUsers([]); loadBrowse(1) }}
           disabled={browseLoading}
-          className="w-full py-3 rounded-2xl bg-primary-500 text-white font-bold hover:bg-primary-600 active:scale-95 transition-all disabled:opacity-60 shadow-sm"
+          className="w-full py-3 rounded-2xl border-2 border-primary-400 text-primary-500 font-bold hover:bg-primary-50 active:scale-95 transition-all disabled:opacity-60"
         >
-          {browseLoading ? '검색 중...' : '🔍 조건으로 검색'}
+          {browseLoading ? '검색 중...' : '🔍 필터 재검색'}
         </button>
       </div>
 
