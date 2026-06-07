@@ -4,7 +4,8 @@ import { useAuthStore } from '@/store/authStore'
 import { useChatStore } from '@/store/chatStore'
 import { appointmentApi } from '@/api/appointment'
 import { isAppointmentExpired } from '@/components/AppointmentCard'
-import type { Appointment } from '@/types'
+import { useSocketInstance } from '@/hooks/useSocket'
+import type { Appointment, ChatMessage } from '@/types'
 import dayjs from 'dayjs'
 
 function getGreeting() {
@@ -100,15 +101,29 @@ export default function HomePage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const { user } = useAuthStore()
   const { rooms } = useChatStore()
+  const socket = useSocketInstance()
 
   useEffect(() => {
     const id = setInterval(() => setGreeting(getGreeting()), 60_000)
     return () => clearInterval(id)
   }, [])
 
-  useEffect(() => {
+  const fetchAppointments = () =>
     appointmentApi.getMine().then((res) => setAppointments(res.data)).catch(() => {})
+
+  useEffect(() => {
+    fetchAppointments()
   }, [])
+
+  // 실시간: 약속 제안/취소 알림(마커 메시지) 수신 시 일정 즉시 갱신
+  useEffect(() => {
+    if (!socket) return
+    const onMsg = (m: ChatMessage) => {
+      if (m?.content?.startsWith('[appointment:')) fetchAppointments()
+    }
+    socket.on('message:new', onMsg)
+    return () => { socket.off('message:new', onMsg) }
+  }, [socket])
 
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
   // 만료되지 않은 다가오는 약속만 (가까운 순)
