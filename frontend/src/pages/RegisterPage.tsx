@@ -10,6 +10,7 @@ const SCHOOL_DOMAIN = '@yeonsung.ac.kr'
 interface Step1Form {
   username: string
   password: string
+  passwordConfirm: string
   nickname: string
   gender: 'male' | 'female'
 }
@@ -33,7 +34,7 @@ export default function RegisterPage() {
   const [codeError, setCodeError] = useState('')
   const [countdown, setCountdown] = useState(0)
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, setError: setFieldError } = useForm<Step1Form>()
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting }, setError: setFieldError } = useForm<Step1Form>()
 
   // 학과 변경 시 유효하지 않은 학년 자동 해제
   useEffect(() => {
@@ -173,6 +174,20 @@ export default function RegisterPage() {
                 {...register('password', { required: '비밀번호를 입력해주세요', minLength: { value: 8, message: '8자 이상 입력해주세요' } })}
               />
               {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
+            </div>
+
+            {/* 비밀번호 확인 */}
+            <div>
+              <input
+                type="password"
+                placeholder="비밀번호 확인"
+                className="input-field"
+                {...register('passwordConfirm', {
+                  required: '비밀번호를 한 번 더 입력해주세요',
+                  validate: (v) => v === watch('password') || '비밀번호가 일치하지 않습니다',
+                })}
+              />
+              {errors.passwordConfirm && <p className="text-xs text-red-500 mt-1">{errors.passwordConfirm.message}</p>}
             </div>
 
             {/* 닉네임 (선택) */}

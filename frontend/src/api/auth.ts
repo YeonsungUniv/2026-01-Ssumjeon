@@ -46,6 +46,15 @@ export const authApi = {
   verifyEmailCode: (email: string, code: string) =>
     client.post<ApiResponse<{ verified: boolean }>>('/auth/verify-email-code', { email, code }),
 
+  sendRecoveryCode: (email: string) =>
+    client.post<ApiResponse<{ sent: boolean }>>('/auth/send-recovery-code', { email }),
+
+  findUsername: (email: string, code: string) =>
+    client.post<ApiResponse<{ username: string }>>('/auth/find-username', { email, code }),
+
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    client.post<ApiResponse<{ reset: boolean }>>('/auth/reset-password', { email, code, newPassword }),
+
   checkUsername: (username: string) =>
     client.get<{ success: boolean; data: { available: boolean } }>(`/auth/check-username/${encodeURIComponent(username)}`),
 

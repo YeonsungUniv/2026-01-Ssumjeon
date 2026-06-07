@@ -65,6 +65,18 @@ async function generateUniqueNickname(): Promise<string> {
   }
 }
 
+// 인증 코드를 검증하고 사용 처리(소비)
+async function consumeVerificationCode(email: string, code: string) {
+  const result = await query<{ id: string }>(
+    `SELECT id FROM email_verification_codes
+     WHERE email = $1 AND code = $2 AND verified = false AND expires_at > NOW()
+     ORDER BY created_at DESC LIMIT 1`,
+    [email, code],
+  )
+  if (result.rows.length === 0) throw new Error('인증 코드가 올바르지 않거나 만료되었습니다.')
+  await query('UPDATE email_verification_codes SET verified = true WHERE id = $1', [result.rows[0].id])
+}
+
 export const authService = {
   // 인증 코드 발송
   async sendEmailCode(email: string) {
@@ -97,6 +109,42 @@ export const authService = {
 
     await query('UPDATE email_verification_codes SET verified = true WHERE id = $1', [result.rows[0].id])
     return { verified: true }
+  },
+
+  // 계정 복구용 코드 발송 (가입된 이메일에만)
+  async sendRecoveryCode(email: string) {
+    if (!email.endsWith(SCHOOL_DOMAIN))
+      throw new Error(`연성대학교 이메일(${SCHOOL_DOMAIN})만 사용 가능합니다.`)
+
+    const exist = await query('SELECT id FROM users WHERE LOWER(email) = $1', [email])
+    if (exist.rows.length === 0) throw new Error('해당 이메일로 가입된 계정이 없습니다.')
+
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    await query(
+      `INSERT INTO email_verification_codes (id, email, code, expires_at)
+       VALUES ($1, $2, $3, NOW() + INTERVAL '10 minutes')`,
+      [uuidv4(), email, code],
+    )
+    await sendVerificationEmail(email, code)
+    return { sent: true }
+  },
+
+  // 코드 인증 후 아이디 반환
+  async findUsername(email: string, code: string) {
+    await consumeVerificationCode(email, code)
+    const result = await query<{ username: string }>('SELECT username FROM users WHERE LOWER(email) = $1', [email])
+    if (result.rows.length === 0) throw new Error('가입된 계정이 없습니다.')
+    return { username: result.rows[0].username }
+  },
+
+  // 코드 인증 후 비밀번호 재설정
+  async resetPassword(email: string, code: string, newPassword: string) {
+    if (!newPassword || newPassword.length < 8) throw new Error('비밀번호는 8자 이상이어야 합니다.')
+    await consumeVerificationCode(email, code)
+    const passwordHash = await bcrypt.hash(newPassword, 12)
+    const result = await query('UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2 RETURNING id', [passwordHash, email])
+    if ((result.rowCount ?? 0) === 0) throw new Error('가입된 계정이 없습니다.')
+    return { reset: true }
   },
 
   async register(payload: {

@@ -8,6 +8,7 @@ import AuthLayout from '@/components/layout/AuthLayout'
 
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
+import ForgotPage from '@/pages/ForgotPage'
 import PendingPage from '@/pages/PendingPage'
 import AdminPage from '@/pages/AdminPage'
 import HomePage from '@/pages/HomePage'
@@ -85,6 +86,7 @@ export default function App() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+          <Route path="/forgot" element={<PublicRoute><ForgotPage /></PublicRoute>} />
         </Route>
 
         <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>

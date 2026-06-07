@@ -34,6 +34,42 @@ export const authController = {
     }
   },
 
+  async sendRecoveryCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body
+      if (!email) return fail(res, '이메일을 입력해주세요.')
+      const result = await authService.sendRecoveryCode(email.trim().toLowerCase())
+      return success(res, result)
+    } catch (err) {
+      if (err instanceof Error) return fail(res, err.message)
+      next(err)
+    }
+  },
+
+  async findUsername(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, code } = req.body
+      if (!email || !code) return fail(res, '이메일과 인증 코드를 입력해주세요.')
+      const result = await authService.findUsername(email.trim().toLowerCase(), code.trim())
+      return success(res, result)
+    } catch (err) {
+      if (err instanceof Error) return fail(res, err.message)
+      next(err)
+    }
+  },
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, code, newPassword } = req.body
+      if (!email || !code || !newPassword) return fail(res, '필수 항목을 모두 입력해주세요.')
+      const result = await authService.resetPassword(email.trim().toLowerCase(), code.trim(), newPassword)
+      return success(res, result)
+    } catch (err) {
+      if (err instanceof Error) return fail(res, err.message)
+      next(err)
+    }
+  },
+
   async register(req: Request, res: Response, next: NextFunction) {
     try {
       const { username, password, nickname, gender, department, grade, email } = req.body
