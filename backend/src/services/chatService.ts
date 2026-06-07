@@ -8,6 +8,7 @@ function previewLastMessage(content: string | null): string | null {
   if (!content) return null
   if (content === '[system:partner_left]') return '상대방이 채팅방을 나갔습니다'
   if (content === '[appointment:proposed]') return '📅 약속을 제안했어요'
+  if (content === '[appointment:cancelled]') return '📅 약속이 취소되었어요'
   if (content === '[expired_image]') return '🗑️ 만료된 이미지'
   if (content.includes('amazonaws.com') || content.startsWith('/uploads/')) return '📷 사진을 보냈습니다'
   return content

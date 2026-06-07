@@ -22,8 +22,10 @@ const isExpiredImage = (content: string) => content === '[expired_image]'
 
 const isSystemMessage = (content: string) => content.startsWith('[system:')
 
-// 약속 알림용 마커 메시지 — 버블로는 표시하지 않고 알림/미리보기 용도로만 사용
-const isAppointmentMarker = (content: string) => content.startsWith('[appointment:')
+// 약속 제안 마커 — 버블/타임라인에 표시하지 않음(카드가 대체). 알림/미리보기 용도
+const isApptProposedMarker = (content: string) => content === '[appointment:proposed]'
+// 약속 취소 마커 — 중앙 시스템 안내로 표시
+const isApptCancelledMarker = (content: string) => content === '[appointment:cancelled]'
 
 export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
@@ -68,7 +70,7 @@ export default function ChatRoomPage() {
     | { kind: 'appointment'; ts: number; data: Appointment }
   const timeline: TimelineItem[] = [
     ...roomMessages
-      .filter((m) => !isAppointmentMarker(m.content))
+      .filter((m) => !isApptProposedMarker(m.content))
       .map((m) => ({ kind: 'message' as const, ts: new Date(m.createdAt).getTime(), data: m })),
     ...appointments
       .filter((a) => !dismissedAppts.has(a.id))
@@ -313,6 +315,16 @@ export default function ChatRoomPage() {
               <div key={msg.id} className="flex justify-center my-2">
                 <span className="text-[11px] text-gray-400 bg-gray-200/60 px-3 py-1 rounded-full">
                   상대방이 채팅방을 나갔습니다
+                </span>
+              </div>
+            )
+          }
+          // 약속 취소 안내 — 닫아둔 사람도 알 수 있도록 중앙 안내로 표시
+          if (isApptCancelledMarker(msg.content)) {
+            return (
+              <div key={msg.id} className="flex justify-center my-2">
+                <span className="text-[11px] text-gray-500 bg-gray-200/60 px-3 py-1 rounded-full">
+                  📅 약속이 취소되었습니다
                 </span>
               </div>
             )
