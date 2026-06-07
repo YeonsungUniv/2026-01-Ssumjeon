@@ -96,10 +96,13 @@ export const groupMatchingService = {
       inviteCode = generateInviteCode()
     }
 
+    // preferred_gender는 NOT NULL — 미지정 시 방장의 반대 성별로 기본 설정
+    const preferredGender = payload.preferredGender ?? (leaderGender === 'male' ? 'female' : 'male')
+
     await query(
       `INSERT INTO group_rooms (id, title, description, leader_id, gender, max_members, preferred_gender, invite_code, is_private, allowed_gender)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [roomId, payload.title, payload.description ?? null, leaderId, leaderGender, payload.maxMembers, payload.preferredGender, inviteCode, payload.isPrivate ?? false, payload.allowedGender ?? null],
+      [roomId, payload.title, payload.description ?? null, leaderId, leaderGender, payload.maxMembers, preferredGender, inviteCode, payload.isPrivate ?? false, payload.allowedGender ?? null],
     )
     await query(
       'INSERT INTO group_room_members (group_room_id, user_id, is_leader) VALUES ($1, $2, true)',
