@@ -17,9 +17,18 @@ const STATUS_LABEL = {
   cancelled: { text: '취소됨',       color: 'text-gray-400 bg-gray-50 border-gray-200' },
 }
 
+const EXPIRED_STYLE = { text: '만료됨', color: 'text-gray-400 bg-gray-50 border-gray-200' }
+
+// 약속 일시가 현재보다 과거인지 (취소된 약속은 만료 판정에서 제외)
+export function isAppointmentExpired(a: Appointment): boolean {
+  if (a.status === 'cancelled') return false
+  return dayjs(`${a.date} ${a.time}`).isBefore(dayjs())
+}
+
 export default function AppointmentCard({ appointment, myUserId, onUpdate, onEdit, onDismiss }: Props) {
   const isProposer = appointment.proposerId === myUserId
-  const { text, color } = STATUS_LABEL[appointment.status]
+  const expired = isAppointmentExpired(appointment)
+  const { text, color } = expired ? EXPIRED_STYLE : STATUS_LABEL[appointment.status]
   const [collapsed, setCollapsed] = useState(false)
 
   const handleCancel = async () => {
@@ -88,8 +97,13 @@ export default function AppointmentCard({ appointment, myUserId, onUpdate, onEdi
         </div>
       </div>
 
+      {/* 만료됨 — 지난 약속은 안내만 표시 */}
+      {expired && (
+        <p className="text-xs text-gray-400 pt-1">지난 약속이에요. 새로 약속을 잡아보세요.</p>
+      )}
+
       {/* 대기 중 */}
-      {appointment.status === 'pending' && (
+      {!expired && appointment.status === 'pending' && (
         <div className="flex gap-2 pt-1">
           {isProposer ? (
             <>
@@ -126,7 +140,7 @@ export default function AppointmentCard({ appointment, myUserId, onUpdate, onEdi
       )}
 
       {/* 확정됨 — 양쪽 취소 가능, 제안자는 수정도 가능 */}
-      {appointment.status === 'confirmed' && (
+      {!expired && appointment.status === 'confirmed' && (
         <div className="flex gap-2 pt-1">
           {isProposer && (
             <button

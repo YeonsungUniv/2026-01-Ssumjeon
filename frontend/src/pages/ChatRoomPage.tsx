@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/authStore'
 import { getSocket } from '@/hooks/useSocket'
 import ProfileSheet from '@/components/ProfileSheet'
 import ChatRoomSettingsSheet from '@/components/ChatRoomSettingsSheet'
-import AppointmentCard from '@/components/AppointmentCard'
+import AppointmentCard, { isAppointmentExpired } from '@/components/AppointmentCard'
 import AppointmentSheet from '@/components/AppointmentSheet'
 import EmojiPicker from '@/components/EmojiPicker'
 import { appointmentApi } from '@/api/appointment'
@@ -111,6 +111,13 @@ export default function ChatRoomPage() {
       setActiveRoom(null)
     }
   }, [roomId, setMessages, markRoomAsRead, markRoomMessagesRead, setActiveRoom])
+
+  // 약속 만료를 실시간 반영하기 위해 1분마다 리렌더
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   const loadMore = async () => {
     if (!roomId || loadingMore || !hasMore) return
@@ -272,8 +279,8 @@ export default function ChatRoomPage() {
         </button>
       </div>
 
-      {/* 약속 공지 배너 (상단 고정 — 확정/대기 중인 약속 요약) */}
-      {appointments.filter((a) => a.status !== 'cancelled').slice(0, 1).map((a) => (
+      {/* 약속 공지 배너 (상단 고정 — 확정/대기 중인 약속 요약, 만료 제외) */}
+      {appointments.filter((a) => a.status !== 'cancelled' && !isAppointmentExpired(a)).slice(0, 1).map((a) => (
         <div key={a.id} className={`px-4 py-2 text-xs flex items-center gap-2 border-b ${a.status === 'confirmed' ? 'bg-green-50 border-green-100' : 'bg-yellow-50 border-yellow-100'}`}>
           <span>📅</span>
           <span className={`font-semibold ${a.status === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
