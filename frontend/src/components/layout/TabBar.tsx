@@ -26,7 +26,9 @@ export default function TabBar() {
   return (
     <nav className="fixed left-0 top-0 h-full w-52 bg-white border-r border-gray-100 flex flex-col z-50 shadow-sm">
       <div className="px-6 py-6 border-b border-gray-100">
-        <h1 className="text-2xl font-black text-primary-500 tracking-tight">썸전</h1>
+        <h1 className="text-2xl font-black text-primary-700 tracking-tight">
+          썸전<span className="text-secondary-500">.</span>
+        </h1>
         <p className="text-xs text-gray-400 mt-0.5">연성대학교 과팅 매칭</p>
       </div>
       <div className="flex-1 flex flex-col gap-1 py-4 px-3">

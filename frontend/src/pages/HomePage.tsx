@@ -167,16 +167,16 @@ export default function HomePage() {
             onMouseEnter={() => setMatchHover(true)}
             onMouseLeave={() => setMatchHover(false)}
           >
-            <div className="bg-gradient-to-br from-rose-400 to-pink-500 px-5 py-6 flex items-center justify-between">
+            <div className="bg-gradient-to-br from-primary-600 to-primary-800 px-5 py-6 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-rose-100 uppercase tracking-widest">1:1</p>
+                <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">1:1</p>
                 <p className="text-2xl font-black text-white mt-0.5">매칭</p>
               </div>
               <HeartArrowIcon active={matchHover} />
             </div>
             <div className="px-5 py-4">
               <p className="text-sm text-gray-500 leading-snug">마음에 드는 상대에게 좋아요를 보내보세요</p>
-              <p className="text-xs font-bold text-rose-400 mt-3 group-hover:translate-x-1 transition-transform">시작하기 →</p>
+              <p className="text-xs font-bold text-primary-600 mt-3 group-hover:translate-x-1 transition-transform">시작하기 →</p>
             </div>
           </Link>
 
@@ -186,16 +186,16 @@ export default function HomePage() {
             onMouseEnter={() => setGroupHover(true)}
             onMouseLeave={() => setGroupHover(false)}
           >
-            <div className="bg-gradient-to-br from-violet-400 to-purple-500 px-5 py-6 flex items-center justify-between">
+            <div className="bg-gradient-to-br from-secondary-400 to-secondary-600 px-5 py-6 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-violet-100 uppercase tracking-widest">그룹</p>
+                <p className="text-xs font-semibold text-white/70 uppercase tracking-widest">그룹</p>
                 <p className="text-2xl font-black text-white mt-0.5">과팅</p>
               </div>
               <FireworksIcon active={groupHover} />
             </div>
             <div className="px-5 py-4">
               <p className="text-sm text-gray-500 leading-snug">팀을 꾸려 다 같이 만나보세요</p>
-              <p className="text-xs font-bold text-violet-400 mt-3 group-hover:translate-x-1 transition-transform">참여하기 →</p>
+              <p className="text-xs font-bold text-secondary-600 mt-3 group-hover:translate-x-1 transition-transform">참여하기 →</p>
             </div>
           </Link>
 
