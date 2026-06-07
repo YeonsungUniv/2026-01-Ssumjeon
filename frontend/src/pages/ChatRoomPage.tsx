@@ -37,8 +37,6 @@ export default function ChatRoomPage() {
   const [showAppointment, setShowAppointment] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
-  const [bannerCollapsed, setBannerCollapsed] = useState(false)
-  const [dismissedAppts, setDismissedAppts] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -258,48 +256,6 @@ export default function ChatRoomPage() {
           </svg>
         </button>
       </div>
-
-      {/* 약속 공지 배너 (확정 또는 대기 중인 약속) — 접기/펴기·삭제 가능 */}
-      {appointments
-        .filter((a) => a.status !== 'cancelled' && !dismissedAppts.has(a.id))
-        .slice(0, 1)
-        .map((a) => (
-          <div key={a.id} className={`border-b ${a.status === 'confirmed' ? 'bg-green-50 border-green-100' : 'bg-yellow-50 border-yellow-100'}`}>
-            <div className="px-4 py-2 text-xs flex items-center gap-2">
-              <span>📅</span>
-              <span className={`font-semibold ${a.status === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
-                {a.status === 'confirmed' ? '확정된 약속' : '약속 대기 중'}
-              </span>
-              {!bannerCollapsed && (
-                <span className="text-gray-600 truncate">
-                  : {dayjs(a.date).format('M/D(ddd)')} {a.time} · {a.location}
-                </span>
-              )}
-              <div className="ml-auto flex items-center gap-1 shrink-0">
-                {/* 접기/펴기 */}
-                <button
-                  onClick={() => setBannerCollapsed((v) => !v)}
-                  className="p-1 text-gray-400 hover:text-gray-600"
-                  title={bannerCollapsed ? '펼치기' : '접기'}
-                >
-                  <svg className={`w-3.5 h-3.5 transition-transform ${bannerCollapsed ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {/* 삭제(숨기기) */}
-                <button
-                  onClick={() => setDismissedAppts((prev) => new Set(prev).add(a.id))}
-                  className="p-1 text-gray-400 hover:text-red-400"
-                  title="공지 지우기"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
 
       {/* 메시지 목록 */}
       <div
