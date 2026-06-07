@@ -281,9 +281,9 @@ export default function ChatRoomPage() {
 
       {/* 약속 공지 배너 (상단 고정 — 확정/대기 중인 약속 요약, 만료 제외) */}
       {appointments.filter((a) => a.status !== 'cancelled' && !isAppointmentExpired(a)).slice(0, 1).map((a) => (
-        <div key={a.id} className={`px-4 py-2 text-xs flex items-center gap-2 border-b ${a.status === 'confirmed' ? 'bg-green-50 border-green-100' : 'bg-yellow-50 border-yellow-100'}`}>
-          <span>📅</span>
-          <span className={`font-semibold ${a.status === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
+        <div key={a.id} className={`px-4 py-3 text-sm flex items-center gap-2 border-b ${a.status === 'confirmed' ? 'bg-green-50 border-green-100' : 'bg-yellow-50 border-yellow-100'}`}>
+          <span className="text-base">📅</span>
+          <span className={`font-bold ${a.status === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
             {a.status === 'confirmed' ? '확정된 약속' : '약속 대기 중'}:
           </span>
           <span className="text-gray-600 truncate">{dayjs(a.date).format('M/D(ddd)')} {a.time} · {a.location}</span>
