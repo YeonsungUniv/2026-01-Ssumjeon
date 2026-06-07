@@ -156,7 +156,7 @@ export function setupSocket(io: Server) {
           } catch {
             socket.emit('matching:error', { message: '매칭 오류가 발생했습니다.' })
           }
-        }, 5000)
+        }, 3000)
 
         pendingJoinTimers.set(userId, timer)
       } catch (err) {
