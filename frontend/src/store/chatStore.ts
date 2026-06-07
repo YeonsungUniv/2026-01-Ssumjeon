@@ -131,7 +131,10 @@ export const useChatStore = create<ChatState>()(
       const isActiveRoom = get().activeRoomId === message.roomId
       const content = message.content
       const preview =
-        content === '[expired_image]' ? '🗑️ 만료된 이미지'
+        content === '[system:partner_left]' ? '상대방이 채팅방을 나갔습니다'
+        : content === '[appointment:proposed]' ? '📅 약속을 제안했어요'
+        : content === '[appointment:cancelled]' ? '📅 약속이 취소되었어요'
+        : content === '[expired_image]' ? '🗑️ 만료된 이미지'
         : (content.includes('amazonaws.com') || content.startsWith('blob:')) ? '📷 사진을 보냈습니다'
         : content
       return {
