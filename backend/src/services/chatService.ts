@@ -32,6 +32,7 @@ export const chatService = {
         partner_nickname: string | null
         partner_image: string | null
         partner_left: boolean | null
+        is_blocked: boolean | null
         group_name: string | null
         last_message: string | null
         last_message_at: Date | null
@@ -46,6 +47,8 @@ export const chatService = {
          partner.nickname AS partner_nickname,
          partner.profile_image AS partner_image,
          partner.left_at IS NOT NULL AS partner_left,
+         -- 내가 상대를 차단했는지
+         EXISTS(SELECT 1 FROM user_blocks ub WHERE ub.blocker_id = $1 AND ub.blocked_id = partner.id) AS is_blocked,
          -- 그룹 방 이름
          gr.title AS group_name,
          -- 마지막 메시지
@@ -88,7 +91,7 @@ export const chatService = {
       lastMessage: previewLastMessage(r.last_message),
       lastMessageAt: r.last_message_at?.toISOString(),
       unreadCount: parseInt(r.unread_count, 10),
-      isBlocked: false, // 차단 여부는 개별 room 조회 시 판단
+      isBlocked: r.is_blocked ?? false,
       partnerLeft: r.partner_left ?? false,
     }))
   },

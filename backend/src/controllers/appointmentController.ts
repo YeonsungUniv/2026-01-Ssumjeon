@@ -125,6 +125,14 @@ export const appointmentController = {
            LIMIT 1
          ) partner ON true
          WHERE a.status != 'cancelled'
+           -- 차단(양방향) 상대와의 약속은 제외
+           AND NOT EXISTS (
+             SELECT 1 FROM chat_room_members other
+             JOIN user_blocks ub
+               ON (ub.blocker_id = $1 AND ub.blocked_id = other.user_id)
+               OR (ub.blocker_id = other.user_id AND ub.blocked_id = $1)
+             WHERE other.chat_room_id = a.room_id AND other.user_id != $1
+           )
          ORDER BY a.date ASC, a.time ASC`,
         [userId],
       )
