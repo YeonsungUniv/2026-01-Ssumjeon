@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Appointment } from '@/types'
 import { appointmentApi } from '@/api/appointment'
 import dayjs from 'dayjs'
@@ -7,6 +8,7 @@ interface Props {
   myUserId: string
   onUpdate: (updated: Appointment) => void
   onEdit: (appointment: Appointment) => void
+  onDismiss?: () => void
 }
 
 const STATUS_LABEL = {
@@ -15,9 +17,10 @@ const STATUS_LABEL = {
   cancelled: { text: '취소됨',       color: 'text-gray-400 bg-gray-50 border-gray-200' },
 }
 
-export default function AppointmentCard({ appointment, myUserId, onUpdate, onEdit }: Props) {
+export default function AppointmentCard({ appointment, myUserId, onUpdate, onEdit, onDismiss }: Props) {
   const isProposer = appointment.proposerId === myUserId
   const { text, color } = STATUS_LABEL[appointment.status]
+  const [collapsed, setCollapsed] = useState(false)
 
   const handleCancel = async () => {
     const res = await appointmentApi.cancel(appointment.id)
@@ -31,14 +34,45 @@ export default function AppointmentCard({ appointment, myUserId, onUpdate, onEdi
 
   return (
     <div className={`rounded-2xl border-2 p-4 space-y-3 ${color}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="text-lg">📅</span>
-          <span className="font-bold text-sm text-gray-800">약속 제안</span>
+          <span className="font-bold text-sm text-gray-800 shrink-0">약속 제안</span>
+          {collapsed && (
+            <span className="text-xs text-gray-500 truncate">
+              {dayjs(appointment.date).format('M/D(ddd)')} {appointment.time}
+            </span>
+          )}
         </div>
-        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>{text}</span>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${color}`}>{text}</span>
+          {/* 접기/펴기 */}
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            className="p-0.5 text-gray-400 hover:text-gray-600"
+            title={collapsed ? '펼치기' : '접기'}
+          >
+            <svg className={`w-3.5 h-3.5 transition-transform ${collapsed ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {/* 삭제 (나만 숨기기) */}
+          {onDismiss && (
+            <button
+              onClick={onDismiss}
+              className="p-0.5 text-gray-400 hover:text-red-400"
+              title="내 화면에서 지우기"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
+      {collapsed ? null : (
+      <>
       <div className="space-y-1.5 text-sm">
         <div className="flex items-center gap-2 text-gray-700">
           <span className="text-base">🗓</span>
@@ -109,6 +143,8 @@ export default function AppointmentCard({ appointment, myUserId, onUpdate, onEdi
             약속 취소
           </button>
         </div>
+      )}
+      </>
       )}
     </div>
   )

@@ -37,6 +37,17 @@ export default function ChatRoomPage() {
   const [showAppointment, setShowAppointment] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
+  // 내가 지운 약속 카드(로컬 전용 — 상대에겐 영향 없음), localStorage에 영구 저장
+  const [dismissedAppts, setDismissedAppts] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('dismissed-appts') ?? '[]')) } catch { return new Set() }
+  })
+  const dismissAppt = (id: string) => {
+    setDismissedAppts((prev) => {
+      const next = new Set(prev).add(id)
+      localStorage.setItem('dismissed-appts', JSON.stringify([...next]))
+      return next
+    })
+  }
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -59,11 +70,13 @@ export default function ChatRoomPage() {
     ...roomMessages
       .filter((m) => !isAppointmentMarker(m.content))
       .map((m) => ({ kind: 'message' as const, ts: new Date(m.createdAt).getTime(), data: m })),
-    ...appointments.map((a) => ({
-      kind: 'appointment' as const,
-      ts: new Date(a.updatedAt ?? a.createdAt).getTime(),
-      data: a,
-    })),
+    ...appointments
+      .filter((a) => !dismissedAppts.has(a.id))
+      .map((a) => ({
+        kind: 'appointment' as const,
+        ts: new Date(a.updatedAt ?? a.createdAt).getTime(),
+        data: a,
+      })),
   ].sort((x, y) => x.ts - y.ts)
 
   useEffect(() => {
@@ -257,6 +270,17 @@ export default function ChatRoomPage() {
         </button>
       </div>
 
+      {/* 약속 공지 배너 (상단 고정 — 확정/대기 중인 약속 요약) */}
+      {appointments.filter((a) => a.status !== 'cancelled').slice(0, 1).map((a) => (
+        <div key={a.id} className={`px-4 py-2 text-xs flex items-center gap-2 border-b ${a.status === 'confirmed' ? 'bg-green-50 border-green-100' : 'bg-yellow-50 border-yellow-100'}`}>
+          <span>📅</span>
+          <span className={`font-semibold ${a.status === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
+            {a.status === 'confirmed' ? '확정된 약속' : '약속 대기 중'}:
+          </span>
+          <span className="text-gray-600 truncate">{dayjs(a.date).format('M/D(ddd)')} {a.time} · {a.location}</span>
+        </div>
+      ))}
+
       {/* 메시지 목록 */}
       <div
         ref={scrollRef}
@@ -278,6 +302,7 @@ export default function ChatRoomPage() {
                 myUserId={user?.id ?? ''}
                 onUpdate={(updated) => setAppointments((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
                 onEdit={(appt) => setEditingAppointment(appt)}
+                onDismiss={() => dismissAppt(a.id)}
               />
             )
           }
