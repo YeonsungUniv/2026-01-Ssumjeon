@@ -5,6 +5,9 @@ export const appointmentApi = {
   getByRoom: (roomId: string) =>
     client.get<ApiResponse<Appointment[]>>(`/appointments/rooms/${roomId}`),
 
+  getMine: () =>
+    client.get<ApiResponse<Appointment[]>>('/appointments/mine'),
+
   propose: (roomId: string, data: { date: string; time: string; location: string }) =>
     client.post<ApiResponse<Appointment>>(`/appointments/rooms/${roomId}`, data),
 

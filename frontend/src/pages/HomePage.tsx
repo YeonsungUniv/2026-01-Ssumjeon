@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useChatStore } from '@/store/chatStore'
+import { appointmentApi } from '@/api/appointment'
+import { isAppointmentExpired } from '@/components/AppointmentCard'
+import type { Appointment } from '@/types'
 import dayjs from 'dayjs'
 
 function getGreeting() {
@@ -94,6 +97,7 @@ export default function HomePage() {
   const [groupHover, setGroupHover] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
   const [greeting, setGreeting] = useState(getGreeting)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
   const { user } = useAuthStore()
   const { rooms } = useChatStore()
 
@@ -101,7 +105,16 @@ export default function HomePage() {
     const id = setInterval(() => setGreeting(getGreeting()), 60_000)
     return () => clearInterval(id)
   }, [])
+
+  useEffect(() => {
+    appointmentApi.getMine().then((res) => setAppointments(res.data)).catch(() => {})
+  }, [])
+
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
+  // 만료되지 않은 다가오는 약속만 (가까운 순)
+  const upcomingAppointments = appointments
+    .filter((a) => !isAppointmentExpired(a))
+    .sort((x, y) => dayjs(`${x.date} ${x.time}`).valueOf() - dayjs(`${y.date} ${y.time}`).valueOf())
 
   return (
     <>
@@ -187,6 +200,47 @@ export default function HomePage() {
           </Link>
 
         </div>
+
+        {/* 다가오는 약속 */}
+        {upcomingAppointments.length > 0 && (
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm">
+            <div className="px-5 pt-4 pb-3 flex items-center gap-2 border-b border-gray-50">
+              <span className="text-base">📅</span>
+              <p className="font-bold text-gray-800">다가오는 약속</p>
+              <span className="text-[11px] text-gray-400 font-medium">{upcomingAppointments.length}건</span>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {upcomingAppointments.slice(0, 4).map((a) => (
+                <Link
+                  key={a.id}
+                  to={`/chat/${a.roomId}`}
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors"
+                >
+                  <div className={`w-11 h-11 rounded-2xl flex flex-col items-center justify-center shrink-0 ${a.status === 'confirmed' ? 'bg-green-50' : 'bg-yellow-50'}`}>
+                    <span className={`text-[10px] font-bold leading-none ${a.status === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {dayjs(a.date).format('M월')}
+                    </span>
+                    <span className={`text-base font-black leading-tight ${a.status === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
+                      {dayjs(a.date).format('D')}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">
+                      {a.location}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate mt-0.5">
+                      {dayjs(a.date).format('M/D(ddd)')} {a.time}
+                      {a.partnerNickname && ` · ${a.partnerNickname}`}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full ${a.status === 'confirmed' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>
+                    {a.status === 'confirmed' ? '확정' : '대기'}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 최근 채팅 */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm">

@@ -109,6 +109,29 @@ export const appointmentController = {
     } catch (err) { next(err) }
   },
 
+  // 내가 속한 모든 방의 약속(취소 제외) — 홈 화면 일정용
+  async getMine(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId
+      const result = await query<AppointmentRow & { partner_nickname: string | null }>(
+        `SELECT a.*, u.nickname AS proposer_nickname, partner.nickname AS partner_nickname
+         FROM appointments a
+         JOIN chat_room_members me ON me.chat_room_id = a.room_id AND me.user_id = $1 AND me.left_at IS NULL
+         JOIN users u ON u.id = a.proposer_id
+         LEFT JOIN LATERAL (
+           SELECT pu.nickname FROM chat_room_members cm
+           JOIN users pu ON pu.id = cm.user_id
+           WHERE cm.chat_room_id = a.room_id AND cm.user_id != $1
+           LIMIT 1
+         ) partner ON true
+         WHERE a.status != 'cancelled'
+         ORDER BY a.date ASC, a.time ASC`,
+        [userId],
+      )
+      return success(res, result.rows.map((r) => ({ ...toDto(r), partnerNickname: r.partner_nickname ?? undefined })))
+    } catch (err) { next(err) }
+  },
+
   async edit(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params

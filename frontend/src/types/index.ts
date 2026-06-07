@@ -101,6 +101,7 @@ export interface Appointment {
   status: 'pending' | 'confirmed' | 'cancelled'
   createdAt: string
   updatedAt?: string
+  partnerNickname?: string
 }
 
 // ── 채팅 신청 (둘러보기 매칭) ─────────────────────────────────────
