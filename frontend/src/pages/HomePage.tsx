@@ -201,16 +201,23 @@ export default function HomePage() {
 
         </div>
 
-        {/* 다가오는 약속 */}
-        {upcomingAppointments.length > 0 && (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm">
-            <div className="px-5 pt-4 pb-3 flex items-center gap-2 border-b border-gray-50">
-              <span className="text-base">📅</span>
-              <p className="font-bold text-gray-800">다가오는 약속</p>
+        {/* 내 약속 일정 (항상 표시되는 고정 박스) */}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm">
+          <div className="px-5 pt-4 pb-3 flex items-center gap-2 border-b border-gray-50">
+            <span className="text-base">📅</span>
+            <p className="font-bold text-gray-800">내 약속 일정</p>
+            {upcomingAppointments.length > 0 && (
               <span className="text-[11px] text-gray-400 font-medium">{upcomingAppointments.length}건</span>
+            )}
+          </div>
+          {upcomingAppointments.length === 0 ? (
+            <div className="py-10 flex flex-col items-center gap-2 text-gray-300">
+              <span className="text-3xl">🗓️</span>
+              <p className="text-xs">예정된 약속이 없어요</p>
             </div>
-            <div className="divide-y divide-gray-50">
-              {upcomingAppointments.slice(0, 4).map((a) => (
+          ) : (
+            <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
+              {upcomingAppointments.map((a) => (
                 <Link
                   key={a.id}
                   to={`/chat/${a.roomId}?appt=${a.id}`}
@@ -239,8 +246,8 @@ export default function HomePage() {
                 </Link>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* 최근 채팅 */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm">
