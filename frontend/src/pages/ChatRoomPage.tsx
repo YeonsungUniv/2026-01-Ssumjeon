@@ -22,6 +22,9 @@ const isExpiredImage = (content: string) => content === '[expired_image]'
 
 const isSystemMessage = (content: string) => content.startsWith('[system:')
 
+// 약속 알림용 마커 메시지 — 버블로는 표시하지 않고 알림/미리보기 용도로만 사용
+const isAppointmentMarker = (content: string) => content.startsWith('[appointment:')
+
 export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const navigate = useNavigate()
@@ -34,6 +37,8 @@ export default function ChatRoomPage() {
   const [showAppointment, setShowAppointment] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
+  const [bannerCollapsed, setBannerCollapsed] = useState(false)
+  const [dismissedAppts, setDismissedAppts] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -47,6 +52,21 @@ export default function ChatRoomPage() {
 
   const roomMessages = messages[roomId!] ?? []
   const room = rooms.find((r) => r.id === roomId)
+
+  // 메시지 + 약속을 하나의 타임라인으로 병합 (약속은 수정·취소 시각 기준 → 변경 시 맨 아래로)
+  type TimelineItem =
+    | { kind: 'message'; ts: number; data: typeof roomMessages[number] }
+    | { kind: 'appointment'; ts: number; data: Appointment }
+  const timeline: TimelineItem[] = [
+    ...roomMessages
+      .filter((m) => !isAppointmentMarker(m.content))
+      .map((m) => ({ kind: 'message' as const, ts: new Date(m.createdAt).getTime(), data: m })),
+    ...appointments.map((a) => ({
+      kind: 'appointment' as const,
+      ts: new Date(a.updatedAt ?? a.createdAt).getTime(),
+      data: a,
+    })),
+  ].sort((x, y) => x.ts - y.ts)
 
   useEffect(() => {
     if (!roomId) return
@@ -239,16 +259,47 @@ export default function ChatRoomPage() {
         </button>
       </div>
 
-      {/* 약속 배너 (확정 또는 대기 중인 약속) */}
-      {appointments.filter((a) => a.status !== 'cancelled').slice(0, 1).map((a) => (
-        <div key={a.id} className={`px-4 py-2 text-xs flex items-center gap-2 border-b ${a.status === 'confirmed' ? 'bg-green-50 border-green-100' : 'bg-yellow-50 border-yellow-100'}`}>
-          <span>📅</span>
-          <span className={`font-semibold ${a.status === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
-            {a.status === 'confirmed' ? '확정된 약속' : '약속 대기 중'}:
-          </span>
-          <span className="text-gray-600">{dayjs(a.date).format('M/D(ddd)')} {a.time} · {a.location}</span>
-        </div>
-      ))}
+      {/* 약속 공지 배너 (확정 또는 대기 중인 약속) — 접기/펴기·삭제 가능 */}
+      {appointments
+        .filter((a) => a.status !== 'cancelled' && !dismissedAppts.has(a.id))
+        .slice(0, 1)
+        .map((a) => (
+          <div key={a.id} className={`border-b ${a.status === 'confirmed' ? 'bg-green-50 border-green-100' : 'bg-yellow-50 border-yellow-100'}`}>
+            <div className="px-4 py-2 text-xs flex items-center gap-2">
+              <span>📅</span>
+              <span className={`font-semibold ${a.status === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
+                {a.status === 'confirmed' ? '확정된 약속' : '약속 대기 중'}
+              </span>
+              {!bannerCollapsed && (
+                <span className="text-gray-600 truncate">
+                  : {dayjs(a.date).format('M/D(ddd)')} {a.time} · {a.location}
+                </span>
+              )}
+              <div className="ml-auto flex items-center gap-1 shrink-0">
+                {/* 접기/펴기 */}
+                <button
+                  onClick={() => setBannerCollapsed((v) => !v)}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                  title={bannerCollapsed ? '펼치기' : '접기'}
+                >
+                  <svg className={`w-3.5 h-3.5 transition-transform ${bannerCollapsed ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {/* 삭제(숨기기) */}
+                <button
+                  onClick={() => setDismissedAppts((prev) => new Set(prev).add(a.id))}
+                  className="p-1 text-gray-400 hover:text-red-400"
+                  title="공지 지우기"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
 
       {/* 메시지 목록 */}
       <div
@@ -261,19 +312,20 @@ export default function ChatRoomPage() {
             <div className="animate-spin w-5 h-5 border-2 border-primary-300 border-t-primary-500 rounded-full" />
           </div>
         )}
-        {/* 약속 카드 목록 */}
-        {appointments.map((a) => (
-          <AppointmentCard
-            key={a.id}
-            appointment={a}
-            myUserId={user?.id ?? ''}
-            onUpdate={(updated) => setAppointments((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
-            onEdit={(appt) => setEditingAppointment(appt)}
-          />
-        ))}
-        {appointments.length > 0 && <div className="border-t border-dashed border-gray-200 my-1" />}
-
-        {roomMessages.map((msg) => {
+        {timeline.map((item) => {
+          if (item.kind === 'appointment') {
+            const a = item.data
+            return (
+              <AppointmentCard
+                key={`appt-${a.id}`}
+                appointment={a}
+                myUserId={user?.id ?? ''}
+                onUpdate={(updated) => setAppointments((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
+                onEdit={(appt) => setEditingAppointment(appt)}
+              />
+            )
+          }
+          const msg = item.data
           // 시스템 메시지(상대방 나감 등)는 중앙 안내로 표시
           if (isSystemMessage(msg.content)) {
             return (

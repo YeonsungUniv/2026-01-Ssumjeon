@@ -100,6 +100,7 @@ export interface Appointment {
   location: string
   status: 'pending' | 'confirmed' | 'cancelled'
   createdAt: string
+  updatedAt?: string
 }
 
 // ── 채팅 신청 (둘러보기 매칭) ─────────────────────────────────────
