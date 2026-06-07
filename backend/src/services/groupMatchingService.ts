@@ -129,16 +129,17 @@ export const groupMatchingService = {
     )
     const room = roomResult.rows[0]
     if (!room) throw new Error('유효하지 않은 초대 코드입니다.')
-    return this.joinRoom(room.id, userId)
+    return this.joinRoom(room.id, userId, true)
   },
 
-  async joinRoom(roomId: string, userId: string) {
+  async joinRoom(roomId: string, userId: string, viaCode = false) {
     const roomResult = await query<GroupRoomRow>('SELECT * FROM group_rooms WHERE id = $1', [roomId])
     const room = roomResult.rows[0]
     if (!room) throw new Error('방을 찾을 수 없습니다.')
     if (room.status !== 'waiting') throw new Error('참여할 수 없는 방입니다.')
 
-    if (room.is_private) {
+    // 비공개 방은 초대코드로만 입장 가능
+    if (room.is_private && !viaCode) {
       throw new Error('초대코드로만 참여할 수 있는 방입니다.')
     }
 
