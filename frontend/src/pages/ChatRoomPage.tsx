@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
 import { useAuthStore } from '@/store/authStore'
@@ -30,6 +30,9 @@ const isApptCancelledMarker = (content: string) => content === '[appointment:can
 export default function ChatRoomPage() {
   const { roomId } = useParams<{ roomId: string }>()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const focusApptId = searchParams.get('appt')
+  const [highlightApptId, setHighlightApptId] = useState<string | null>(null)
   const { user } = useAuthStore()
   const { messages, setMessages, prependMessages, appendMessage, replaceMessage, removeMessage, markRoomAsRead, markRoomMessagesRead, setActiveRoom, removeRoom, markRoomAsBlocked, markRoomAsUnblocked, rooms } = useChatStore()
   const [input, setInput] = useState('')
@@ -118,6 +121,29 @@ export default function ChatRoomPage() {
     const id = setInterval(() => setTick((t) => t + 1), 60_000)
     return () => clearInterval(id)
   }, [])
+
+  // 홈에서 약속 공지를 누르고 들어온 경우 → 해당 카드로 스크롤 + 강조
+  useEffect(() => {
+    if (!focusApptId || appointments.length === 0) return
+    if (!appointments.some((a) => a.id === focusApptId)) return
+    // 내가 숨겨둔 약속이면 다시 보이게 한 뒤(리렌더) 다음 실행에서 스크롤
+    if (dismissedAppts.has(focusApptId)) {
+      setDismissedAppts((prev) => {
+        const next = new Set(prev); next.delete(focusApptId)
+        localStorage.setItem('dismissed-appts', JSON.stringify([...next]))
+        return next
+      })
+      return
+    }
+    const el = document.getElementById(`appt-card-${focusApptId}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setHighlightApptId(focusApptId)
+    const t = setTimeout(() => setHighlightApptId(null), 2500)
+    // 강조 후 쿼리 파라미터 제거 (재진입 시 중복 방지)
+    setSearchParams({}, { replace: true })
+    return () => clearTimeout(t)
+  }, [focusApptId, appointments, dismissedAppts, setSearchParams])
 
   const loadMore = async () => {
     if (!roomId || loadingMore || !hasMore) return
@@ -305,14 +331,19 @@ export default function ChatRoomPage() {
           if (item.kind === 'appointment') {
             const a = item.data
             return (
-              <AppointmentCard
+              <div
                 key={`appt-${a.id}`}
-                appointment={a}
-                myUserId={user?.id ?? ''}
-                onUpdate={(updated) => setAppointments((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
-                onEdit={(appt) => setEditingAppointment(appt)}
-                onDismiss={() => dismissAppt(a.id)}
-              />
+                id={`appt-card-${a.id}`}
+                className={`rounded-2xl transition-all ${highlightApptId === a.id ? 'ring-2 ring-primary-400 ring-offset-2' : ''}`}
+              >
+                <AppointmentCard
+                  appointment={a}
+                  myUserId={user?.id ?? ''}
+                  onUpdate={(updated) => setAppointments((prev) => prev.map((p) => p.id === updated.id ? updated : p))}
+                  onEdit={(appt) => setEditingAppointment(appt)}
+                  onDismiss={() => dismissAppt(a.id)}
+                />
+              </div>
             )
           }
           const msg = item.data

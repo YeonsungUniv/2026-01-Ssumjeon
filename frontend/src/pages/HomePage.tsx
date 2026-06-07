@@ -213,7 +213,7 @@ export default function HomePage() {
               {upcomingAppointments.slice(0, 4).map((a) => (
                 <Link
                   key={a.id}
-                  to={`/chat/${a.roomId}`}
+                  to={`/chat/${a.roomId}?appt=${a.id}`}
                   className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors"
                 >
                   <div className={`w-11 h-11 rounded-2xl flex flex-col items-center justify-center shrink-0 ${a.status === 'confirmed' ? 'bg-green-50' : 'bg-yellow-50'}`}>
