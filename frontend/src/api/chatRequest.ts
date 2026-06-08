@@ -40,4 +40,7 @@ export const chatRequestApi = {
 
   deleteSent: (requestId: string) =>
     client.delete<ApiResponse<null>>(`/chat-requests/${requestId}/sent`),
+
+  deleteAllSent: () =>
+    client.delete<ApiResponse<{ deleted: number }>>('/chat-requests/sent/all'),
 }

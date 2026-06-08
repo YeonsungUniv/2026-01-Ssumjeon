@@ -108,6 +108,16 @@ export const chatRequestController = {
     }
   },
 
+  async deleteAllSent(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const result = await chatRequestService.deleteAllSentRequests(req.user!.userId)
+      return success(res, result)
+    } catch (err) {
+      if (err instanceof Error) return fail(res, err.message)
+      next(err)
+    }
+  },
+
   async getPendingCount(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const count = await chatRequestService.getPendingIncomingCount(req.user!.userId)

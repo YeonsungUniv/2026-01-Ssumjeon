@@ -503,10 +503,24 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
   }
 
   const handleDeleteSent = async (requestId: string) => {
+    if (!window.confirm('이 신청 기록을 삭제할까요?')) return
     setActionLoading(requestId)
     try {
       await chatRequestApi.deleteSent(requestId)
       setOutgoing((prev) => prev.filter((r) => r.requestId !== requestId))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '삭제에 실패했습니다.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleDeleteAllSent = async () => {
+    if (!window.confirm('보낸 신청 기록을 모두 삭제할까요?')) return
+    setActionLoading('__all__')
+    try {
+      await chatRequestApi.deleteAllSent()
+      setOutgoing([])
     } catch (e) {
       alert(e instanceof Error ? e.message : '삭제에 실패했습니다.')
     } finally {
@@ -774,6 +788,17 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
         {/* 보낸 신청 탭 */}
         {browseTab === 'outgoing' && (
           <div className="space-y-3">
+            {!outgoingLoading && outgoing.length > 0 && (
+              <div className="flex justify-end">
+                <button
+                  disabled={actionLoading === '__all__'}
+                  onClick={handleDeleteAllSent}
+                  className="text-xs font-semibold text-red-400 hover:text-red-500 disabled:opacity-50 transition-colors"
+                >
+                  {actionLoading === '__all__' ? '삭제 중...' : '모두 삭제'}
+                </button>
+              </div>
+            )}
             {outgoingLoading ? (
               <div className="flex justify-center py-16">
                 <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-primary-500 rounded-full" />
