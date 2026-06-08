@@ -49,6 +49,28 @@
   100% { transform: translateY(-40px) scale(0); opacity: 0; }
 }
 
+/* ── 계절 배경 연출 ─────────────────────────────────────────── */
+@keyframes season-fall {
+  0%   { transform: translateY(-12vh) translateX(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: var(--op, 0.85); }
+  90%  { opacity: var(--op, 0.85); }
+  100% { transform: translateY(112vh) translateX(var(--sway, 40px)) rotate(var(--spin, 360deg)); opacity: 0; }
+}
+@keyframes season-rise {
+  0%   { transform: translateY(12vh) translateX(0) scale(0.9); opacity: 0; }
+  15%  { opacity: var(--op, 0.7); }
+  85%  { opacity: var(--op, 0.7); }
+  100% { transform: translateY(-112vh) translateX(var(--sway, 30px)) scale(1.05); opacity: 0; }
+}
+@keyframes season-bob {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-10px) rotate(3deg); }
+}
+@keyframes season-wave {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-25px); }
+}
+
 @layer components {
   .btn-primary {
     @apply bg-primary-500 text-white font-semibold px-6 py-3 rounded-2xl

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import TabBar from './TabBar'
+import SeasonalBackground from '@/components/SeasonalBackground'
 import { useSocket } from '@/hooks/useSocket'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
@@ -20,8 +21,10 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-dvh bg-cream">
+      {/* 계절 배경 연출 (채팅방 등 풀스크린에선 가려짐) */}
+      {!isFullHeight && <SeasonalBackground />}
       <TabBar />
-      <main className="ml-52 min-h-dvh">
+      <main className="relative z-10 ml-52 min-h-dvh">
         {isFullHeight ? (
           <Outlet />
         ) : (
