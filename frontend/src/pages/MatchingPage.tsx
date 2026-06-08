@@ -528,6 +528,20 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
     }
   }
 
+  const handleDeleteAllReceived = async () => {
+    if (!window.confirm('받은 신청을 모두 삭제할까요?')) return
+    setActionLoading('__all__')
+    try {
+      await chatRequestApi.deleteAllReceived()
+      setIncoming([])
+      setPendingIncomingCount(0)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '삭제에 실패했습니다.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const handleAcceptIncoming = async (requestId: string) => {
     setActionLoading(requestId)
     try {
@@ -735,6 +749,17 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
         {/* 받은 신청 탭 */}
         {browseTab === 'incoming' && (
           <div className="space-y-3">
+            {!incomingLoading && incoming.length > 0 && (
+              <div className="flex justify-end">
+                <button
+                  disabled={actionLoading === '__all__'}
+                  onClick={handleDeleteAllReceived}
+                  className="text-xs font-semibold text-red-400 hover:text-red-500 disabled:opacity-50 transition-colors"
+                >
+                  {actionLoading === '__all__' ? '삭제 중...' : '모두 삭제'}
+                </button>
+              </div>
+            )}
             {incomingLoading ? (
               <div className="flex justify-center py-16">
                 <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-primary-500 rounded-full" />

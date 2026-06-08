@@ -12,6 +12,7 @@ router.get('/pending-count', chatRequestController.getPendingCount)
 router.post('/', chatRequestController.sendRequest)
 router.patch('/:requestId/respond', chatRequestController.respond)
 router.delete('/sent/all', chatRequestController.deleteAllSent)
+router.delete('/received/all', chatRequestController.deleteAllReceived)
 router.delete('/:requestId/sent', chatRequestController.deleteSent)
 router.delete('/:requestId', chatRequestController.cancel)
 

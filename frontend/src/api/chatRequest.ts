@@ -43,4 +43,7 @@ export const chatRequestApi = {
 
   deleteAllSent: () =>
     client.delete<ApiResponse<{ deleted: number }>>('/chat-requests/sent/all'),
+
+  deleteAllReceived: () =>
+    client.delete<ApiResponse<{ deleted: number }>>('/chat-requests/received/all'),
 }

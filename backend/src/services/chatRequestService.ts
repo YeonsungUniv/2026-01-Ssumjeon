@@ -270,6 +270,15 @@ export const chatRequestService = {
     return { deleted: result.rowCount ?? 0 }
   },
 
+  // 내가 받은 신청(대기 중) 전체 삭제
+  async deleteAllReceivedRequests(userId: string) {
+    const result = await query(
+      "DELETE FROM chat_requests WHERE receiver_id=$1 AND status='pending' RETURNING id",
+      [userId],
+    )
+    return { deleted: result.rowCount ?? 0 }
+  },
+
   async getPendingIncomingCount(userId: string) {
     const result = await query<{ count: string }>(
       "SELECT COUNT(*) AS count FROM chat_requests WHERE receiver_id=$1 AND status='pending'",
