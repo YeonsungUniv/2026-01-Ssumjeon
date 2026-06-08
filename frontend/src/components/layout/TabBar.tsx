@@ -24,14 +24,8 @@ export default function TabBar() {
   const tabs = user?.isAdmin ? [...baseTabs, adminTab] : baseTabs
 
   return (
-    <nav className="fixed left-0 top-0 h-full w-52 bg-white border-r border-gray-100 flex flex-col z-50 shadow-sm">
-      <div className="px-6 py-6 border-b border-gray-100">
-        <h1 className="text-2xl font-black text-primary-500 tracking-tight">
-          썸전<span className="text-secondary-400">.</span>
-        </h1>
-        <p className="text-xs text-gray-400 mt-0.5">연성대학교 과팅 매칭</p>
-      </div>
-      <div className="flex-1 flex flex-col gap-1 py-4 px-3">
+    <nav className="shrink-0 bg-white/95 backdrop-blur border-t border-gray-100 z-40">
+      <div className="flex items-stretch justify-around px-1.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
         {tabs.map(({ to, label, icon: Icon, badge }) => {
           const badgeCount = badge === 'chat' ? totalUnread : badge === 'request' ? pendingIncomingCount : 0
           return (
@@ -40,22 +34,24 @@ export default function TabBar() {
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-primary-50 text-primary-600'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                `flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-2xl transition-colors ${
+                  isActive ? 'text-primary-500' : 'text-gray-400'
                 }`
               }
             >
-              <div className="relative shrink-0">
-                <Icon className="w-5 h-5" />
-                {badgeCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
-                    {badgeCount > 99 ? '99+' : badgeCount}
-                  </span>
-                )}
-              </div>
-              {label}
+              {({ isActive }) => (
+                <>
+                  <div className="relative">
+                    <Icon className={`w-[26px] h-[26px] transition-transform ${isActive ? 'scale-105' : ''}`} />
+                    {badgeCount > 0 && (
+                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-medium'}`}>{label}</span>
+                </>
+              )}
             </NavLink>
           )
         })}
