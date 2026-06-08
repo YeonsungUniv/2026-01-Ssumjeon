@@ -19,7 +19,7 @@ export default function MainLayout() {
   const isFullHeight = FULL_HEIGHT_ROUTES.test(pathname)
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh bg-cream">
       <TabBar />
       <main className="ml-52 min-h-dvh">
         {isFullHeight ? (
