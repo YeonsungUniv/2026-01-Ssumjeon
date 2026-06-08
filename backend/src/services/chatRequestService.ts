@@ -255,6 +255,15 @@ export const chatRequestService = {
     if ((result.rowCount ?? 0) === 0) throw new Error('취소할 수 없는 신청입니다.')
   },
 
+  // 보낸 신청 기록 삭제 (상태 무관 — 내 보낸 목록에서 제거)
+  async deleteSentRequest(requestId: string, userId: string) {
+    const result = await query(
+      'DELETE FROM chat_requests WHERE id=$1 AND sender_id=$2 RETURNING id',
+      [requestId, userId],
+    )
+    if ((result.rowCount ?? 0) === 0) throw new Error('삭제할 수 없는 신청입니다.')
+  },
+
   async getPendingIncomingCount(userId: string) {
     const result = await query<{ count: string }>(
       "SELECT COUNT(*) AS count FROM chat_requests WHERE receiver_id=$1 AND status='pending'",

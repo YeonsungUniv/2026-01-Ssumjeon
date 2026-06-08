@@ -37,4 +37,7 @@ export const chatRequestApi = {
 
   cancel: (requestId: string) =>
     client.delete<ApiResponse<null>>(`/chat-requests/${requestId}`),
+
+  deleteSent: (requestId: string) =>
+    client.delete<ApiResponse<null>>(`/chat-requests/${requestId}/sent`),
 }

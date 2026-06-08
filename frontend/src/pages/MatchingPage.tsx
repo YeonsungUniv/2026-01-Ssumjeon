@@ -502,6 +502,18 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
     }
   }
 
+  const handleDeleteSent = async (requestId: string) => {
+    setActionLoading(requestId)
+    try {
+      await chatRequestApi.deleteSent(requestId)
+      setOutgoing((prev) => prev.filter((r) => r.requestId !== requestId))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '삭제에 실패했습니다.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const handleAcceptIncoming = async (requestId: string) => {
     setActionLoading(requestId)
     try {
@@ -807,6 +819,16 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
                       <span className="w-3.5 h-3.5 rounded-full bg-gray-200 flex items-center justify-center text-[9px]">✕</span>
                       거절됨
                     </span>
+                  )}
+                  {/* 수락/거절된 기록 삭제 */}
+                  {req.status !== 'pending' && (
+                    <button
+                      disabled={actionLoading === req.requestId}
+                      onClick={() => handleDeleteSent(req.requestId)}
+                      className="text-xs px-2.5 py-1 rounded-full text-gray-400 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    >
+                      {actionLoading === req.requestId ? '...' : '기록 삭제'}
+                    </button>
                   )}
                 </div>
               </div>
