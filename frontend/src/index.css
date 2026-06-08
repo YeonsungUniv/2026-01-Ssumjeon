@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    @apply bg-cream text-gray-900 font-sans antialiased;
     min-height: 100dvh;
   }
 
@@ -75,6 +75,7 @@
   }
 
   .card {
-    @apply bg-white rounded-3xl shadow-sm border border-gray-100 p-6;
+    @apply bg-white rounded-[1.75rem] border border-gray-100/80 p-6;
+    box-shadow: 0 6px 24px -12px rgba(255, 122, 138, 0.18);
   }
 }
