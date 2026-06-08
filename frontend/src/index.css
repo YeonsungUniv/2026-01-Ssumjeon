@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply bg-cream text-gray-900 font-sans antialiased;
+    @apply bg-gray-50 text-gray-900 font-sans antialiased;
     min-height: 100dvh;
   }
 
@@ -49,42 +49,6 @@
   100% { transform: translateY(-40px) scale(0); opacity: 0; }
 }
 
-/* ── 계절 배경 연출 ─────────────────────────────────────────── */
-@keyframes season-fall {
-  0%   { transform: translateY(-12vh) translateX(0) rotate(0deg); opacity: 0; }
-  10%  { opacity: var(--op, 0.85); }
-  90%  { opacity: var(--op, 0.85); }
-  100% { transform: translateY(112vh) translateX(var(--sway, 40px)) rotate(var(--spin, 360deg)); opacity: 0; }
-}
-@keyframes season-rise {
-  0%   { transform: translateY(12vh) translateX(0) scale(0.9); opacity: 0; }
-  15%  { opacity: var(--op, 0.7); }
-  85%  { opacity: var(--op, 0.7); }
-  100% { transform: translateY(-112vh) translateX(var(--sway, 30px)) scale(1.05); opacity: 0; }
-}
-@keyframes season-bob {
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50%      { transform: translateY(-10px) rotate(3deg); }
-}
-@keyframes season-wave {
-  0%, 100% { transform: translateX(0); }
-  50%      { transform: translateX(-25px); }
-}
-/* 파도가 좌우로 넝실거리며 흐르는 효과 (2주기 그려두고 -50% 이동 → 끊김 없음) */
-@keyframes wave-drift {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-/* 태양 햇살 회전 */
-@keyframes sun-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes sun-pulse {
-  0%, 100% { opacity: 0.5; }
-  50%      { opacity: 0.85; }
-}
-
 @layer components {
   .btn-primary {
     @apply bg-primary-500 text-white font-semibold px-6 py-3 rounded-2xl
@@ -111,7 +75,6 @@
   }
 
   .card {
-    @apply bg-white rounded-[1.75rem] border border-gray-100/80 p-6;
-    box-shadow: 0 6px 24px -12px rgba(255, 122, 138, 0.18);
+    @apply bg-white rounded-3xl shadow-sm border border-gray-100 p-6;
   }
 }
