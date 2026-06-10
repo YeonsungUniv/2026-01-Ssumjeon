@@ -1,9 +1,94 @@
 import type { Response, NextFunction } from 'express'
 import { query } from '../config/db'
 import { success, fail } from '../utils/response'
+import { entryYearOf } from '../utils/cohort'
 import type { AuthRequest, UserRow } from '../types'
 
+// 관리자 사용자 목록/상세용 공통 매핑
+function adminUserDto(u: UserRow) {
+  return {
+    id: u.id,
+    username: u.username,
+    nickname: u.nickname,
+    email: u.email,
+    studentId: u.student_id,
+    department: u.department,
+    grade: u.grade,
+    gender: u.gender,
+    status: u.status,
+    isAdmin: u.is_admin,
+    enrollmentDoc: u.enrollment_doc,
+    createdAt: u.created_at,
+  }
+}
+
 export const adminController = {
+  // 전체 사용자 목록 (검색어 q: 아이디/닉네임/이메일/학번 부분일치)
+  async listUsers(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const q = String(req.query.q ?? '').trim().toLowerCase()
+      const where = q
+        ? `WHERE LOWER(username) LIKE $1 OR LOWER(nickname) LIKE $1
+             OR LOWER(COALESCE(email,'')) LIKE $1 OR COALESCE(student_id,'') LIKE $1`
+        : ''
+      const params = q ? [`%${q}%`] : []
+      const result = await query<UserRow>(
+        `SELECT id, username, nickname, email, student_id, department, grade, gender,
+                status, is_admin, enrollment_doc, created_at
+         FROM users ${where} ORDER BY created_at DESC`,
+        params,
+      )
+      return success(res, result.rows.map(adminUserDto))
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  // 사용자 학과/학번 수정 (학번 변경 시 학년 자동 재계산)
+  async updateUser(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.params
+      const { department, studentId } = req.body as { department?: string; studentId?: string }
+
+      const fields: string[] = []
+      const values: unknown[] = []
+      let i = 1
+
+      if (typeof department === 'string' && department.trim()) {
+        fields.push(`department = $${i++}`)
+        values.push(department.trim())
+      }
+
+      if (typeof studentId === 'string') {
+        const sid = studentId.trim() || null
+        fields.push(`student_id = $${i++}`)
+        values.push(sid)
+        // 학번 앞 4자리(입학년도)로 학년(DB 호환용) 재계산
+        const entry = entryYearOf(sid)
+        if (entry) {
+          const grade = Math.min(Math.max(new Date().getFullYear() - entry + 1, 1), 4)
+          fields.push(`grade = $${i++}`)
+          values.push(grade)
+        }
+      }
+
+      if (fields.length === 0) return fail(res, '수정할 항목이 없습니다.')
+
+      values.push(userId)
+      const result = await query<UserRow>(
+        `UPDATE users SET ${fields.join(', ')}, updated_at = NOW()
+         WHERE id = $${i}
+         RETURNING id, username, nickname, email, student_id, department, grade, gender,
+                   status, is_admin, enrollment_doc, created_at`,
+        values,
+      )
+      if (result.rows.length === 0) return fail(res, '사용자를 찾을 수 없습니다.', 404)
+      return success(res, adminUserDto(result.rows[0]))
+    } catch (err) {
+      next(err)
+    }
+  },
+
   async listPending(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const result = await query<UserRow>(

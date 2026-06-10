@@ -13,6 +13,7 @@ export interface RegisterPayload {
   gender: 'male' | 'female'
   department: string
   email: string
+  enrollmentDoc: File
 }
 
 export interface AuthTokens {
@@ -36,8 +37,17 @@ export const authApi = {
   login: (payload: LoginPayload) =>
     client.post<ApiResponse<AuthTokens>>('/auth/login', payload),
 
-  register: (payload: RegisterPayload) =>
-    client.post<ApiResponse<{ user: User }>>('/auth/register', payload),
+  register: (payload: RegisterPayload) => {
+    const form = new FormData()
+    form.append('username', payload.username)
+    form.append('password', payload.password)
+    if (payload.nickname) form.append('nickname', payload.nickname)
+    form.append('gender', payload.gender)
+    form.append('department', payload.department)
+    form.append('email', payload.email)
+    form.append('enrollmentDoc', payload.enrollmentDoc)
+    return client.post<ApiResponse<{ user: User }>>('/auth/register', form)
+  },
 
   sendEmailCode: (email: string) =>
     client.post<ApiResponse<{ sent: boolean }>>('/auth/send-email-code', { email }),
@@ -64,7 +74,28 @@ export const authApi = {
     client.post<ApiResponse<{ accessToken: string }>>('/auth/refresh', {}, { withCredentials: true }),
 }
 
+export interface AdminUser {
+  id: string
+  username: string
+  nickname: string
+  email: string | null
+  studentId: string | null
+  department: string
+  grade: number
+  gender: 'male' | 'female'
+  status: 'pending' | 'approved' | 'rejected'
+  isAdmin: boolean
+  enrollmentDoc: string | null
+  createdAt: string
+}
+
 export const adminApi = {
+  listUsers: (q?: string) =>
+    client.get<ApiResponse<AdminUser[]>>('/admin/users', q ? { q } : undefined),
+
+  updateUser: (userId: string, payload: { department?: string; studentId?: string }) =>
+    client.patch<ApiResponse<AdminUser>>(`/admin/users/${userId}`, payload),
+
   listPending: () =>
     client.get<ApiResponse<PendingUser[]>>('/admin/pending'),
 

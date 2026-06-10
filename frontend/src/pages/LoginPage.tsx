@@ -22,9 +22,8 @@ export default function LoginPage() {
       setAuth(res.data.user, res.data.accessToken)
       if (res.data.user.status === 'pending') {
         navigate('/pending', { replace: true })
-      } else if (res.data.user.isAdmin) {
-        navigate('/admin', { replace: true })
       } else {
+        // 관리자도 일반 화면(홈)으로 진입 — 관리 기능은 좌측 사이드바 '관리바'에서 접근
         navigate('/', { replace: true })
       }
     } catch (e: unknown) {

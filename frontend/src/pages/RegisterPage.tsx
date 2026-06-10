@@ -16,10 +16,15 @@ interface Step1Form {
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [step, setStep] = useState<1 | 2 | 'done'>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 'done'>(1)
   const [error, setError] = useState('')
   const [step1Data, setStep1Data] = useState<Step1Form | null>(null)
   const [department, setDepartment] = useState('')
+
+  // 재학증명서 (Step 3)
+  const [enrollmentFile, setEnrollmentFile] = useState<File | null>(null)
+  const [docError, setDocError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   // 이메일 인증 상태 (emailLocal = @ 앞 부분만)
   const [emailLocal, setEmailLocal] = useState('')
@@ -84,19 +89,39 @@ export default function RegisterPage() {
     }
   }
 
+  const handleSelectDoc = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null
+    setDocError('')
+    if (!file) { setEnrollmentFile(null); return }
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png']
+    if (!allowed.includes(file.type)) {
+      setDocError('PDF 또는 이미지(jpg/png) 파일만 업로드할 수 있습니다.')
+      setEnrollmentFile(null)
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setDocError('파일 크기는 10MB 이하여야 합니다.')
+      setEnrollmentFile(null)
+      return
+    }
+    setEnrollmentFile(file)
+  }
+
   const onFinalSubmit = async () => {
     if (!step1Data || !department) return
     if (!emailVerified) { setEmailError('이메일 인증을 완료해주세요.'); return }
+    if (!enrollmentFile) { setDocError('재학증명서를 첨부해주세요.'); return }
     setError('')
+    setSubmitting(true)
     try {
       await authApi.register({
         ...step1Data,
         nickname: step1Data.nickname.trim() || undefined,
         department,
         email: fullEmail,
+        enrollmentDoc: enrollmentFile,
       })
       setStep('done')
-      setTimeout(() => navigate('/login', { replace: true }), 2500)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '회원가입에 실패했습니다.'
       if (msg.includes('아이디')) {
@@ -105,6 +130,8 @@ export default function RegisterPage() {
       } else {
         setError(msg)
       }
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -113,11 +140,18 @@ export default function RegisterPage() {
       {/* 단계 표시 */}
       {step !== 'done' && (
         <div className="flex items-center gap-2 mb-6">
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step === 1 ? 'bg-primary-500 text-white' : 'bg-primary-100 text-primary-500'}`}>1</div>
-          <div className="flex-1 h-0.5 bg-gray-100">
-            <div className={`h-full bg-primary-400 transition-all ${step === 2 ? 'w-full' : 'w-0'}`} />
-          </div>
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step === 2 ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-400'}`}>2</div>
+          {[1, 2, 3].map((n, idx) => (
+            <div key={n} className="flex items-center gap-2 flex-1 last:flex-none">
+              <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
+                step >= (n as 1 | 2 | 3) ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-400'
+              }`}>{n}</div>
+              {idx < 2 && (
+                <div className="flex-1 h-0.5 bg-gray-100">
+                  <div className={`h-full bg-primary-400 transition-all ${step > (n as 1 | 2 | 3) ? 'w-full' : 'w-0'}`} />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
@@ -297,11 +331,67 @@ export default function RegisterPage() {
               <button type="button" onClick={() => setStep(1)} className="btn-outline flex-1">이전</button>
               <button
                 type="button"
-                onClick={onFinalSubmit}
+                onClick={() => { setError(''); setStep(3) }}
                 disabled={!emailVerified}
                 className="btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                가입하기
+                다음
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Step 3: 재학증명서 제출 ──────────────────────────────── */}
+      {step === 3 && (
+        <>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">재학증명서 제출</h2>
+          <p className="text-sm text-gray-400 mb-6">재학 여부 확인을 위해 재학증명서를 첨부해주세요. 관리자 승인 후 이용할 수 있습니다.</p>
+
+          <div className="space-y-4">
+            <label
+              htmlFor="enrollment-doc"
+              className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-2xl py-10 px-4 cursor-pointer transition-colors ${
+                enrollmentFile ? 'border-primary-400 bg-primary-50' : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+              }`}
+            >
+              {enrollmentFile ? (
+                <>
+                  <svg className="w-8 h-8 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p className="text-sm font-semibold text-primary-600 break-all text-center">{enrollmentFile.name}</p>
+                  <p className="text-xs text-gray-400">다시 선택하려면 클릭</p>
+                </>
+              ) : (
+                <>
+                  <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <p className="text-sm font-medium text-gray-500">파일 선택 (클릭)</p>
+                  <p className="text-xs text-gray-400">PDF 또는 이미지 · 최대 10MB</p>
+                </>
+              )}
+              <input
+                id="enrollment-doc"
+                type="file"
+                accept="application/pdf,image/jpeg,image/png"
+                className="hidden"
+                onChange={handleSelectDoc}
+              />
+            </label>
+            {docError && <p className="text-xs text-red-500">{docError}</p>}
+            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={() => setStep(2)} className="btn-outline flex-1" disabled={submitting}>이전</button>
+              <button
+                type="button"
+                onClick={onFinalSubmit}
+                disabled={!enrollmentFile || submitting}
+                className="btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {submitting ? '제출 중...' : '가입 신청'}
               </button>
             </div>
           </div>
@@ -311,11 +401,14 @@ export default function RegisterPage() {
       {/* ── 완료 ─────────────────────────────────────────────── */}
       {step === 'done' && (
         <div className="flex flex-col items-center gap-4 py-8">
-          <span className="text-6xl">🎉</span>
-          <h2 className="text-xl font-bold text-gray-900">가입이 완료되었습니다!</h2>
-          <p className="text-sm text-gray-400 text-center">썸전에 오신 것을 환영합니다.<br />잠시 후 로그인 페이지로 이동합니다.</p>
+          <span className="text-6xl">📨</span>
+          <h2 className="text-xl font-bold text-gray-900">가입 신청이 접수되었습니다!</h2>
+          <p className="text-sm text-gray-400 text-center">
+            제출하신 재학증명서를 관리자가 확인 중입니다.<br />
+            승인이 완료되면 로그인하여 이용할 수 있습니다.
+          </p>
           <button type="button" onClick={() => navigate('/login', { replace: true })} className="btn-primary w-full mt-2">
-            로그인하기
+            로그인 화면으로
           </button>
         </div>
       )}

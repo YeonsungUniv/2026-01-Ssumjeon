@@ -13,15 +13,49 @@ const baseTabs: Tab[] = [
   { to: '/profile',        label: '나',    icon: PersonIcon },
 ]
 
-const adminTab: Tab = { to: '/suggestions', label: '건의사항', icon: SuggestionIcon }
+const adminTabs: Tab[] = [
+  { to: '/admin/users',  label: '사용자 관리', icon: UsersIcon },
+  { to: '/admin/inbox',  label: '가입 수신함', icon: InboxIcon },
+  { to: '/suggestions',  label: '건의사항',   icon: SuggestionIcon },
+]
 
 export default function TabBar({ collapsed = false, onToggle }: { collapsed?: boolean; onToggle?: () => void }) {
   const { rooms } = useChatStore()
   const { user } = useAuthStore()
   const { pendingIncomingCount } = useMatchRequestStore()
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
+  const isAdmin = user?.isAdmin === true
 
-  const tabs = user?.isAdmin ? [...baseTabs, adminTab] : baseTabs
+  const renderTab = ({ to, label, icon: Icon, badge }: Tab) => {
+    const badgeCount = badge === 'chat' ? totalUnread : badge === 'request' ? pendingIncomingCount : 0
+    return (
+      <NavLink
+        key={to}
+        to={to}
+        end={to === '/'}
+        title={collapsed ? label : undefined}
+        className={({ isActive }) =>
+          `flex items-center gap-3 rounded-2xl text-sm font-medium transition-colors ${
+            collapsed ? 'w-11 h-11 justify-center' : 'px-4 py-3'
+          } ${
+            isActive
+              ? 'bg-primary-50 text-primary-600'
+              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+          }`
+        }
+      >
+        <div className="relative shrink-0">
+          <Icon className="w-5 h-5" />
+          {badgeCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </span>
+          )}
+        </div>
+        {!collapsed && label}
+      </NavLink>
+    )
+  }
 
   return (
     <nav className={`fixed left-0 top-0 h-full bg-white border-r border-gray-100 flex flex-col z-50 shadow-sm transition-[width] duration-200 ${collapsed ? 'w-16' : 'w-52'}`}>
@@ -44,37 +78,18 @@ export default function TabBar({ collapsed = false, onToggle }: { collapsed?: bo
         </button>
       </div>
 
-      <div className={`flex-1 flex flex-col gap-1 py-4 ${collapsed ? 'px-2 items-center' : 'px-3'}`}>
-        {tabs.map(({ to, label, icon: Icon, badge }) => {
-          const badgeCount = badge === 'chat' ? totalUnread : badge === 'request' ? pendingIncomingCount : 0
-          return (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              title={collapsed ? label : undefined}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-2xl text-sm font-medium transition-colors ${
-                  collapsed ? 'w-11 h-11 justify-center' : 'px-4 py-3'
-                } ${
-                  isActive
-                    ? 'bg-primary-50 text-primary-600'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
-                }`
-              }
-            >
-              <div className="relative shrink-0">
-                <Icon className="w-5 h-5" />
-                {badgeCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
-                    {badgeCount > 99 ? '99+' : badgeCount}
-                  </span>
-                )}
-              </div>
-              {!collapsed && label}
-            </NavLink>
-          )
-        })}
+      <div className={`flex-1 flex flex-col gap-1 py-4 overflow-y-auto ${collapsed ? 'px-2 items-center' : 'px-3'}`}>
+        {baseTabs.map(renderTab)}
+
+        {/* 관리바 (관리자 전용) */}
+        {isAdmin && (
+          <>
+            <div className={`mt-3 mb-1 ${collapsed ? 'w-8 border-t border-gray-100' : 'px-4'}`}>
+              {!collapsed && <p className="text-[11px] font-bold text-gray-300 tracking-wider uppercase">관리</p>}
+            </div>
+            {adminTabs.map(renderTab)}
+          </>
+        )}
       </div>
     </nav>
   )
@@ -116,6 +131,22 @@ function PersonIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  )
+}
+
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  )
+}
+
+function InboxIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
     </svg>
   )
 }

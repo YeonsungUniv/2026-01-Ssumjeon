@@ -173,9 +173,11 @@ export const authService = {
     gender: 'male' | 'female'
     department: string
     email: string
+    enrollmentDoc: string
   }) {
     if (!payload.username || payload.username.trim().length === 0) throw new Error('아이디를 입력해주세요.')
     if (!/^[a-zA-Z0-9_]{4,20}$/.test(payload.username)) throw new Error('아이디는 4~20자의 영문, 숫자, 밑줄(_)만 사용 가능합니다.')
+    if (!payload.enrollmentDoc) throw new Error('재학증명서를 업로드해주세요.')
 
     // 이메일 인증 완료 여부 확인 (10분 내 verified된 코드)
     const verified = await query(
@@ -212,11 +214,12 @@ export const authService = {
     const passwordHash = await bcrypt.hash(payload.password, 12)
     const id = uuidv4()
 
+    // 재학증명서 제출 → 관리자 승인 대기(pending) 상태로 가입
     const result = await query<UserRow>(
-      `INSERT INTO users (id, username, email, password_hash, nickname, student_id, gender, department, grade, interests, status, is_verified)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'approved', true)
+      `INSERT INTO users (id, username, email, password_hash, nickname, student_id, gender, department, grade, interests, enrollment_doc, status, is_verified)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', true)
        RETURNING *`,
-      [id, payload.username, payload.email, passwordHash, nickname, studentId, payload.gender, payload.department, grade, []],
+      [id, payload.username, payload.email, passwordHash, nickname, studentId, payload.gender, payload.department, grade, [], payload.enrollmentDoc],
     )
 
     return { user: toUserDto(result.rows[0]) }

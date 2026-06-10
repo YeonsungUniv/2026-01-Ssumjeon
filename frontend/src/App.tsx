@@ -20,6 +20,8 @@ import ProfilePage from '@/pages/ProfilePage'
 import ProfileEditPage from '@/pages/ProfileEditPage'
 import SupportPage from '@/pages/SupportPage'
 import SuggestionsAdminPage from '@/pages/SuggestionsAdminPage'
+import AdminUsersPage from '@/pages/AdminUsersPage'
+import AdminInboxPage from '@/pages/AdminInboxPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -99,6 +101,8 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<ProfileEditPage />} />
           <Route path="/support" element={<SupportPage />} />
+          <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
+          <Route path="/admin/inbox" element={<AdminRoute><AdminInboxPage /></AdminRoute>} />
           <Route path="/suggestions" element={<AdminRoute><SuggestionsAdminPage /></AdminRoute>} />
         </Route>
 
