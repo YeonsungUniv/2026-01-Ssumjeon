@@ -425,7 +425,7 @@ export default function ChatRoomPage() {
                         <span className="text-[10px] text-primary-400 font-bold leading-none">1</span>
                       )}
                       <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">
-                        {dayjs(msg.createdAt).format('HH:mm')}
+                        {dayjs(msg.createdAt).format('A h:mm')}
                       </span>
                     </div>
                   </div>
