@@ -68,6 +68,13 @@ async function notifyAppointment(roomId: string, actorId: string, marker: string
   }
 }
 
+// 과거 일시 여부 (서버 TZ 기준, 2분 여유). 명백한 과거면 true
+function isPastDateTime(date: string, time: string): boolean {
+  const dt = new Date(`${date}T${(time || '23:59')}:00`)
+  if (isNaN(dt.getTime())) return false
+  return dt.getTime() < Date.now() - 2 * 60 * 1000
+}
+
 export const appointmentController = {
   async propose(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -75,6 +82,8 @@ export const appointmentController = {
       const { date, time, location } = req.body
 
       if (!date || !time || !location?.trim()) return fail(res, '날짜, 시간, 장소를 모두 입력해주세요.')
+      if (location.trim().length > 100) return fail(res, '장소는 100자 이하로 입력해주세요.')
+      if (isPastDateTime(date, time)) return fail(res, '지난 날짜·시간으로는 약속을 잡을 수 없습니다.')
 
       const access = await query('SELECT 1 FROM chat_room_members WHERE chat_room_id = $1 AND user_id = $2', [roomId, req.user!.userId])
       if (access.rows.length === 0) return fail(res, '권한이 없습니다.', 403)
@@ -145,6 +154,8 @@ export const appointmentController = {
       const { id } = req.params
       const { date, time, location } = req.body
       if (!date || !time || !location?.trim()) return fail(res, '날짜, 시간, 장소를 모두 입력해주세요.')
+      if (location.trim().length > 100) return fail(res, '장소는 100자 이하로 입력해주세요.')
+      if (isPastDateTime(date, time)) return fail(res, '지난 날짜·시간으로는 약속을 잡을 수 없습니다.')
 
       const appt = await query<AppointmentRow & { proposer_nickname: string }>(
         `SELECT a.*, u.nickname AS proposer_nickname FROM appointments a

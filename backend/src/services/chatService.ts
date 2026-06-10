@@ -153,6 +153,14 @@ export const chatService = {
     )
     if (partnerLeft.rows.length > 0) throw new Error('상대방이 채팅방을 나가 메시지를 보낼 수 없습니다.')
 
+    // 텍스트 메시지 검증 (이미지 URL은 제외)
+    const isUrl = /^https?:\/\//.test(content) || content.includes('amazonaws.com') || content.startsWith('/uploads/')
+    if (!isUrl) {
+      const text = (content ?? '').trim()
+      if (text.length === 0) throw new Error('메시지를 입력해주세요.')
+      if (text.length > 2000) throw new Error('메시지는 2000자 이하로 입력해주세요.')
+    }
+
     const id = uuidv4()
     const result = await query<MessageRow & { sender_nickname: string; sender_profile_image: string | null }>(
       `INSERT INTO messages (id, room_id, sender_id, content)

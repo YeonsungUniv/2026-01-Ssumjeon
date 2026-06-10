@@ -4,10 +4,12 @@ import http from 'http'
 import { Server as SocketServer } from 'socket.io'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import helmet from 'helmet'
 import cron from 'node-cron'
 import { env } from './config/env'
 import { pool, query } from './config/db'
 import apiRouter from './routes'
+import { apiLimiter } from './middlewares/rateLimit'
 import { errorHandler } from './middlewares/errorHandler'
 import { setupSocket } from './services/socketService'
 import { seedTestUsers } from './seeds/testUsers'
@@ -26,12 +28,16 @@ const io = new SocketServer(httpServer, {
 setupSocket(io)
 
 // ── Express 미들웨어 ────────────────────────────────────────────
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
 app.use(cors({ origin: corsOrigins, credentials: true }))
-app.use(express.json())
+app.use(express.json({ limit: '1mb' }))
 app.use(cookieParser())
 
-// ── API 라우터 ──────────────────────────────────────────────────
-app.use('/api', apiRouter)
+// 신뢰 프록시(배포 환경 X-Forwarded-For) — rate limit IP 식별
+app.set('trust proxy', 1)
+
+// ── API 라우터 (전체 기본 레이트리밋) ───────────────────────────
+app.use('/api', apiLimiter, apiRouter)
 
 // ── Health Check ────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok' }))

@@ -33,6 +33,15 @@ export const userController = {
 
   async getUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
+      // 차단(양방향) 관계면 프로필 비공개
+      const blocked = await query(
+        `SELECT 1 FROM user_blocks
+         WHERE (blocker_id = $1 AND blocked_id = $2)
+            OR (blocker_id = $2 AND blocked_id = $1) LIMIT 1`,
+        [req.user!.userId, req.params.userId],
+      )
+      if (blocked.rows.length > 0) return fail(res, '사용자를 찾을 수 없습니다.', 404)
+
       const result = await query<UserRow>('SELECT * FROM users WHERE id = $1', [req.params.userId])
       const u = result.rows[0]
       if (!u) return fail(res, '사용자를 찾을 수 없습니다.', 404)

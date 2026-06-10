@@ -65,6 +65,21 @@ async function generateUniqueNickname(): Promise<string> {
   }
 }
 
+// 같은 이메일에 직전 발송 후 60초 이내 재발송 차단 (메일 스팸 방지)
+async function assertSendCooldown(email: string) {
+  const recent = await query<{ created_at: Date }>(
+    `SELECT created_at FROM email_verification_codes
+     WHERE email = $1 AND created_at > NOW() - INTERVAL '60 seconds'
+     ORDER BY created_at DESC LIMIT 1`,
+    [email],
+  )
+  if (recent.rows.length > 0) {
+    const elapsed = (Date.now() - recent.rows[0].created_at.getTime()) / 1000
+    const wait = Math.max(1, Math.ceil(60 - elapsed))
+    throw new Error(`잠시 후 다시 시도해주세요. (${wait}초)`)
+  }
+}
+
 // 인증 코드를 검증하고 사용 처리(소비)
 async function consumeVerificationCode(email: string, code: string) {
   const result = await query<{ id: string }>(
@@ -85,6 +100,8 @@ export const authService = {
 
     const dup = await query('SELECT id FROM users WHERE email = $1', [email])
     if (dup.rows.length > 0) throw new Error('이미 가입된 이메일입니다.')
+
+    await assertSendCooldown(email)
 
     const code = String(Math.floor(100000 + Math.random() * 900000))
     await query(
@@ -118,6 +135,8 @@ export const authService = {
 
     const exist = await query('SELECT id FROM users WHERE LOWER(email) = $1', [email])
     if (exist.rows.length === 0) throw new Error('해당 이메일로 가입된 계정이 없습니다.')
+
+    await assertSendCooldown(email)
 
     const code = String(Math.floor(100000 + Math.random() * 900000))
     await query(
