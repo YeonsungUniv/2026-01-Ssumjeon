@@ -47,6 +47,7 @@ async function buildRoomDto(room: GroupRoomRow) {
       nickname: m.nickname,
       department: m.department,
       grade: m.grade,
+      studentId: m.student_id ?? undefined,
       profileImage: m.profile_image,
       isLeader: m.is_leader,
     })),

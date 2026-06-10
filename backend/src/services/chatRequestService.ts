@@ -25,6 +25,7 @@ function toBrowseCard(row: BrowseRow) {
     nickname: row.nickname,
     department: row.department,
     grade: row.grade,
+    studentId: row.student_id ?? undefined,
     gender: row.gender,
     profileImage: row.profile_image ?? undefined,
     bio: row.bio ?? undefined,
@@ -40,7 +41,7 @@ export const chatRequestService = {
   async browseUsers(
     userId: string,
     _userGender: 'male' | 'female',
-    filters?: { departments?: string[]; grades?: number[]; gender?: 'male' | 'female' },
+    filters?: { departments?: string[]; entryYears?: number[]; gender?: 'male' | 'female' },
     page = 1,
     limit = 6,
   ) {
@@ -59,9 +60,10 @@ export const chatRequestService = {
       params.push(filters.departments)
       idx++
     }
-    if (filters?.grades?.length) {
-      extra.push(`u.grade = ANY($${idx}::int[])`)
-      params.push(filters.grades)
+    if (filters?.entryYears?.length) {
+      // 학번 앞 4자리(입학년도)로 필터
+      extra.push(`(u.student_id ~ '^\\d{4}' AND substring(u.student_id from 1 for 4)::int = ANY($${idx}::int[]))`)
+      params.push(filters.entryYears)
       idx++
     }
 
@@ -171,6 +173,7 @@ export const chatRequestService = {
       nickname: row.nickname,
       department: row.department,
       grade: row.grade,
+      studentId: row.student_id ?? undefined,
       gender: row.gender,
       profileImage: row.profile_image ?? undefined,
       bio: row.bio ?? undefined,
@@ -196,6 +199,7 @@ export const chatRequestService = {
       nickname: row.nickname,
       department: row.department,
       grade: row.grade,
+      studentId: row.student_id ?? undefined,
       gender: row.gender,
       profileImage: row.profile_image ?? undefined,
     }))

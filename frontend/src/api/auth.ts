@@ -12,7 +12,6 @@ export interface RegisterPayload {
   nickname?: string
   gender: 'male' | 'female'
   department: string
-  grade: number
   email: string
 }
 

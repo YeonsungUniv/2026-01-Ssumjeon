@@ -51,6 +51,7 @@ export const userController = {
         nickname: u.nickname,
         department: u.department,
         grade: u.grade,
+        studentId: u.student_id,
         gender: u.gender,
         profileImage: u.profile_image,
         bio: u.bio,
@@ -205,7 +206,8 @@ export const userController = {
 
   async updateMe(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { nickname, bio, mbti, interests, department, grade } = req.body
+      // 학과·학년·학번은 수정 불가 (가입 시 확정)
+      const { nickname, bio, mbti, interests } = req.body
 
       if (nickname !== undefined) {
         if (typeof nickname !== 'string' || nickname.trim().length === 0)
@@ -223,24 +225,16 @@ export const userController = {
         if (dupCheck.rows.length > 0) return fail(res, '이미 사용 중인 닉네임입니다.')
       }
 
-      if (grade !== undefined) {
-        const gradeNum = Number(grade)
-        if (!Number.isInteger(gradeNum) || gradeNum < 1 || gradeNum > 4)
-          return fail(res, '학년은 1~4 사이여야 합니다.')
-      }
-
       const result = await query<UserRow>(
         `UPDATE users SET
            nickname = COALESCE($1, nickname),
            bio = COALESCE($2, bio),
            mbti = COALESCE($3, mbti),
            interests = COALESCE($4, interests),
-           department = COALESCE($5, department),
-           grade = COALESCE($6, grade),
            updated_at = NOW()
-         WHERE id = $7
+         WHERE id = $5
          RETURNING *`,
-        [nickname, bio, mbti, interests, department || null, grade ? Number(grade) : null, req.user!.userId],
+        [nickname, bio, mbti, interests, req.user!.userId],
       )
 
       const u = result.rows[0]

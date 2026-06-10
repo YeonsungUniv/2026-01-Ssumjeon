@@ -3,7 +3,7 @@ import type { ApiResponse, MatchCard, MatchResult } from '@/types'
 
 export interface MatchFilters {
   departments?: string[]
-  grades?: number[]
+  entryYears?: number[]
   gender?: 'male' | 'female'
 }
 
@@ -11,7 +11,7 @@ export const matchingApi = {
   getCards: (filters?: MatchFilters) => {
     const params: Record<string, string> = {}
     if (filters?.departments?.length) params.departments = filters.departments.join(',')
-    if (filters?.grades?.length) params.grades = filters.grades.join(',')
+    if (filters?.entryYears?.length) params.entryYears = filters.entryYears.join(',')
     if (filters?.gender) params.gender = filters.gender
     return client.get<ApiResponse<MatchCard[]>>('/matching/cards', params)
   },

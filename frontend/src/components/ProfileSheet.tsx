@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { userApi, type UserProfile } from '@/api/user'
 import { chatApi } from '@/api/chat'
+import { cohortLabel } from '@/constants'
 import { getSocket } from '@/hooks/useSocket'
 
 interface Props {
@@ -72,7 +73,7 @@ export default function ProfileSheet({ userId, onClose, onBlock, onUnblock }: Pr
               </div>
               <div>
                 <p className="text-xl font-bold text-gray-900">{profile.nickname}</p>
-                <p className="text-sm text-gray-500">{profile.department} · {profile.grade}학년</p>
+                <p className="text-sm text-gray-500">{profile.department}{cohortLabel(profile.studentId) ? ` · ${cohortLabel(profile.studentId)}` : ''}</p>
               </div>
             </div>
 

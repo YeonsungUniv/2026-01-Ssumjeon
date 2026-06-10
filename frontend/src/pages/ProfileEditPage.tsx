@@ -4,15 +4,13 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import client from '@/api/client'
 import type { ApiResponse, User } from '@/types'
-import { MBTI_LIST, DEPARTMENTS, GRADES } from '@/constants'
+import { MBTI_LIST, cohortLabel } from '@/constants'
 
 interface EditPayload {
   nickname: string
   bio: string
   mbti: string
   interests: string
-  department: string
-  grade: string
 }
 
 export default function ProfileEditPage() {
@@ -44,8 +42,6 @@ export default function ProfileEditPage() {
       bio: user?.bio ?? '',
       mbti: user?.mbti ?? '',
       interests: user?.interests.join(', ') ?? '',
-      department: user?.department ?? '',
-      grade: user?.grade ? String(user.grade) : '',
     },
   })
 
@@ -81,8 +77,6 @@ export default function ProfileEditPage() {
       bio: data.bio,
       mbti: data.mbti || undefined,
       interests: data.interests.split(',').map((s) => s.trim()).filter(Boolean),
-      department: data.department || undefined,
-      grade: data.grade ? Number(data.grade) : undefined,
     })
     updateUser(res.data)
     navigate('/profile')
@@ -137,9 +131,9 @@ export default function ProfileEditPage() {
 
           <div className="text-center">
             <p className="text-lg font-bold text-gray-800">{user?.nickname}</p>
-            {(user?.department || user?.grade) && (
+            {(user?.department || cohortLabel(user?.studentId)) && (
               <p className="text-sm text-primary-500 mt-0.5">
-                {user?.department}{user?.grade ? ` · ${user.grade}학년` : ''}
+                {user?.department}{cohortLabel(user?.studentId) ? ` · ${cohortLabel(user?.studentId)}` : ''}
               </p>
             )}
             {user?.mbti && (
@@ -194,22 +188,21 @@ export default function ProfileEditPage() {
                 </select>
               </div>
 
-              {/* 학과 */}
+              {/* 학과 (수정 불가) */}
               <div>
                 <label className="text-sm font-medium text-gray-600 mb-1.5 block">학과</label>
-                <select className="input-field" {...register('department')}>
-                  <option value="">선택 안 함</option>
-                  {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
-                </select>
+                <div className="input-field bg-gray-50 text-gray-500 cursor-not-allowed select-none">
+                  {user?.department || '-'}
+                </div>
               </div>
 
-              {/* 학년 */}
+              {/* 학번 (수정 불가) */}
               <div>
-                <label className="text-sm font-medium text-gray-600 mb-1.5 block">학년</label>
-                <select className="input-field" {...register('grade')}>
-                  <option value="">선택 안 함</option>
-                  {GRADES.map((g) => <option key={g} value={g}>{g}학년</option>)}
-                </select>
+                <label className="text-sm font-medium text-gray-600 mb-1.5 block">학번</label>
+                <div className="input-field bg-gray-50 text-gray-500 cursor-not-allowed select-none">
+                  {user?.studentId || '-'}
+                  {cohortLabel(user?.studentId) && <span className="ml-2 text-xs text-gray-400">({cohortLabel(user?.studentId)})</span>}
+                </div>
               </div>
             </div>
 

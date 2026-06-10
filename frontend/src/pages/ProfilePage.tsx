@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/api/auth'
 import { chatApi } from '@/api/chat'
 import { userApi } from '@/api/user'
+import { cohortLabel } from '@/constants'
 import client from '@/api/client'
 import type { ApiResponse } from '@/types'
 
@@ -139,9 +140,9 @@ export default function ProfilePage() {
 
             <div className="text-center">
               <h3 className="text-2xl font-bold text-gray-900">{user.nickname}</h3>
-              {(user.department || user.grade) && (
+              {(user.department || cohortLabel(user.studentId)) && (
                 <p className="text-sm text-primary-500 mt-1">
-                  {user.department}{user.grade ? ` · ${user.grade}학년` : ''}
+                  {user.department}{cohortLabel(user.studentId) ? ` · ${cohortLabel(user.studentId)}` : ''}
                 </p>
               )}
               {user.mbti && (

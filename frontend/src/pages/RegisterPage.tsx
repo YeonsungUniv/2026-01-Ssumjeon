@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authApi } from '@/api/auth'
-import { GRADES, DEPARTMENT_MAX_GRADE } from '@/constants'
 import DepartmentSelect from '@/components/DepartmentSelect'
 
 const SCHOOL_DOMAIN = '@yeonsung.ac.kr'
@@ -21,7 +20,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [step1Data, setStep1Data] = useState<Step1Form | null>(null)
   const [department, setDepartment] = useState('')
-  const [grade, setGrade] = useState<number | null>(null)
 
   // 이메일 인증 상태 (emailLocal = @ 앞 부분만)
   const [emailLocal, setEmailLocal] = useState('')
@@ -36,14 +34,6 @@ export default function RegisterPage() {
 
   const { register, handleSubmit, watch, formState: { errors, isSubmitting }, setError: setFieldError } = useForm<Step1Form>()
 
-  // 학과 변경 시 유효하지 않은 학년 자동 해제
-  useEffect(() => {
-    if (grade && department) {
-      const max = DEPARTMENT_MAX_GRADE[department] ?? 4
-      if (grade > max) setGrade(null)
-    }
-  }, [department, grade])
-
   // 재전송 카운트다운
   useEffect(() => {
     if (countdown <= 0) return
@@ -55,7 +45,6 @@ export default function RegisterPage() {
 
   const onStep1Submit = async (data: Step1Form) => {
     if (!department) { setError('학과를 선택해주세요.'); return }
-    if (!grade) { setError('학년을 선택해주세요.'); return }
     try {
       const res = await authApi.checkUsername(data.username)
       if (!res.data.available) {
@@ -96,7 +85,7 @@ export default function RegisterPage() {
   }
 
   const onFinalSubmit = async () => {
-    if (!step1Data || !department || !grade) return
+    if (!step1Data || !department) return
     if (!emailVerified) { setEmailError('이메일 인증을 완료해주세요.'); return }
     setError('')
     try {
@@ -104,7 +93,6 @@ export default function RegisterPage() {
         ...step1Data,
         nickname: step1Data.nickname.trim() || undefined,
         department,
-        grade,
         email: fullEmail,
       })
       setStep('done')
@@ -214,25 +202,7 @@ export default function RegisterPage() {
                 {department && <span className="ml-2 text-primary-500 font-semibold">{department}</span>}
               </p>
               <DepartmentSelect value={department} onChange={setDepartment} />
-            </div>
-
-            {/* 학년 */}
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-2">학년 <span className="text-red-400">*</span></p>
-              <div className="flex gap-2">
-                {GRADES.filter((g) => g <= (DEPARTMENT_MAX_GRADE[department] ?? 4)).map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => setGrade(g)}
-                    className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      grade === g ? 'bg-primary-500 text-white' : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-primary-300'
-                    }`}
-                  >
-                    {g}학년
-                  </button>
-                ))}
-              </div>
+              <p className="text-xs text-gray-400 mt-1.5">학번(입학년도)은 학교 이메일로 자동 인식됩니다.</p>
             </div>
 
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}

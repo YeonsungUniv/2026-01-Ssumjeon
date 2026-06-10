@@ -44,13 +44,14 @@ export interface RoomMember {
   nickname: string
   department: string
   grade: number
+  studentId?: string
   profileImage?: string
   isLeader: boolean
 }
 
 export interface RoomInfo {
   type: 'individual' | 'group'
-  partner?: { userId: string; nickname: string; department: string; grade: number; profileImage?: string; bio?: string; mbti?: string; interests: string[] }
+  partner?: { userId: string; nickname: string; department: string; grade: number; studentId?: string; profileImage?: string; bio?: string; mbti?: string; interests: string[] }
   groupRoomId?: string
   name?: string
   isLeader?: boolean

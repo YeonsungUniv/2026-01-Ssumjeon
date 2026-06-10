@@ -172,7 +172,6 @@ export const authService = {
     nickname?: string
     gender: 'male' | 'female'
     department: string
-    grade: number
     email: string
   }) {
     if (!payload.username || payload.username.trim().length === 0) throw new Error('아이디를 입력해주세요.')
@@ -203,14 +202,21 @@ export const authService = {
       nickname = await generateUniqueNickname()
     }
 
+    // 학번 = 학교 이메일 아이디. 학번에서 입학년도→학년(DB 호환용)을 도출
+    const studentId = (payload.email.split('@')[0] ?? '').trim()
+    const entryYear = /^\d{4}/.test(studentId) ? parseInt(studentId.slice(0, 4), 10) : NaN
+    const grade = Number.isFinite(entryYear)
+      ? Math.min(Math.max(new Date().getFullYear() - entryYear + 1, 1), 4)
+      : 1
+
     const passwordHash = await bcrypt.hash(payload.password, 12)
     const id = uuidv4()
 
     const result = await query<UserRow>(
-      `INSERT INTO users (id, username, email, password_hash, nickname, gender, department, grade, interests, status, is_verified)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'approved', true)
+      `INSERT INTO users (id, username, email, password_hash, nickname, student_id, gender, department, grade, interests, status, is_verified)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'approved', true)
        RETURNING *`,
-      [id, payload.username, payload.email, passwordHash, nickname, payload.gender, payload.department, payload.grade, []],
+      [id, payload.username, payload.email, passwordHash, nickname, studentId, payload.gender, payload.department, grade, []],
     )
 
     return { user: toUserDto(result.rows[0]) }

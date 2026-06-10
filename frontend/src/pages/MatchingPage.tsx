@@ -6,7 +6,7 @@ import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
 import { useMatchRequestStore } from '@/store/matchRequestStore'
 import { useSocketInstance } from '@/hooks/useSocket'
-import { GRADES, DEPARTMENT_MAX_GRADE } from '@/constants'
+import { ENTRY_YEARS, yearLabel, cohortLabel } from '@/constants'
 import DepartmentSelect from '@/components/DepartmentSelect'
 import type { BrowseUser, IncomingRequest, OutgoingRequest } from '@/types'
 
@@ -46,14 +46,14 @@ function FilterPanel({
   filters: MatchFilters
   onChange: (f: MatchFilters) => void
 }) {
-  const hasFilters = !!(filters.departments?.length || filters.grades?.length || filters.gender)
+  const hasFilters = !!(filters.departments?.length || filters.entryYears?.length || filters.gender)
 
-  const toggleGrade = (g: number) =>
+  const toggleYear = (y: number) =>
     onChange({
       ...filters,
-      grades: (filters.grades ?? []).includes(g)
-        ? (filters.grades ?? []).filter((x) => x !== g)
-        : [...(filters.grades ?? []), g],
+      entryYears: (filters.entryYears ?? []).includes(y)
+        ? (filters.entryYears ?? []).filter((x) => x !== y)
+        : [...(filters.entryYears ?? []), y],
     })
 
   const toggleGender = (g: 'male' | 'female') =>
@@ -65,7 +65,7 @@ function FilterPanel({
         <p className="text-base font-bold text-gray-700">매칭 조건</p>
         {hasFilters && (
           <button
-            onClick={() => onChange({ departments: [], grades: [], gender: undefined })}
+            onClick={() => onChange({ departments: [], entryYears: [], gender: undefined })}
             className="text-xs text-gray-400 hover:text-red-400 transition-colors"
           >
             초기화
@@ -93,35 +93,22 @@ function FilterPanel({
       </div>
 
       <div>
-        <p className="text-sm font-medium text-gray-500 mb-2">학년</p>
+        <p className="text-sm font-medium text-gray-500 mb-2">학번</p>
         <div className="flex gap-2 flex-wrap">
-          {GRADES.filter((g) =>
-            !filters.departments?.length ||
-            filters.departments.some((d) => g <= (DEPARTMENT_MAX_GRADE[d] ?? 4))
-          ).map((g) => (
+          {ENTRY_YEARS.map((y) => (
             <button
-              key={g}
-              onClick={() => toggleGrade(g)}
+              key={y}
+              onClick={() => toggleYear(y)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                filters.grades?.includes(g)
+                filters.entryYears?.includes(y)
                   ? 'bg-primary-500 text-white'
                   : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-primary-300'
               }`}
             >
-              {g}학년
+              {yearLabel(y)}
             </button>
           ))}
         </div>
-        {(filters.grades ?? []).map((g) => {
-          const excluded = (filters.departments ?? []).filter((d) => g > (DEPARTMENT_MAX_GRADE[d] ?? 4))
-          if (!excluded.length) return null
-          return (
-            <p key={g} className="text-xs text-amber-600 mt-1 flex items-start gap-1">
-              <span className="shrink-0">⚠️</span>
-              <span><strong>{g}학년</strong> 선택 시 <strong>{excluded.join(', ')}</strong>은(는) 매칭에서 제외됩니다</span>
-            </p>
-          )
-        })}
       </div>
 
       <div>
@@ -135,11 +122,7 @@ function FilterPanel({
         <DepartmentSelect
           multiple
           value={filters.departments ?? []}
-          onChange={(deps) => {
-            const maxGrade = deps.length ? Math.max(...deps.map((d) => DEPARTMENT_MAX_GRADE[d] ?? 4)) : 4
-            const validGrades = (filters.grades ?? []).filter((g) => g <= maxGrade)
-            onChange({ ...filters, departments: deps, grades: validGrades })
-          }}
+          onChange={(deps) => onChange({ ...filters, departments: deps })}
         />
       </div>
     </div>
@@ -209,7 +192,7 @@ function RealtimeSection({ filters, onFilterChange }: { filters: MatchFilters; o
   }
 
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-  const hasFilters = !!(filters.departments?.length || filters.grades?.length || filters.gender)
+  const hasFilters = !!(filters.departments?.length || filters.entryYears?.length || filters.gender)
 
   if (phase === 'searching') {
     return (
@@ -252,7 +235,7 @@ function RealtimeSection({ filters, onFilterChange }: { filters: MatchFilters; o
         {hasFilters ? (
           <div className="flex flex-wrap gap-2 justify-center max-w-xl">
             {filters.gender && <span className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">{filters.gender === 'male' ? '남성' : '여성'}</span>}
-            {filters.grades?.map((g) => <span key={g} className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">{g}학년</span>)}
+            {filters.entryYears?.map((y) => <span key={y} className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">{yearLabel(y)}</span>)}
             {filters.departments?.map((d) => <span key={d} className="bg-primary-50 text-primary-600 text-sm px-3 py-1.5 rounded-full">{d}</span>)}
           </div>
         ) : (
@@ -276,7 +259,7 @@ function RealtimeSection({ filters, onFilterChange }: { filters: MatchFilters; o
         {hasFilters && (
           <div className="flex flex-wrap gap-2 justify-center px-2">
             {filters.gender && <span className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">{filters.gender === 'male' ? '남성' : '여성'}</span>}
-            {filters.grades?.map((g) => <span key={g} className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">{g}학년</span>)}
+            {filters.entryYears?.map((y) => <span key={y} className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">{yearLabel(y)}</span>)}
             {filters.departments?.map((d) => <span key={d} className="bg-primary-50 text-primary-600 text-xs font-medium px-3 py-1.5 rounded-full">{d}</span>)}
           </div>
         )}
@@ -322,7 +305,7 @@ function BrowseUserCard({
               <span className="text-xs bg-secondary-50 text-secondary-600 px-2 py-0.5 rounded-full font-semibold">{user.mbti}</span>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">{user.department} · {user.grade}학년</p>
+          <p className="text-xs text-gray-400 mt-0.5">{user.department}{cohortLabel(user.studentId) ? ` · ${cohortLabel(user.studentId)}` : ''}</p>
         </div>
       </div>
 
@@ -779,7 +762,7 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
                     <p className="font-bold text-gray-800">{req.nickname}</p>
                     {req.mbti && <span className="text-xs bg-secondary-50 text-secondary-600 px-2 py-0.5 rounded-full">{req.mbti}</span>}
                   </div>
-                  <p className="text-xs text-gray-400">{req.department} · {req.grade}학년</p>
+                  <p className="text-xs text-gray-400">{req.department}{cohortLabel(req.studentId) ? ` · ${cohortLabel(req.studentId)}` : ''}</p>
                   {req.bio && <p className="text-sm text-gray-500 mt-1 line-clamp-1">{req.bio}</p>}
                   {req.interests.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1.5">
@@ -840,7 +823,7 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
                 <UserAvatar gender={req.gender} profileImage={req.profileImage} size="md" />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-800">{req.nickname}</p>
-                  <p className="text-xs text-gray-400">{req.department} · {req.grade}학년</p>
+                  <p className="text-xs text-gray-400">{req.department}{cohortLabel(req.studentId) ? ` · ${cohortLabel(req.studentId)}` : ''}</p>
                 </div>
                 <div className="shrink-0 flex flex-col items-end gap-2">
                   {req.status === 'pending' && (
@@ -894,7 +877,7 @@ function BrowseSection({ filters, onFilterChange }: { filters: MatchFilters; onF
 export default function MatchingPage() {
   const [pageMode, setPageMode] = useState<PageMode>('realtime')
   const [browseKey, setBrowseKey] = useState(0)
-  const [filters, setFilters] = useState<MatchFilters>({ departments: [], grades: [], gender: undefined })
+  const [filters, setFilters] = useState<MatchFilters>({ departments: [], entryYears: [], gender: undefined })
   const { pendingIncomingCount } = useMatchRequestStore()
 
   const handleBrowseClick = () => {

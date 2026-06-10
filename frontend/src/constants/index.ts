@@ -26,6 +26,23 @@ export const MBTI_LIST = [
 
 export const GRADES = [1, 2, 3, 4]
 
+// 매칭 필터용 입학년도(학번) 코호트 — 최근 6개 학번
+export const ENTRY_YEARS: number[] = (() => {
+  const y = new Date().getFullYear()
+  return Array.from({ length: 6 }, (_, i) => y - i) // 올해 ~ 5년 전
+})()
+
+// 학번(student_id 또는 입학년도)에서 'NN학번' 라벨 생성. 없으면 null
+export function cohortLabel(studentId?: string | null): string | null {
+  if (!studentId || !/^\d{4}/.test(studentId)) return null
+  return `${studentId.slice(2, 4)}학번`
+}
+
+// 입학년도 숫자 → 'NN학번'
+export function yearLabel(year: number): string {
+  return `${String(year).slice(2)}학번`
+}
+
 // 학과별 최대 학년 (2년제=2, 3년제=3, 전공심화과정 운영=4)
 export const DEPARTMENT_MAX_GRADE: Record<string, number> = {
   // 3년제 + 전공심화 (→ 4학년)

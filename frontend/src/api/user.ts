@@ -6,6 +6,7 @@ export interface UserProfile {
   nickname: string
   department: string
   grade: number
+  studentId?: string
   gender: 'male' | 'female'
   profileImage?: string
   bio?: string

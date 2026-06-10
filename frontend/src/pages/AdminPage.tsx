@@ -134,7 +134,7 @@ export default function AdminPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold text-gray-900">{u.nickname} <span className="text-sm text-gray-400">@{u.username}</span></p>
-                  <p className="text-sm text-gray-500">{u.department} {u.grade}학년 · {u.gender === 'male' ? '남' : '여'} · 학번 {u.studentId}</p>
+                  <p className="text-sm text-gray-500">{u.department} · {u.gender === 'male' ? '남' : '여'} · 학번 {u.studentId}</p>
                 </div>
                 <span className="text-xs text-gray-400">{new Date(u.createdAt).toLocaleDateString('ko-KR')}</span>
               </div>

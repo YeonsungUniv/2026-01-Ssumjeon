@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { chatApi, type RoomInfo, type RoomMember } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
 import { useAuthStore } from '@/store/authStore'
+import { cohortLabel } from '@/constants'
 
 interface Props {
   roomId: string
@@ -61,7 +62,7 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onView
                     <Avatar name={info.partner.nickname} profileImage={info.partner.profileImage} />
                     <div className="text-left">
                       <p className="font-semibold text-gray-800">{info.partner.nickname}</p>
-                      <p className="text-xs text-gray-400">{info.partner.department} · {info.partner.grade}학년</p>
+                      <p className="text-xs text-gray-400">{info.partner.department}{cohortLabel(info.partner.studentId) ? ` · ${cohortLabel(info.partner.studentId)}` : ''}</p>
                     </div>
                     <svg className="w-4 h-4 text-gray-300 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -117,7 +118,7 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onView
                               : m.isLeader && <span className="text-[10px] bg-primary-100 text-primary-500 px-1.5 py-0.5 rounded-full">방장</span>
                             }
                           </p>
-                          <p className="text-xs text-gray-400">{m.department} · {m.grade}학년</p>
+                          <p className="text-xs text-gray-400">{m.department}{cohortLabel(m.studentId) ? ` · ${cohortLabel(m.studentId)}` : ''}</p>
                         </div>
                       </button>
                     ))}

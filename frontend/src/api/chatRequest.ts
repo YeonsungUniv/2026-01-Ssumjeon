@@ -3,7 +3,7 @@ import type { ApiResponse, PaginatedResponse, BrowseUser, IncomingRequest, Outgo
 
 export interface BrowseFilters {
   departments?: string[]
-  grades?: number[]
+  entryYears?: number[]
   gender?: 'male' | 'female'
   page?: number
   limit?: number
@@ -13,7 +13,7 @@ export const chatRequestApi = {
   browse: (filters?: BrowseFilters) => {
     const params: Record<string, string> = {}
     if (filters?.departments?.length) params.departments = filters.departments.join(',')
-    if (filters?.grades?.length) params.grades = filters.grades.join(',')
+    if (filters?.entryYears?.length) params.entryYears = filters.entryYears.join(',')
     if (filters?.gender) params.gender = filters.gender
     if (filters?.page) params.page = String(filters.page)
     if (filters?.limit) params.limit = String(filters.limit)

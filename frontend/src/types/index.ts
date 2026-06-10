@@ -23,6 +23,7 @@ export interface MatchCard {
   nickname: string
   department: string
   grade: number
+  studentId?: string
   gender: 'male' | 'female'
   profileImage?: string
   bio?: string
@@ -61,6 +62,7 @@ export interface GroupMember {
   nickname: string
   department: string
   grade: number
+  studentId?: string
   profileImage?: string
   isLeader: boolean
 }
@@ -110,6 +112,7 @@ export interface BrowseUser {
   nickname: string
   department: string
   grade: number
+  studentId?: string
   gender: 'male' | 'female'
   profileImage?: string
   bio?: string
@@ -127,6 +130,7 @@ export interface IncomingRequest {
   nickname: string
   department: string
   grade: number
+  studentId?: string
   gender: 'male' | 'female'
   profileImage?: string
   bio?: string
@@ -142,6 +146,7 @@ export interface OutgoingRequest {
   nickname: string
   department: string
   grade: number
+  studentId?: string
   gender: 'male' | 'female'
   profileImage?: string
 }

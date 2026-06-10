@@ -72,12 +72,10 @@ export const authController = {
 
   async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { username, password, nickname, gender, department, grade, email } = req.body
+      const { username, password, nickname, gender, department, email } = req.body
 
       if (!email) return fail(res, '이메일을 입력해주세요.')
       if (!department) return fail(res, '학과를 선택해주세요.')
-      const gradeNum = parseInt(grade, 10)
-      if (![1, 2, 3, 4].includes(gradeNum)) return fail(res, '학년을 선택해주세요.')
 
       const result = await authService.register({
         username,
@@ -85,7 +83,6 @@ export const authController = {
         nickname,
         gender,
         department,
-        grade: gradeNum,
         email: email.trim().toLowerCase(),
       })
 

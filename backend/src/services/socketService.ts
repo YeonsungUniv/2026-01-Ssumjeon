@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { verifyAccessToken } from '../utils/jwt'
 import { chatService } from './chatService'
 import { query } from '../config/db'
+import { entryYearOf } from '../utils/cohort'
 
 let _io: Server | null = null
 
@@ -15,11 +16,11 @@ interface QueueEntry {
   socketId: string
   gender: 'male' | 'female'
   department: string
-  grade: number
+  entryYear: number | null
   filters: {
     gender?: 'male' | 'female'
     departments?: string[]
-    grades?: number[]
+    entryYears?: number[]
   }
 }
 
@@ -32,8 +33,8 @@ function isCompatible(a: QueueEntry, b: QueueEntry): boolean {
   if (b.gender !== aWants || a.gender !== bWants) return false
   if (a.filters.departments?.length && !a.filters.departments.includes(b.department)) return false
   if (b.filters.departments?.length && !b.filters.departments.includes(a.department)) return false
-  if (a.filters.grades?.length && !a.filters.grades.includes(b.grade)) return false
-  if (b.filters.grades?.length && !b.filters.grades.includes(a.grade)) return false
+  if (a.filters.entryYears?.length && (b.entryYear === null || !a.filters.entryYears.includes(b.entryYear))) return false
+  if (b.filters.entryYears?.length && (a.entryYear === null || !b.filters.entryYears.includes(a.entryYear))) return false
   return true
 }
 
@@ -93,15 +94,15 @@ export function setupSocket(io: Server) {
     // ── 실시간 1:1 매칭 ──────────────────────────────────────────────
     socket.on('matching:join', async (filters: QueueEntry['filters']) => {
       try {
-        const result = await query<{ gender: 'male' | 'female'; department: string; grade: number }>(
-          'SELECT gender, department, grade FROM users WHERE id = $1',
+        const result = await query<{ gender: 'male' | 'female'; department: string; student_id: string | null }>(
+          'SELECT gender, department, student_id FROM users WHERE id = $1',
           [userId],
         )
         const me = result.rows[0]
         if (!me) return
 
-        if (!me.department || !me.grade) {
-          socket.emit('matching:error', { message: '프로필(학과·학년)을 완성해야 매칭에 참여할 수 있습니다.' })
+        if (!me.department) {
+          socket.emit('matching:error', { message: '프로필(학과)을 완성해야 매칭에 참여할 수 있습니다.' })
           return
         }
 
@@ -110,7 +111,12 @@ export function setupSocket(io: Server) {
         const timer = setTimeout(async () => {
           pendingJoinTimers.delete(userId)
           try {
-            const entry: QueueEntry = { userId, socketId: socket.id, ...me, filters }
+            const entry: QueueEntry = {
+              userId, socketId: socket.id,
+              gender: me.gender, department: me.department,
+              entryYear: entryYearOf(me.student_id),
+              filters,
+            }
 
             let matched: QueueEntry | null = null
             for (const [qId, qEntry] of matchingQueue) {

@@ -13,10 +13,10 @@ export const chatRequestController = {
       const gender = userResult.rows[0]?.gender
       if (!gender) return fail(res, '사용자를 찾을 수 없습니다.', 404)
 
-      const { departments, grades, gender: gFilter, page, limit } = req.query as Record<string, string>
+      const { departments, entryYears, gender: gFilter, page, limit } = req.query as Record<string, string>
       const filters = {
         departments: departments ? departments.split(',').map((d) => d.trim()).filter(Boolean) : undefined,
-        grades: grades ? grades.split(',').map(Number).filter((n) => [1, 2, 3, 4].includes(n)) : undefined,
+        entryYears: entryYears ? entryYears.split(',').map(Number).filter((n) => Number.isInteger(n) && n > 2000 && n < 2100) : undefined,
         gender: (gFilter as 'male' | 'female') || undefined,
       }
 
