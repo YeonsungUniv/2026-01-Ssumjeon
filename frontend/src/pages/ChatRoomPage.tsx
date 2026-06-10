@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
@@ -327,12 +327,26 @@ export default function ChatRoomPage() {
             <div className="animate-spin w-5 h-5 border-2 border-primary-300 border-t-primary-500 rounded-full" />
           </div>
         )}
-        {timeline.map((item) => {
+        {timeline.map((item, idx) => {
+          // 날짜가 바뀌는 첫 항목 앞에 날짜 구분선 (카톡 스타일)
+          const prevTs = idx > 0 ? timeline[idx - 1].ts : undefined
+          const showDate = prevTs === undefined || !dayjs(prevTs).isSame(item.ts, 'day')
+          const dateDivider = showDate ? (
+            <div className="flex justify-center my-3">
+              <span className="text-[11px] text-gray-500 bg-gray-200/70 px-3 py-1 rounded-full">
+                {dayjs(item.ts).format('YYYY년 M월 D일 dddd')}
+              </span>
+            </div>
+          ) : null
+
+          let key: string
+          let content: React.ReactNode
+
           if (item.kind === 'appointment') {
             const a = item.data
-            return (
+            key = `appt-${a.id}`
+            content = (
               <div
-                key={`appt-${a.id}`}
                 id={`appt-card-${a.id}`}
                 className={`rounded-2xl transition-all ${highlightApptId === a.id ? 'ring-2 ring-primary-400 ring-offset-2' : ''}`}
               >
@@ -345,79 +359,86 @@ export default function ChatRoomPage() {
                 />
               </div>
             )
-          }
-          const msg = item.data
-          // 시스템 메시지(상대방 나감 등)는 중앙 안내로 표시
-          if (isSystemMessage(msg.content)) {
-            return (
-              <div key={msg.id} className="flex justify-center my-2">
-                <span className="text-[11px] text-gray-400 bg-gray-200/60 px-3 py-1 rounded-full">
-                  상대방이 채팅방을 나갔습니다
-                </span>
-              </div>
-            )
-          }
-          // 약속 취소 안내 — 닫아둔 사람도 알 수 있도록 중앙 안내로 표시
-          if (isApptCancelledMarker(msg.content)) {
-            return (
-              <div key={msg.id} className="flex justify-center my-2">
-                <span className="text-[11px] text-gray-500 bg-gray-200/60 px-3 py-1 rounded-full">
-                  📅 약속이 취소되었습니다
-                </span>
-              </div>
-            )
-          }
-          const isMe = msg.senderId === user?.id
-          return (
-            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} gap-2`}>
-              {!isMe && (
-                <button
-                  className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0 self-end mb-0.5 overflow-hidden"
-                  onClick={() => openProfile(msg.senderId)}
-                >
-                  {msg.senderProfileImage ? (
-                    <img src={msg.senderProfileImage} alt={msg.senderNickname} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-xs text-primary-500 font-bold">{msg.senderNickname[0]}</span>
-                  )}
-                </button>
-              )}
-
-              {/* 버블 + 메타(시간·읽음) 가로 배치 — 내 메시지는 reverse */}
-              <div className={`max-w-[70%] flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-1.5`}>
-
-                {/* 메시지 버블 */}
-                <div className={`flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
-                  {!isMe && <span className="text-xs text-gray-400 px-1">{msg.senderNickname}</span>}
-                  {isExpiredImage(msg.content) ? (
-                    <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
-                      <span className="block px-4 py-2.5 text-xs opacity-60">🗑️ 이미지가 만료되었습니다</span>
-                    </div>
-                  ) : isImageContent(msg.content) ? (
-                    <img
-                      src={msg.content}
-                      alt="사진"
-                      className={`block max-w-[260px] max-h-[320px] object-contain cursor-pointer rounded-2xl shadow-sm ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`}
-                      onClick={() => window.open(msg.content, '_blank')}
-                    />
-                  ) : (
-                    <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
-                      <span className="block px-4 py-2.5">{msg.content}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 읽음 "1" + 시간 — 버블 옆에 세로 배치 */}
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} shrink-0 gap-0.5 pb-0.5`}>
-                  {isMe && !msg.isRead && (
-                    <span className="text-[10px] text-primary-400 font-bold leading-none">1</span>
-                  )}
-                  <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">
-                    {dayjs(msg.createdAt).format('HH:mm')}
+          } else {
+            const msg = item.data
+            key = msg.id
+            if (isSystemMessage(msg.content)) {
+              content = (
+                <div className="flex justify-center my-2">
+                  <span className="text-[11px] text-gray-400 bg-gray-200/60 px-3 py-1 rounded-full">
+                    상대방이 채팅방을 나갔습니다
                   </span>
                 </div>
-              </div>
-            </div>
+              )
+            } else if (isApptCancelledMarker(msg.content)) {
+              content = (
+                <div className="flex justify-center my-2">
+                  <span className="text-[11px] text-gray-500 bg-gray-200/60 px-3 py-1 rounded-full">
+                    📅 약속이 취소되었습니다
+                  </span>
+                </div>
+              )
+            } else {
+              const isMe = msg.senderId === user?.id
+              content = (
+                <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} gap-2`}>
+                  {!isMe && (
+                    <button
+                      className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0 self-end mb-0.5 overflow-hidden"
+                      onClick={() => openProfile(msg.senderId)}
+                    >
+                      {msg.senderProfileImage ? (
+                        <img src={msg.senderProfileImage} alt={msg.senderNickname} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs text-primary-500 font-bold">{msg.senderNickname[0]}</span>
+                      )}
+                    </button>
+                  )}
+
+                  {/* 버블 + 메타(시간·읽음) 가로 배치 — 내 메시지는 reverse */}
+                  <div className={`max-w-[70%] flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-1.5`}>
+
+                    {/* 메시지 버블 */}
+                    <div className={`flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
+                      {!isMe && <span className="text-xs text-gray-400 px-1">{msg.senderNickname}</span>}
+                      {isExpiredImage(msg.content) ? (
+                        <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
+                          <span className="block px-4 py-2.5 text-xs opacity-60">🗑️ 이미지가 만료되었습니다</span>
+                        </div>
+                      ) : isImageContent(msg.content) ? (
+                        <img
+                          src={msg.content}
+                          alt="사진"
+                          className={`block max-w-[260px] max-h-[320px] object-contain cursor-pointer rounded-2xl shadow-sm ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'}`}
+                          onClick={() => window.open(msg.content, '_blank')}
+                        />
+                      ) : (
+                        <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
+                          <span className="block px-4 py-2.5">{msg.content}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 읽음 "1" + 시간 — 버블 옆에 세로 배치 */}
+                    <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} shrink-0 gap-0.5 pb-0.5`}>
+                      {isMe && !msg.isRead && (
+                        <span className="text-[10px] text-primary-400 font-bold leading-none">1</span>
+                      )}
+                      <span className="text-[10px] text-gray-400 leading-none whitespace-nowrap">
+                        {dayjs(msg.createdAt).format('HH:mm')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+          }
+
+          return (
+            <Fragment key={key}>
+              {dateDivider}
+              {content}
+            </Fragment>
           )
         })}
         <div ref={bottomRef} />
