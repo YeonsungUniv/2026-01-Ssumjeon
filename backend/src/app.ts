@@ -80,7 +80,10 @@ async function bootstrap() {
   client.release()
   console.log('[DB] Connected to PostgreSQL')
 
-  await seedTestUsers()
+  // 테스트 계정 시드는 SEED_TEST_USERS=true 일 때만 (기본 비활성화)
+  if (process.env.SEED_TEST_USERS === 'true') {
+    await seedTestUsers()
+  }
 
   httpServer.listen(env.port, () => {
     console.log(`[Server] Running on http://localhost:${env.port}`)
