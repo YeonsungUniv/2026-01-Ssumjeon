@@ -170,9 +170,10 @@ export const userController = {
       )
       const dmRoomIds = dmRooms.rows.map((r) => r.id)
 
-      // S3 파일 수집: 프로필 이미지 + 내 채팅 이미지 + 삭제될 1:1 방의 모든 이미지
+      // S3 파일 수집: 프로필 이미지 + 재학증명서 + 내 채팅 이미지 + 삭제될 1:1 방의 모든 이미지
       const s3Urls: string[] = []
       if (user.profile_image) s3Urls.push(user.profile_image)
+      if (user.enrollment_doc) s3Urls.push(user.enrollment_doc)
 
       const imgRows = await query<{ content: string }>(
         `SELECT content FROM messages

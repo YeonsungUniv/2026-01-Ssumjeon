@@ -37,6 +37,29 @@ async function sendVerificationEmail(to: string, code: string) {
   })
 }
 
+// 가입 승인/거절 결과 안내 메일 (SMTP 미설정 시 조용히 실패 → 호출부에서 catch)
+export async function sendAccountResultEmail(to: string, nickname: string, approved: boolean) {
+  if (!to) return
+  const target = env.devEmailOverride || to
+  const transporter = createTransport()
+  const subject = approved ? '[썸전] 가입이 승인되었습니다 🎉' : '[썸전] 가입 신청 결과 안내'
+  const body = approved
+    ? `<p style="color:#555;margin-bottom:24px;"><strong>${nickname}</strong>님, 재학증명서 확인이 완료되어 가입이 <strong style="color:#ff2d6f;">승인</strong>되었습니다.<br/>지금 바로 로그인하여 썸전을 이용하실 수 있어요.</p>`
+    : `<p style="color:#555;margin-bottom:24px;"><strong>${nickname}</strong>님, 제출하신 재학증명서로는 재학 여부 확인이 어려워 가입이 <strong style="color:#888;">거절</strong>되었습니다.<br/>재학증명서를 다시 확인하신 후 재가입을 신청해주세요.</p>`
+  await transporter.sendMail({
+    from: `"썸전" <${env.smtp.user}>`,
+    to: target,
+    subject,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;border:1px solid #eee;border-radius:12px;">
+        <h2 style="color:#ff2d6f;margin-bottom:8px;">썸전 가입 ${approved ? '승인' : '결과'} 안내</h2>
+        ${body}
+        <p style="color:#aaa;font-size:12px;margin-top:24px;">문의 사항은 앱 내 건의사항으로 남겨주세요.</p>
+      </div>
+    `,
+  })
+}
+
 function toUserDto(row: UserRow) {
   return {
     id: row.id,

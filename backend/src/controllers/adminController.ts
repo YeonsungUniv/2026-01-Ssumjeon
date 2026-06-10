@@ -2,6 +2,8 @@ import type { Response, NextFunction } from 'express'
 import { query } from '../config/db'
 import { success, fail } from '../utils/response'
 import { entryYearOf } from '../utils/cohort'
+import { deleteFromS3 } from '../utils/s3'
+import { sendAccountResultEmail } from '../services/authService'
 import type { AuthRequest, UserRow } from '../types'
 
 // 관리자 사용자 목록/상세용 공통 매핑
@@ -114,12 +116,26 @@ export const adminController = {
   async approveUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { userId } = req.params
-      const result = await query<UserRow>(
-        `UPDATE users SET status = 'approved', updated_at = NOW() WHERE id = $1 AND status = 'pending' RETURNING id, username, nickname`,
+      const found = await query<UserRow>(
+        `SELECT email, nickname, enrollment_doc, status FROM users WHERE id = $1`,
         [userId],
       )
-      if (result.rows.length === 0) return fail(res, '해당 대기 유저를 찾을 수 없습니다.', 404)
-      return success(res, { approved: true, user: result.rows[0] })
+      const target = found.rows[0]
+      if (!target || target.status !== 'pending') return fail(res, '해당 대기 유저를 찾을 수 없습니다.', 404)
+
+      // 승인 처리 + 재학증명서 URL 비우기
+      await query(
+        `UPDATE users SET status = 'approved', enrollment_doc = NULL, updated_at = NOW() WHERE id = $1`,
+        [userId],
+      )
+      // 재학증명서 S3 삭제 (확인 완료 → 보관 불필요)
+      if (target.enrollment_doc) deleteFromS3(target.enrollment_doc).catch(() => {})
+      // 승인 안내 메일 (실패해도 승인은 유지)
+      if (target.email) {
+        sendAccountResultEmail(target.email, target.nickname, true)
+          .catch((e) => console.warn('[Mail] 승인 메일 발송 실패:', e?.message))
+      }
+      return success(res, { approved: true })
     } catch (err) {
       next(err)
     }
@@ -128,12 +144,23 @@ export const adminController = {
   async rejectUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { userId } = req.params
-      const result = await query<UserRow>(
-        `UPDATE users SET status = 'rejected', updated_at = NOW() WHERE id = $1 AND status = 'pending' RETURNING id, username, nickname`,
+      const found = await query<UserRow>(
+        `SELECT email, nickname, enrollment_doc, status FROM users WHERE id = $1`,
         [userId],
       )
-      if (result.rows.length === 0) return fail(res, '해당 대기 유저를 찾을 수 없습니다.', 404)
-      return success(res, { rejected: true, user: result.rows[0] })
+      const target = found.rows[0]
+      if (!target || target.status !== 'pending') return fail(res, '해당 대기 유저를 찾을 수 없습니다.', 404)
+
+      // 거절 안내 메일 (DB 삭제 전에 이메일 확보)
+      if (target.email) {
+        sendAccountResultEmail(target.email, target.nickname, false)
+          .catch((e) => console.warn('[Mail] 거절 메일 발송 실패:', e?.message))
+      }
+      // 재학증명서 S3 삭제
+      if (target.enrollment_doc) deleteFromS3(target.enrollment_doc).catch(() => {})
+      // 거절 시 DB 레코드 삭제 (관련 데이터 CASCADE) → 동일 이메일/아이디로 재가입 가능
+      await query(`DELETE FROM users WHERE id = $1`, [userId])
+      return success(res, { rejected: true })
     } catch (err) {
       next(err)
     }
