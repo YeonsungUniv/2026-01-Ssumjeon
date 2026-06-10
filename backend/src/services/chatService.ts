@@ -1,18 +1,8 @@
 import { v4 as uuidv4 } from 'uuid'
 import { query } from '../config/db'
 import { deleteMultipleFromS3 } from '../utils/s3'
+import { previewLastMessage, validateMessageContent } from '../utils/validation'
 import type { MessageRow, ChatRoomRow, UserRow } from '../types'
-
-// 채팅 목록 미리보기 텍스트 변환
-function previewLastMessage(content: string | null): string | null {
-  if (!content) return null
-  if (content === '[system:partner_left]') return '상대방이 채팅방을 나갔습니다'
-  if (content === '[appointment:proposed]') return '📅 약속을 제안했어요'
-  if (content === '[appointment:cancelled]') return '📅 약속이 취소되었어요'
-  if (content === '[expired_image]') return '🗑️ 만료된 이미지'
-  if (content.includes('amazonaws.com') || content.startsWith('/uploads/')) return '📷 사진을 보냈습니다'
-  return content
-}
 
 // 채팅방의 S3 이미지 메시지 전부 삭제
 async function deleteChatRoomImages(roomId: string) {
@@ -154,12 +144,8 @@ export const chatService = {
     if (partnerLeft.rows.length > 0) throw new Error('상대방이 채팅방을 나가 메시지를 보낼 수 없습니다.')
 
     // 텍스트 메시지 검증 (이미지 URL은 제외)
-    const isUrl = /^https?:\/\//.test(content) || content.includes('amazonaws.com') || content.startsWith('/uploads/')
-    if (!isUrl) {
-      const text = (content ?? '').trim()
-      if (text.length === 0) throw new Error('메시지를 입력해주세요.')
-      if (text.length > 2000) throw new Error('메시지는 2000자 이하로 입력해주세요.')
-    }
+    const msgError = validateMessageContent(content)
+    if (msgError) throw new Error(msgError)
 
     const id = uuidv4()
     const result = await query<MessageRow & { sender_nickname: string; sender_profile_image: string | null }>(

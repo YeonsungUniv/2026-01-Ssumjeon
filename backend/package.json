@@ -5,6 +5,9 @@
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "build": "tsc",
     "start": "node dist/src/app.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "migrate": "node -r ts-node/register migrations/run.ts",
     "seed": "node -r ts-node/register seeds/run.ts"
   },
@@ -40,6 +43,7 @@
     "@types/uuid": "^10.0.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^4.1.8"
   }
 }

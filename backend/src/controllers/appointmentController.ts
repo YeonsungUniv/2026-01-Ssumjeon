@@ -3,6 +3,7 @@ import type { Response, NextFunction } from 'express'
 import { query } from '../config/db'
 import { success, fail } from '../utils/response'
 import { emitToRoom, emitToUser } from '../services/socketService'
+import { isPastDateTime } from '../utils/validation'
 import type { AuthRequest } from '../types'
 
 interface AppointmentRow {
@@ -66,13 +67,6 @@ async function notifyAppointment(roomId: string, actorId: string, marker: string
     )
     if (blocking.rows.length === 0) emitToUser(user_id, 'message:new', message)
   }
-}
-
-// 과거 일시 여부 (서버 TZ 기준, 2분 여유). 명백한 과거면 true
-function isPastDateTime(date: string, time: string): boolean {
-  const dt = new Date(`${date}T${(time || '23:59')}:00`)
-  if (isNaN(dt.getTime())) return false
-  return dt.getTime() < Date.now() - 2 * 60 * 1000
 }
 
 export const appointmentController = {
