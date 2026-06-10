@@ -15,7 +15,7 @@ const baseTabs: Tab[] = [
 
 const adminTab: Tab = { to: '/suggestions', label: '건의사항', icon: SuggestionIcon }
 
-export default function TabBar() {
+export default function TabBar({ collapsed = false, onToggle }: { collapsed?: boolean; onToggle?: () => void }) {
   const { rooms } = useChatStore()
   const { user } = useAuthStore()
   const { pendingIncomingCount } = useMatchRequestStore()
@@ -24,12 +24,27 @@ export default function TabBar() {
   const tabs = user?.isAdmin ? [...baseTabs, adminTab] : baseTabs
 
   return (
-    <nav className="fixed left-0 top-0 h-full w-52 bg-white border-r border-gray-100 flex flex-col z-50 shadow-sm">
-      <div className="px-6 py-6 border-b border-gray-100">
-        <h1 className="text-2xl font-black text-primary-500 tracking-tight">썸전</h1>
-        <p className="text-xs text-gray-400 mt-0.5">연성대학교 과팅 매칭</p>
+    <nav className={`fixed left-0 top-0 h-full bg-white border-r border-gray-100 flex flex-col z-50 shadow-sm transition-[width] duration-200 ${collapsed ? 'w-16' : 'w-52'}`}>
+      {/* 헤더 + 접기/펴기 토글 */}
+      <div className={`flex items-center border-b border-gray-100 ${collapsed ? 'justify-center py-5' : 'justify-between px-6 py-6'}`}>
+        {!collapsed && (
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black text-primary-500 tracking-tight">썸전</h1>
+            <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">연성대학교 과팅 매칭</p>
+          </div>
+        )}
+        <button
+          onClick={onToggle}
+          title={collapsed ? '사이드바 펼치기' : '사이드바 접기'}
+          className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+        >
+          <svg className={`w-5 h-5 transition-transform ${collapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+          </svg>
+        </button>
       </div>
-      <div className="flex-1 flex flex-col gap-1 py-4 px-3">
+
+      <div className={`flex-1 flex flex-col gap-1 py-4 ${collapsed ? 'px-2 items-center' : 'px-3'}`}>
         {tabs.map(({ to, label, icon: Icon, badge }) => {
           const badgeCount = badge === 'chat' ? totalUnread : badge === 'request' ? pendingIncomingCount : 0
           return (
@@ -37,8 +52,11 @@ export default function TabBar() {
               key={to}
               to={to}
               end={to === '/'}
+              title={collapsed ? label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-colors ${
+                `flex items-center gap-3 rounded-2xl text-sm font-medium transition-colors ${
+                  collapsed ? 'w-11 h-11 justify-center' : 'px-4 py-3'
+                } ${
                   isActive
                     ? 'bg-primary-50 text-primary-600'
                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
@@ -53,7 +71,7 @@ export default function TabBar() {
                   </span>
                 )}
               </div>
-              {label}
+              {!collapsed && label}
             </NavLink>
           )
         })}
