@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import TabBar from './TabBar'
+import TabBar, { MobileNav } from './TabBar'
 import { useSocket } from '@/hooks/useSocket'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
@@ -30,11 +30,13 @@ export default function MainLayout() {
   return (
     <div className="min-h-dvh bg-gray-50">
       <TabBar collapsed={collapsed} onToggle={toggleSidebar} />
-      <main className={`min-h-dvh transition-[margin] duration-200 ${collapsed ? 'ml-16' : 'ml-52'}`}>
+      <MobileNav />
+      {/* 데스크톱은 사이드바 폭만큼 좌측 여백, 모바일은 여백 없음(하단바만) */}
+      <main className={`min-h-dvh transition-[margin] duration-200 ${collapsed ? 'md:ml-16' : 'md:ml-52'}`}>
         {isFullHeight ? (
           <Outlet />
         ) : (
-          <div className="max-w-5xl mx-auto px-8 py-6">
+          <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 pb-24 md:pb-6">
             <Outlet />
           </div>
         )}

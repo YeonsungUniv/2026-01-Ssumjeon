@@ -18,14 +18,14 @@ export default function ChatLayout() {
   }, [setRooms])
 
   return (
-    <div className="flex h-screen">
-      {/* 좌측 채팅방 목록 */}
-      <div className="w-80 shrink-0 border-r border-gray-100 bg-white flex flex-col">
+    <div className="flex h-dvh">
+      {/* 좌측 채팅방 목록 — 모바일에선 방 선택 시 숨김 */}
+      <div className={`${roomId ? 'hidden md:flex' : 'flex'} w-full md:w-80 shrink-0 border-r border-gray-100 bg-white flex-col`}>
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-800">채팅</h2>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-16 md:pb-0">
           {rooms.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400 py-12">
               <span className="text-4xl">💬</span>
@@ -79,12 +79,12 @@ export default function ChatLayout() {
         </div>
       </div>
 
-      {/* 우측 채팅방 또는 빈 상태 */}
-      <div className="flex-1 min-w-0">
+      {/* 우측 채팅방 또는 빈 상태 — 모바일에선 방 미선택 시 숨김 */}
+      <div className={`${roomId ? 'flex' : 'hidden md:flex'} flex-1 min-w-0`}>
         {roomId ? (
           <Outlet />
         ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400">
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 w-full">
             <span className="text-5xl">💬</span>
             <p className="text-base font-medium">대화를 선택해주세요</p>
             <p className="text-sm">왼쪽 목록에서 채팅방을 선택하면 대화가 시작됩니다</p>

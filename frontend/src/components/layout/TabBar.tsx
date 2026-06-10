@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useChatStore } from '@/store/chatStore'
 import { useAuthStore } from '@/store/authStore'
 import { useMatchRequestStore } from '@/store/matchRequestStore'
@@ -58,7 +58,7 @@ export default function TabBar({ collapsed = false, onToggle }: { collapsed?: bo
   }
 
   return (
-    <nav className={`fixed left-0 top-0 h-full bg-white border-r border-gray-100 flex flex-col z-50 shadow-sm transition-[width] duration-200 ${collapsed ? 'w-16' : 'w-52'}`}>
+    <nav className={`hidden md:flex fixed left-0 top-0 h-full bg-white border-r border-gray-100 flex-col z-50 shadow-sm transition-[width] duration-200 ${collapsed ? 'w-16' : 'w-52'}`}>
       {/* 헤더 + 접기/펴기 토글 */}
       <div className={`flex items-center border-b border-gray-100 ${collapsed ? 'justify-center py-5' : 'justify-between px-6 py-6'}`}>
         {!collapsed && (
@@ -91,6 +91,53 @@ export default function TabBar({ collapsed = false, onToggle }: { collapsed?: bo
           </>
         )}
       </div>
+    </nav>
+  )
+}
+
+// 모바일 하단 탭바 (md 미만에서만 노출)
+export function MobileNav() {
+  const { rooms } = useChatStore()
+  const { user } = useAuthStore()
+  const { pendingIncomingCount } = useMatchRequestStore()
+  const { pathname } = useLocation()
+  const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
+  const isAdmin = user?.isAdmin === true
+
+  // 채팅방(입력창 있는 화면)에서는 하단바 숨김 — 입력창 가림 방지
+  if (/^\/chat\/.+/.test(pathname)) return null
+
+  const tabs: Tab[] = isAdmin
+    ? [...baseTabs, { to: '/admin/users', label: '관리', icon: UsersIcon }]
+    : baseTabs
+
+  return (
+    <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-white border-t border-gray-100 z-50 flex pb-[env(safe-area-inset-bottom)]">
+      {tabs.map(({ to, label, icon: Icon, badge }) => {
+        const badgeCount = badge === 'chat' ? totalUnread : badge === 'request' ? pendingIncomingCount : 0
+        return (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            className={({ isActive }) =>
+              `flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+                isActive ? 'text-primary-600' : 'text-gray-400'
+              }`
+            }
+          >
+            <div className="relative">
+              <Icon className="w-[22px] h-[22px]" />
+              {badgeCount > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 min-w-[15px] h-3.5 px-1 text-[9px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
+                  {badgeCount > 99 ? '99+' : badgeCount}
+                </span>
+              )}
+            </div>
+            {label}
+          </NavLink>
+        )
+      })}
     </nav>
   )
 }

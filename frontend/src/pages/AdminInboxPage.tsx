@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminApi, type PendingUser } from '@/api/auth'
+import AdminSubNav from '@/components/layout/AdminSubNav'
 
 export default function AdminInboxPage() {
   const [pending, setPending] = useState<PendingUser[]>([])
@@ -45,6 +46,7 @@ export default function AdminInboxPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
+      <AdminSubNav />
       <div className="flex items-center justify-between pt-2">
         <h2 className="text-xl font-bold text-gray-800">가입 수신함 <span className="text-sm font-normal text-gray-400">재학증명서 승인 대기</span></h2>
         {pending.length > 0 && (

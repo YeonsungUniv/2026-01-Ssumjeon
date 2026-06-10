@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import client from '@/api/client'
 import type { ApiResponse } from '@/types'
 import dayjs from 'dayjs'
+import AdminSubNav from '@/components/layout/AdminSubNav'
 
 interface Inquiry {
   id: string
@@ -106,6 +107,7 @@ export default function SuggestionsAdminPage() {
 
   return (
     <div className="space-y-4">
+      <AdminSubNav />
       <h2 className="text-xl font-bold text-gray-800">건의사항 관리</h2>
 
       <div className="flex bg-gray-100 rounded-2xl p-1 gap-1">

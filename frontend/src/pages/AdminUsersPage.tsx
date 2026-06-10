@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { adminApi, type AdminUser } from '@/api/auth'
 import DepartmentSelect from '@/components/DepartmentSelect'
+import AdminSubNav from '@/components/layout/AdminSubNav'
 
 const STATUS_LABEL: Record<AdminUser['status'], { text: string; cls: string }> = {
   approved: { text: '승인', cls: 'bg-green-50 text-green-600' },
@@ -72,6 +73,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
+      <AdminSubNav />
       <div className="flex items-center justify-between pt-2">
         <h2 className="text-xl font-bold text-gray-800">사용자 관리</h2>
         <span className="text-sm text-gray-400">{users.length}명</span>
