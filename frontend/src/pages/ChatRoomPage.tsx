@@ -102,15 +102,25 @@ export default function ChatRoomPage() {
     const onNewAppt = (a: Appointment) => setAppointments((prev) => [a, ...prev])
     const onUpdatedAppt = (a: Appointment) => setAppointments((prev) => prev.map((p) => p.id === a.id ? a : p))
     const onMessagesRead = ({ userId }: { userId: string }) => markRoomMessagesRead(roomId, userId)
+    // 방을 보고 있는 동안 상대 메시지가 오면 즉시 읽음 처리 (상대의 '1' 제거)
+    const onIncoming = (m: { roomId: string; senderId: string }) => {
+      if (m.roomId !== roomId) return
+      if (m.senderId !== useAuthStore.getState().user?.id) {
+        chatApi.markAsRead(roomId)
+        markRoomAsRead(roomId)
+      }
+    }
     socket?.on('appointment:new', onNewAppt)
     socket?.on('appointment:updated', onUpdatedAppt)
     socket?.on('messages:read', onMessagesRead)
+    socket?.on('message:new', onIncoming)
 
     return () => {
       socket?.emit('room:leave', roomId)
       socket?.off('appointment:new', onNewAppt)
       socket?.off('appointment:updated', onUpdatedAppt)
       socket?.off('messages:read', onMessagesRead)
+      socket?.off('message:new', onIncoming)
       setActiveRoom(null)
     }
   }, [roomId, setMessages, markRoomAsRead, markRoomMessagesRead, setActiveRoom])
