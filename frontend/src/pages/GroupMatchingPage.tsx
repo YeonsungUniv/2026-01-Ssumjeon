@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { groupMatchingApi, type CreateRoomPayload } from '@/api/groupMatching'
 import { userApi, type UserProfile } from '@/api/user'
@@ -12,6 +12,18 @@ const MBTI_LIST = [
   'INTJ','INTP','ENTJ','ENTP','INFJ','INFP','ENFJ','ENFP',
   'ISTJ','ISFJ','ESTJ','ESFJ','ISTP','ISFP','ESTP','ESFP',
 ]
+
+const ROOMS_PER_PAGE = 10
+
+// 남/여 팀이 한쪽 열로 몰리지 않도록 섞기 (Fisher-Yates)
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
 
 function MemberAvatar({ member, size = 'md' }: { member: GroupMember; size?: 'sm' | 'md' }) {
   const sz = size === 'sm' ? 'w-7 h-7 text-sm' : 'w-10 h-10 text-base'
@@ -52,6 +64,14 @@ export default function GroupMatchingPage() {
   const [copied, setCopied] = useState(false)
   const [profileModal, setProfileModal] = useState<UserProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [page, setPage] = useState(0)
+
+  // 필터/목록이 바뀌면 페이지를 섞어 1페이지부터 다시 표시
+  const filteredRooms = useMemo(
+    () => shuffle(rooms.filter((r) => genderFilter === 'all' || r.gender === genderFilter)),
+    [rooms, genderFilter],
+  )
+  useEffect(() => { setPage(0) }, [genderFilter, rooms])
 
   const loadData = async () => {
     setLoading(true)
@@ -196,7 +216,9 @@ export default function GroupMatchingPage() {
     )
   }
 
-  const filteredRooms = rooms.filter((r) => genderFilter === 'all' || r.gender === genderFilter)
+  const totalPages = Math.max(1, Math.ceil(filteredRooms.length / ROOMS_PER_PAGE))
+  const safePage = Math.min(page, totalPages - 1)
+  const pagedRooms = filteredRooms.slice(safePage * ROOMS_PER_PAGE, safePage * ROOMS_PER_PAGE + ROOMS_PER_PAGE)
 
   return (
     <div className="space-y-6">
@@ -379,7 +401,7 @@ export default function GroupMatchingPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-              {filteredRooms.map((room) => {
+              {pagedRooms.map((room) => {
                 // 성별 제한(allowedGender)이 설정된 경우에만 차단. 제한없음이면 동성도 참여 가능
                 const genderBlocked = room.allowedGender && room.allowedGender !== user?.gender
                 const canJoin = !myRoom && !genderBlocked && !room.isPrivate
@@ -440,6 +462,39 @@ export default function GroupMatchingPage() {
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* 페이지네이션 (10개/페이지) */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-1.5 pt-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={safePage === 0}
+                className="w-9 h-9 rounded-xl bg-white/60 backdrop-blur border border-white/60 text-gray-500 text-sm disabled:opacity-30 hover:bg-white/80 transition-colors"
+              >
+                ‹
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i)}
+                  className={`w-9 h-9 rounded-xl text-sm font-semibold transition-colors ${
+                    i === safePage
+                      ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-[0_4px_14px_rgba(244,63,94,0.30)]'
+                      : 'bg-white/60 backdrop-blur border border-white/60 text-gray-500 hover:bg-white/80'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={safePage === totalPages - 1}
+                className="w-9 h-9 rounded-xl bg-white/60 backdrop-blur border border-white/60 text-gray-500 text-sm disabled:opacity-30 hover:bg-white/80 transition-colors"
+              >
+                ›
+              </button>
             </div>
           )}
         </div>
