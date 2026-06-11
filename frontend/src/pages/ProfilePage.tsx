@@ -302,7 +302,7 @@ export default function ProfilePage() {
           {/* 고객센터 */}
           <Link
             to="/support"
-            className="flex items-center justify-between w-full px-5 py-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-between w-full px-5 py-4 bg-white/55 backdrop-blur-xl rounded-2xl border border-white/60 shadow-[0_8px_30px_rgba(120,90,200,0.10)] hover:bg-white/75 transition-colors"
           >
             <div className="flex items-center gap-3">
               <span className="text-xl">💬</span>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
       {/* 회원 탈퇴 모달 */}
       {showWithdraw && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl space-y-4">
+          <div className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4">
             <div className="text-center space-y-1">
               <p className="text-2xl">😢</p>
               <h3 className="font-bold text-gray-900 text-lg">정말 탈퇴하시겠어요?</h3>

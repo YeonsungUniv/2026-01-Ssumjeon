@@ -222,7 +222,7 @@ export default function GroupMatchingPage() {
 
               {/* 초대 코드 */}
               {myRoom.status === 'waiting' && myRoom.inviteCode && (
-                <div className="bg-white rounded-2xl border border-primary-100 px-4 py-3 flex items-center justify-between gap-3">
+                <div className="bg-white/55 backdrop-blur-xl rounded-2xl border border-white/60 shadow-[0_6px_24px_rgba(120,90,200,0.08)] px-4 py-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs text-gray-400 mb-0.5">초대 코드</p>
                     <p className="font-mono font-bold text-lg tracking-widest text-primary-600">{myRoom.inviteCode}</p>
@@ -456,7 +456,7 @@ export default function GroupMatchingPage() {
           className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6"
           onClick={() => { if (!profileLoading) setProfileModal(null) }}
         >
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {profileLoading ? (
               <div className="flex items-center justify-center py-16">
                 <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-primary-500 rounded-full" />
@@ -528,7 +528,7 @@ export default function GroupMatchingPage() {
       {/* 초대 코드 참여 모달 */}
       {showJoinByCode && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl space-y-4">
+          <div className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-gray-900 text-lg">초대 코드 입력</h3>
               <button onClick={() => setShowJoinByCode(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
@@ -554,7 +554,7 @@ export default function GroupMatchingPage() {
       {/* 확인 다이얼로그 */}
       {confirm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
+          <div className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-3xl p-6 w-full max-w-sm shadow-2xl">
             <p className="font-bold text-gray-900 text-center mb-2 text-lg">
               {confirm === 'leave' ? '방 나가기' : '매칭 취소'}
             </p>

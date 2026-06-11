@@ -37,7 +37,7 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onView
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl z-50 animate-slide-up max-h-[85dvh] flex flex-col">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/85 backdrop-blur-2xl border-t border-x border-white/60 rounded-t-3xl z-50 animate-slide-up max-h-[85dvh] flex flex-col shadow-[0_-8px_40px_rgba(120,90,200,0.15)]">
         {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-2 shrink-0">
           <div className="w-10 h-1 bg-gray-200 rounded-full" />
@@ -154,7 +154,7 @@ export default function ChatRoomSettingsSheet({ roomId, onClose, onLeave, onView
       {/* 확인 다이얼로그 */}
       {confirm === 'leave' && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-xl">
+          <div className="bg-white/90 backdrop-blur-2xl border border-white/60 rounded-3xl p-6 w-full max-w-xs shadow-2xl">
             <p className="font-bold text-gray-900 text-center mb-2">대화방 나가기</p>
             <p className="text-sm text-gray-500 text-center mb-6">대화방을 나가면 목록에서 삭제됩니다.</p>
             <div className="flex gap-3">

@@ -44,7 +44,7 @@ export default function ChatListPage() {
             <Link
               key={room.id}
               to={`/chat/${room.id}`}
-              className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 p-4 bg-white/55 backdrop-blur-xl rounded-2xl border border-white/60 shadow-[0_8px_30px_rgba(120,90,200,0.10)] hover:bg-white/75 transition-colors"
             >
               <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center shrink-0 overflow-hidden">
                 {room.type === 'individual' && room.partner?.profileImage ? (

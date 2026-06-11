@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { adminApi, authApi, type PendingUser } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
+import AuroraBackground from '@/components/layout/AuroraBackground'
 
 export default function AdminPage() {
   const { user, setAuth, logout } = useAuthStore()
@@ -82,8 +83,9 @@ export default function AdminPage() {
   // 로그인 화면
   if (!isAdmin) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-gray-50 p-5">
-        <div className="card w-full max-w-sm space-y-5">
+      <div className="min-h-dvh flex items-center justify-center p-5">
+        <AuroraBackground />
+        <div className="card relative z-10 w-full max-w-sm space-y-5">
           <h2 className="text-xl font-bold text-gray-900">관리자 로그인</h2>
           <form onSubmit={handleLogin} className="space-y-3">
             <input

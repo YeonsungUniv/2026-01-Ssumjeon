@@ -13,7 +13,7 @@ export default function PendingPage() {
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-gray-50 p-5">
+    <div className="min-h-dvh flex items-center justify-center p-5">
       <div className="card w-full max-w-sm text-center space-y-6">
         <div className="text-5xl">⏳</div>
 

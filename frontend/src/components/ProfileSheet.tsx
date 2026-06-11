@@ -50,7 +50,7 @@ export default function ProfileSheet({ userId, onClose, onBlock, onUnblock }: Pr
       <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
 
       {/* 바텀시트 */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white rounded-t-3xl z-50 pb-safe animate-slide-up">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/85 backdrop-blur-2xl border-t border-x border-white/60 rounded-t-3xl z-50 pb-safe animate-slide-up shadow-[0_-8px_40px_rgba(120,90,200,0.15)]">
         {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 bg-gray-200 rounded-full" />
