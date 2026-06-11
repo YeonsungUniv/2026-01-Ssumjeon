@@ -204,6 +204,15 @@ export default function GroupMatchingPage() {
     }
   }
 
+  const cancelRequest = async (requestId: string) => {
+    try {
+      await groupMatchingApi.cancelMatchRequest(requestId)
+      await refreshRequests()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '취소에 실패했습니다.')
+    }
+  }
+
   const outgoingRoomIds = new Set(matchReqs.outgoing.map((o) => o.toRoomId))
 
   const isLeader = !!myRoom?.members.find((m) => m.userId === user?.id && m.isLeader)
@@ -458,6 +467,31 @@ export default function GroupMatchingPage() {
                 <button onClick={() => setShowCreate(false)} className="btn-outline flex-1">취소</button>
                 <button onClick={createRoom} className="btn-primary flex-1">만들기</button>
               </div>
+            </div>
+          )}
+
+          {/* 신청중인 과팅 (보낸 신청 + 취소) */}
+          {matchReqs.outgoing.length > 0 && (
+            <div className="card space-y-2.5">
+              <p className="text-sm font-bold text-gray-800">
+                신청중인 과팅 <span className="text-violet-500">{matchReqs.outgoing.length}</span>
+              </p>
+              {matchReqs.outgoing.map((o) => (
+                <div key={o.requestId} className="flex items-center gap-2 rounded-2xl bg-white/55 border border-white/60 px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{o.room?.title ?? '상대 팀'}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {o.room ? `${o.room.gender === 'male' ? '남성팀' : '여성팀'} · ${o.room.memberCount}/${o.room.maxMembers}명 · ` : ''}수락 대기 중
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => cancelRequest(o.requestId)}
+                    className="shrink-0 text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    취소
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

@@ -356,10 +356,28 @@ export const groupMatchingService = {
         return { requestId: r.id, room: await buildRoomDto(room) }
       }),
     )
-    return {
-      incoming,
-      outgoing: outgoingRes.rows.map((r) => ({ requestId: r.id, toRoomId: r.to_room_id })),
-    }
+    const outgoing = await Promise.all(
+      outgoingRes.rows.map(async (r) => {
+        const room = (await query<GroupRoomRow>('SELECT * FROM group_rooms WHERE id = $1', [r.to_room_id])).rows[0]
+        return { requestId: r.id, toRoomId: r.to_room_id, room: room ? await buildRoomDto(room) : null }
+      }),
+    )
+    return { incoming, outgoing }
+  },
+
+  // 보낸 매칭 신청 취소 (신청한 팀장)
+  async cancelMatchRequest(requestId: string, userId: string) {
+    const reqRes = await query<{ from_room_id: string; status: string }>(
+      'SELECT from_room_id, status FROM group_match_requests WHERE id = $1',
+      [requestId],
+    )
+    const row = reqRes.rows[0]
+    if (!row) throw new Error('신청을 찾을 수 없습니다.')
+    if (row.status !== 'pending') throw new Error('이미 처리된 신청입니다.')
+    const fromRoom = (await query<GroupRoomRow>('SELECT leader_id FROM group_rooms WHERE id = $1', [row.from_room_id])).rows[0]
+    if (!fromRoom || fromRoom.leader_id !== userId) throw new Error('신청한 팀장만 취소할 수 있습니다.')
+    await query('DELETE FROM group_match_requests WHERE id = $1', [requestId])
+    return { cancelled: true }
   },
 }
 

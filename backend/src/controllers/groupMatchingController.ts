@@ -190,4 +190,14 @@ export const groupMatchingController = {
       next(err)
     }
   },
+
+  async cancelMatchRequest(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const result = await groupMatchingService.cancelMatchRequest(req.params.requestId, req.user!.userId)
+      return success(res, result)
+    } catch (err) {
+      if (err instanceof Error) return fail(res, err.message)
+      next(err)
+    }
+  },
 }

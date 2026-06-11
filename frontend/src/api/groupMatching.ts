@@ -12,7 +12,7 @@ export interface CreateRoomPayload {
 
 export interface GroupMatchRequests {
   incoming: { requestId: string; room: GroupMatchingRoom }[]
-  outgoing: { requestId: string; toRoomId: string }[]
+  outgoing: { requestId: string; toRoomId: string; room: GroupMatchingRoom | null }[]
 }
 
 export const groupMatchingApi = {
@@ -45,6 +45,9 @@ export const groupMatchingApi = {
       `/group-matching/match-requests/${requestId}/respond`,
       { accept },
     ),
+
+  cancelMatchRequest: (requestId: string) =>
+    client.delete<ApiResponse<{ cancelled: boolean }>>(`/group-matching/match-requests/${requestId}`),
 
   disbandRoom: (roomId: string) =>
     client.delete(`/group-matching/rooms/${roomId}`),

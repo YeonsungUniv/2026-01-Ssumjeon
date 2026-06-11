@@ -18,5 +18,6 @@ router.post('/rooms/:roomId/invite', groupMatchingController.inviteUser)
 router.post('/rooms/:roomId/match', groupMatchingController.requestMatch)
 router.get('/match-requests', groupMatchingController.getMatchRequests)
 router.post('/match-requests/:requestId/respond', groupMatchingController.respondMatch)
+router.delete('/match-requests/:requestId', groupMatchingController.cancelMatchRequest)
 
 export default router
