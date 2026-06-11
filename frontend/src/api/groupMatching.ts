@@ -10,6 +10,11 @@ export interface CreateRoomPayload {
   allowedGender?: 'male' | 'female'
 }
 
+export interface GroupMatchRequests {
+  incoming: { requestId: string; room: GroupMatchingRoom }[]
+  outgoing: { requestId: string; toRoomId: string }[]
+}
+
 export const groupMatchingApi = {
   getRooms: (gender?: 'male' | 'female') =>
     client.get<ApiResponse<GroupMatchingRoom[]>>('/group-matching/rooms', gender ? { gender } : undefined),
@@ -27,9 +32,18 @@ export const groupMatchingApi = {
     client.get<ApiResponse<GroupMatchingRoom | null>>('/group-matching/my-room'),
 
   requestMatch: (myRoomId: string, targetRoomId: string) =>
-    client.post<ApiResponse<{ matched: boolean; chatRoomId: string }>>(
+    client.post<ApiResponse<{ requested: boolean }>>(
       `/group-matching/rooms/${myRoomId}/match`,
       { targetRoomId },
+    ),
+
+  getMatchRequests: () =>
+    client.get<ApiResponse<GroupMatchRequests>>('/group-matching/match-requests'),
+
+  respondMatch: (requestId: string, accept: boolean) =>
+    client.post<ApiResponse<{ accepted: boolean; chatRoomId?: string }>>(
+      `/group-matching/match-requests/${requestId}/respond`,
+      { accept },
     ),
 
   disbandRoom: (roomId: string) =>

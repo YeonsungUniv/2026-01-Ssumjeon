@@ -157,9 +157,33 @@ export const groupMatchingController = {
         targetRoomId,
         req.user!.userId,
       )
-      result.memberIds.forEach((uid) =>
-        emitToUser(uid, 'group:matched', { chatRoomId: result.chatRoomId }),
-      )
+      // 상대 팀장에게 신청 알림
+      emitToUser(result.targetLeaderId, 'group:matchRequest', { fromTitle: result.fromTitle })
+      return success(res, { requested: true })
+    } catch (err) {
+      if (err instanceof Error) return fail(res, err.message)
+      next(err)
+    }
+  },
+
+  async getMatchRequests(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const data = await groupMatchingService.getMatchRequests(req.user!.userId)
+      return success(res, data)
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  async respondMatch(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { accept } = req.body
+      const result = await groupMatchingService.respondMatch(req.params.requestId, req.user!.userId, !!accept)
+      if (result.accepted) {
+        result.memberIds.forEach((uid) =>
+          emitToUser(uid, 'group:matched', { chatRoomId: result.chatRoomId }),
+        )
+      }
       return success(res, result)
     } catch (err) {
       if (err instanceof Error) return fail(res, err.message)

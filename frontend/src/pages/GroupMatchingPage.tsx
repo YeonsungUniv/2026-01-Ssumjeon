@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { groupMatchingApi, type CreateRoomPayload } from '@/api/groupMatching'
+import { groupMatchingApi, type CreateRoomPayload, type GroupMatchRequests } from '@/api/groupMatching'
 import { userApi, type UserProfile } from '@/api/user'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
@@ -65,6 +65,8 @@ export default function GroupMatchingPage() {
   const [profileModal, setProfileModal] = useState<UserProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(false)
   const [page, setPage] = useState(0)
+  const [matchReqs, setMatchReqs] = useState<GroupMatchRequests>({ incoming: [], outgoing: [] })
+  const [respondingId, setRespondingId] = useState<string | null>(null)
 
   // 필터/목록이 바뀌면 페이지를 섞어 1페이지부터 다시 표시
   const filteredRooms = useMemo(
@@ -76,16 +78,21 @@ export default function GroupMatchingPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [roomsRes, myRoomRes] = await Promise.all([
+      const [roomsRes, myRoomRes, reqRes] = await Promise.all([
         groupMatchingApi.getRooms(),
         groupMatchingApi.getMyRoom(),
+        groupMatchingApi.getMatchRequests(),
       ])
       setRooms(roomsRes.data)
       setMyRoom(myRoomRes.data)
+      setMatchReqs(reqRes.data)
     } finally {
       setLoading(false)
     }
   }
+
+  const refreshRequests = () =>
+    groupMatchingApi.getMatchRequests().then((res) => setMatchReqs(res.data)).catch(() => {})
 
   useEffect(() => {
     loadData()
@@ -102,8 +109,13 @@ export default function GroupMatchingPage() {
         setTimeout(() => navigate(`/chat/${chatRoomId}`), 1500)
       }, 3000)
     }
+    const onMatchRequest = () => refreshRequests()
     socket.on('group:matched', onGroupMatched)
-    return () => { socket.off('group:matched', onGroupMatched) }
+    socket.on('group:matchRequest', onMatchRequest)
+    return () => {
+      socket.off('group:matched', onGroupMatched)
+      socket.off('group:matchRequest', onMatchRequest)
+    }
   }, [socket, navigate, setChatRooms])
 
   const handleViewProfile = async (userId: string) => {
@@ -164,12 +176,35 @@ export default function GroupMatchingPage() {
 
   const requestMatch = async (targetRoomId: string) => {
     if (!myRoom) return
-    const res = await groupMatchingApi.requestMatch(myRoom.id, targetRoomId)
-    if (res.data.matched) {
-      alert('매칭 성공! 채팅방으로 이동합니다.')
-      loadData()
+    try {
+      await groupMatchingApi.requestMatch(myRoom.id, targetRoomId)
+      await refreshRequests()
+      alert('과팅 신청을 보냈어요! 상대 팀장이 수락하면 매칭됩니다.')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '신청에 실패했습니다.')
     }
   }
+
+  const respondMatch = async (requestId: string, accept: boolean) => {
+    setRespondingId(requestId)
+    try {
+      const res = await groupMatchingApi.respondMatch(requestId, accept)
+      if (res.data.accepted && res.data.chatRoomId) {
+        alert('매칭 성공! 채팅방으로 이동합니다.')
+        chatApi.getRooms().then((r) => setChatRooms(r.data))
+        navigate(`/chat/${res.data.chatRoomId}`)
+      } else {
+        await loadData()
+      }
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '처리에 실패했습니다.')
+      await refreshRequests()
+    } finally {
+      setRespondingId(null)
+    }
+  }
+
+  const outgoingRoomIds = new Set(matchReqs.outgoing.map((o) => o.toRoomId))
 
   const isLeader = !!myRoom?.members.find((m) => m.userId === user?.id && m.isLeader)
 
@@ -258,6 +293,37 @@ export default function GroupMatchingPage() {
                   <span className="text-gray-700 font-medium text-right">{myRoom.isPrivate ? '🔒 초대코드방' : '공개방'}</span>
                 </div>
               </div>
+
+              {/* 받은 과팅 신청 (팀장만 수락/거절) */}
+              {isLeader && myRoom.status === 'waiting' && matchReqs.incoming.length > 0 && (
+                <div className="rounded-2xl bg-rose-50/70 border border-rose-100 p-3 space-y-2">
+                  <p className="text-xs font-bold text-rose-500">💌 받은 과팅 신청 {matchReqs.incoming.length}건</p>
+                  {matchReqs.incoming.map((r) => (
+                    <div key={r.requestId} className="bg-white/80 rounded-xl p-2.5">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{r.room.title}</p>
+                      <p className="text-xs text-gray-400 mb-2">
+                        {r.room.gender === 'male' ? '남성팀' : '여성팀'} · {r.room.memberCount}/{r.room.maxMembers}명
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => respondMatch(r.requestId, true)}
+                          disabled={respondingId === r.requestId}
+                          className="flex-1 py-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs font-semibold disabled:opacity-50"
+                        >
+                          수락
+                        </button>
+                        <button
+                          onClick={() => respondMatch(r.requestId, false)}
+                          disabled={respondingId === r.requestId}
+                          className="flex-1 py-1.5 rounded-lg border border-gray-200 text-gray-500 text-xs font-semibold disabled:opacity-50"
+                        >
+                          거절
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* 초대 코드 */}
               {myRoom.status === 'waiting' && myRoom.inviteCode && (
@@ -459,7 +525,11 @@ export default function GroupMatchingPage() {
                           </button>
                         )}
                         {canMatch && (
-                          <button onClick={() => requestMatch(room.id)} className="btn-secondary text-sm px-4 py-2">과팅 신청</button>
+                          outgoingRoomIds.has(room.id) ? (
+                            <button disabled className="btn-secondary text-sm px-4 py-2 opacity-50 cursor-default">신청됨</button>
+                          ) : (
+                            <button onClick={() => requestMatch(room.id)} className="btn-secondary text-sm px-4 py-2">과팅 신청</button>
+                          )
                         )}
                         {!canJoin && !canJoinPrivate && !canMatch && !myRoom && genderBlocked && (
                           <span className="text-xs text-gray-300">입장 불가</span>

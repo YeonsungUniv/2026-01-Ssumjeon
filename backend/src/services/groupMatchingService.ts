@@ -265,49 +265,118 @@ export const groupMatchingService = {
     return { cancelled: true }
   },
 
-  // 두 팀 매칭 확정 → 상태 변경 + 그룹 채팅방 생성
+  // 과팅 매칭 신청 (즉시 매칭 X → 상대 팀장 수락 대기)
   async requestMatch(myRoomId: string, targetRoomId: string, userId: string) {
+    if (myRoomId === targetRoomId) throw new Error('같은 방에는 신청할 수 없습니다.')
+
     const [myRoomRes, targetRoomRes] = await Promise.all([
       query<GroupRoomRow>('SELECT * FROM group_rooms WHERE id = $1', [myRoomId]),
       query<GroupRoomRow>('SELECT * FROM group_rooms WHERE id = $1', [targetRoomId]),
     ])
-
     const myRoom = myRoomRes.rows[0]
     const targetRoom = targetRoomRes.rows[0]
-
     if (!myRoom || !targetRoom) throw new Error('방을 찾을 수 없습니다.')
     if (myRoom.status !== 'waiting' || targetRoom.status !== 'waiting')
       throw new Error('매칭할 수 없는 상태입니다.')
+    if (myRoom.leader_id !== userId) throw new Error('팀장만 매칭을 신청할 수 있습니다.')
 
-    // 리더만 매칭 요청 가능
-    const leaderCheck = await query(
-      'SELECT 1 FROM group_room_members WHERE group_room_id = $1 AND user_id = $2 AND is_leader = true',
-      [myRoomId, userId],
-    )
-    if (leaderCheck.rows.length === 0) throw new Error('팀장만 매칭을 신청할 수 있습니다.')
-
-    // 두 방 모두 matched 상태로 변경
+    // 대기중 신청 생성(중복이면 갱신)
     await query(
-      "UPDATE group_rooms SET status = 'matched' WHERE id = ANY($1)",
-      [[myRoomId, targetRoomId]],
+      `INSERT INTO group_match_requests (id, from_room_id, to_room_id, status)
+       VALUES ($1, $2, $3, 'pending')
+       ON CONFLICT (from_room_id, to_room_id)
+       DO UPDATE SET status = 'pending', created_at = NOW()`,
+      [uuidv4(), myRoomId, targetRoomId],
     )
 
-    // 그룹 채팅방 생성
-    const chatRoomId = uuidv4()
-    await query('INSERT INTO chat_rooms (id, type, group_room_id) VALUES ($1, $2, $3)', [chatRoomId, 'group', myRoomId])
+    return { requested: true, targetLeaderId: targetRoom.leader_id, fromTitle: myRoom.title }
+  },
 
-    // 두 팀 전원 채팅방 멤버로 추가
-    const membersRes = await query<{ user_id: string }>(
-      'SELECT user_id FROM group_room_members WHERE group_room_id = ANY($1)',
-      [[myRoomId, targetRoomId]],
+  // 매칭 신청 수락/거절 (상대 팀장)
+  async respondMatch(requestId: string, userId: string, accept: boolean) {
+    const reqRes = await query<{ from_room_id: string; to_room_id: string; status: string }>(
+      'SELECT from_room_id, to_room_id, status FROM group_match_requests WHERE id = $1',
+      [requestId],
     )
-    for (const m of membersRes.rows) {
-      await query(
-        'INSERT INTO chat_room_members (chat_room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [chatRoomId, m.user_id],
-      )
+    const reqRow = reqRes.rows[0]
+    if (!reqRow) throw new Error('신청을 찾을 수 없습니다.')
+    if (reqRow.status !== 'pending') throw new Error('이미 처리된 신청입니다.')
+
+    const toRoom = (await query<GroupRoomRow>('SELECT * FROM group_rooms WHERE id = $1', [reqRow.to_room_id])).rows[0]
+    if (!toRoom) throw new Error('방을 찾을 수 없습니다.')
+    if (toRoom.leader_id !== userId) throw new Error('팀장만 수락/거절할 수 있습니다.')
+
+    if (!accept) {
+      await query("UPDATE group_match_requests SET status = 'rejected' WHERE id = $1", [requestId])
+      return { accepted: false as const }
     }
 
-    return { matched: true, chatRoomId, memberIds: membersRes.rows.map((m) => m.user_id) }
+    const fromRoom = (await query<GroupRoomRow>('SELECT * FROM group_rooms WHERE id = $1', [reqRow.from_room_id])).rows[0]
+    if (!fromRoom || fromRoom.status !== 'waiting' || toRoom.status !== 'waiting') {
+      await query("UPDATE group_match_requests SET status = 'rejected' WHERE id = $1", [requestId])
+      throw new Error('상대 팀이 이미 매칭되었거나 사라졌습니다.')
+    }
+
+    const result = await performGroupMatch(reqRow.from_room_id, reqRow.to_room_id)
+    await query("UPDATE group_match_requests SET status = 'accepted' WHERE id = $1", [requestId])
+    // 두 방과 얽힌 다른 대기 신청은 모두 거절 처리
+    await query(
+      `UPDATE group_match_requests SET status = 'rejected'
+       WHERE status = 'pending' AND (from_room_id = ANY($1) OR to_room_id = ANY($1))`,
+      [[reqRow.from_room_id, reqRow.to_room_id]],
+    )
+    return { accepted: true as const, ...result }
   },
+
+  // 내 방 기준 받은/보낸 매칭 신청 목록
+  async getMatchRequests(userId: string) {
+    const myRoomRes = await query<GroupRoomRow>(
+      `SELECT gr.* FROM group_rooms gr
+       JOIN group_room_members grm ON grm.group_room_id = gr.id
+       WHERE grm.user_id = $1 AND gr.status = 'waiting'`,
+      [userId],
+    )
+    if (myRoomRes.rows.length === 0) return { incoming: [], outgoing: [] }
+    const roomId = myRoomRes.rows[0].id
+
+    const [incomingRes, outgoingRes] = await Promise.all([
+      query<{ id: string; from_room_id: string }>(
+        `SELECT id, from_room_id FROM group_match_requests WHERE to_room_id = $1 AND status = 'pending' ORDER BY created_at DESC`,
+        [roomId],
+      ),
+      query<{ id: string; to_room_id: string }>(
+        `SELECT id, to_room_id FROM group_match_requests WHERE from_room_id = $1 AND status = 'pending'`,
+        [roomId],
+      ),
+    ])
+
+    const incoming = await Promise.all(
+      incomingRes.rows.map(async (r) => {
+        const room = (await query<GroupRoomRow>('SELECT * FROM group_rooms WHERE id = $1', [r.from_room_id])).rows[0]
+        return { requestId: r.id, room: await buildRoomDto(room) }
+      }),
+    )
+    return {
+      incoming,
+      outgoing: outgoingRes.rows.map((r) => ({ requestId: r.id, toRoomId: r.to_room_id })),
+    }
+  },
+}
+
+// 실제 매칭 확정: 두 방 matched + 그룹 채팅방 생성 + 전원 추가
+async function performGroupMatch(myRoomId: string, targetRoomId: string) {
+  await query("UPDATE group_rooms SET status = 'matched' WHERE id = ANY($1)", [[myRoomId, targetRoomId]])
+  const chatRoomId = uuidv4()
+  await query('INSERT INTO chat_rooms (id, type, group_room_id) VALUES ($1, $2, $3)', [chatRoomId, 'group', myRoomId])
+  const membersRes = await query<{ user_id: string }>(
+    'SELECT user_id FROM group_room_members WHERE group_room_id = ANY($1)',
+    [[myRoomId, targetRoomId]],
+  )
+  for (const m of membersRes.rows) {
+    await query(
+      'INSERT INTO chat_room_members (chat_room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [chatRoomId, m.user_id],
+    )
+  }
+  return { matched: true, chatRoomId, memberIds: membersRes.rows.map((m) => m.user_id) }
 }
