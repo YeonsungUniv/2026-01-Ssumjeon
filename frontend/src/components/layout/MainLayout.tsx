@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import TabBar, { MobileNav } from './TabBar'
+import AuroraBackground from './AuroraBackground'
 import { useSocket } from '@/hooks/useSocket'
 import { chatApi } from '@/api/chat'
 import { useChatStore } from '@/store/chatStore'
@@ -28,7 +29,8 @@ export default function MainLayout() {
   const isFullHeight = FULL_HEIGHT_ROUTES.test(pathname)
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh">
+      <AuroraBackground />
       <TabBar collapsed={collapsed} onToggle={toggleSidebar} />
       <MobileNav />
       {/* 데스크톱은 사이드바 폭만큼 좌측 여백, 모바일은 여백 없음(하단바만) */}

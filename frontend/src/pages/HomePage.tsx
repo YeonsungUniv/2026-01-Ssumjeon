@@ -93,6 +93,8 @@ function FireworksIcon({ active }: { active: boolean }) {
   )
 }
 
+const GLASS = 'bg-white/55 backdrop-blur-xl border border-white/60 shadow-[0_8px_30px_rgba(120,90,200,0.10)]'
+
 export default function HomePage() {
   const [matchHover, setMatchHover] = useState(false)
   const [groupHover, setGroupHover] = useState(false)
@@ -133,20 +135,20 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="space-y-5">
+      <div className="relative z-10 space-y-5">
 
-        {/* 상단 프로필 바 */}
-        <div className="flex items-center justify-between">
+        {/* 상단 프로필 바 — glass */}
+        <div className={`flex items-center justify-between rounded-3xl px-4 py-3 ${GLASS}`}>
           <div className="flex items-center gap-3">
             <button
               onClick={() => user?.profileImage && setShowImageModal(true)}
               style={{ cursor: user?.profileImage ? 'pointer' : 'default' }}
-              className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0"
+              className="w-10 h-10 rounded-full overflow-hidden bg-white/70 ring-2 ring-white/80 shrink-0"
             >
               {user?.profileImage ? (
                 <img src={user.profileImage} alt="프로필" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-rose-100 to-violet-100 text-violet-400">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
                   </svg>
@@ -154,23 +156,23 @@ export default function HomePage() {
               )}
             </button>
             <div>
-              <p className="text-[13px] font-semibold text-gray-900 leading-none">{user?.nickname}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5 leading-none">{user?.department}</p>
+              <p className="text-[13px] font-bold text-gray-900 leading-none">{user?.nickname}</p>
+              <p className="text-[11px] text-gray-400 mt-1 leading-none">{user?.department}</p>
             </div>
           </div>
-          <Link to="/profile" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <Link to="/profile" className="w-9 h-9 rounded-full bg-white/70 border border-white/80 flex items-center justify-center hover:bg-white transition-colors">
+            <svg className="w-4 h-4 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </Link>
         </div>
 
         {/* 인사 */}
-        <div>
-          <p className="text-[13px] text-gray-400">{greeting}</p>
-          <p className="text-2xl font-black text-gray-900 mt-0.5 leading-tight">
-            오늘 새로운<br/>인연을 만나볼까요?
-          </p>
+        <div className="px-1 pt-1">
+          <p className="text-[13px] font-semibold text-violet-500/80">{greeting}</p>
+          <h1 className="text-[28px] font-black mt-1.5 leading-[1.2] tracking-tight">
+            <span className="bg-gradient-to-br from-gray-900 via-gray-800 to-violet-700 bg-clip-text text-transparent">오늘 새로운<br/>인연을 만나볼까요?</span>
+          </h1>
         </div>
 
         {/* 기능 카드 2열 */}
@@ -178,71 +180,73 @@ export default function HomePage() {
 
           <Link
             to="/matching"
-            className="group bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+            className="group relative rounded-[28px] overflow-hidden border border-white/60 bg-white/45 backdrop-blur-xl shadow-[0_10px_38px_rgba(244,114,182,0.20)] hover:shadow-[0_16px_48px_rgba(244,114,182,0.34)] hover:-translate-y-0.5 transition-all duration-300"
             onMouseEnter={() => setMatchHover(true)}
             onMouseLeave={() => setMatchHover(false)}
           >
-            <div className="bg-gradient-to-br from-rose-400 to-pink-500 px-5 py-6 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-rose-100 uppercase tracking-widest">1:1</p>
-                <p className="text-2xl font-black text-white mt-0.5">매칭</p>
+            <div className="relative bg-gradient-to-br from-rose-400 via-pink-500 to-fuchsia-500 px-5 py-6 flex items-center justify-between overflow-hidden">
+              <div className="absolute -right-6 -bottom-8 w-28 h-28 rounded-full bg-white/15 blur-md" />
+              <div className="relative">
+                <p className="text-[11px] font-bold text-rose-50/90 uppercase tracking-[0.2em]">1:1</p>
+                <p className="text-2xl font-black text-white mt-0.5 drop-shadow-sm">매칭</p>
               </div>
-              <HeartArrowIcon active={matchHover} />
+              <div className="relative"><HeartArrowIcon active={matchHover} /></div>
             </div>
             <div className="px-5 py-4">
-              <p className="text-sm text-gray-500 leading-snug">마음에 드는 상대에게 좋아요를 보내보세요</p>
-              <p className="text-xs font-bold text-rose-400 mt-3 group-hover:translate-x-1 transition-transform">시작하기 →</p>
+              <p className="text-sm text-gray-600 leading-snug">마음에 드는 상대에게 좋아요를 보내보세요</p>
+              <p className="text-xs font-bold text-rose-500 mt-3 group-hover:translate-x-1 transition-transform">시작하기 →</p>
             </div>
           </Link>
 
           <Link
             to="/group-matching"
-            className="group bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+            className="group relative rounded-[28px] overflow-hidden border border-white/60 bg-white/45 backdrop-blur-xl shadow-[0_10px_38px_rgba(139,92,246,0.20)] hover:shadow-[0_16px_48px_rgba(139,92,246,0.34)] hover:-translate-y-0.5 transition-all duration-300"
             onMouseEnter={() => setGroupHover(true)}
             onMouseLeave={() => setGroupHover(false)}
           >
-            <div className="bg-gradient-to-br from-violet-400 to-purple-500 px-5 py-6 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-violet-100 uppercase tracking-widest">그룹</p>
-                <p className="text-2xl font-black text-white mt-0.5">과팅</p>
+            <div className="relative bg-gradient-to-br from-violet-400 via-purple-500 to-indigo-500 px-5 py-6 flex items-center justify-between overflow-hidden">
+              <div className="absolute -right-6 -bottom-8 w-28 h-28 rounded-full bg-white/15 blur-md" />
+              <div className="relative">
+                <p className="text-[11px] font-bold text-violet-50/90 uppercase tracking-[0.2em]">그룹</p>
+                <p className="text-2xl font-black text-white mt-0.5 drop-shadow-sm">과팅</p>
               </div>
-              <FireworksIcon active={groupHover} />
+              <div className="relative"><FireworksIcon active={groupHover} /></div>
             </div>
             <div className="px-5 py-4">
-              <p className="text-sm text-gray-500 leading-snug">팀을 꾸려 다 같이 만나보세요</p>
-              <p className="text-xs font-bold text-violet-400 mt-3 group-hover:translate-x-1 transition-transform">참여하기 →</p>
+              <p className="text-sm text-gray-600 leading-snug">팀을 꾸려 다 같이 만나보세요</p>
+              <p className="text-xs font-bold text-violet-500 mt-3 group-hover:translate-x-1 transition-transform">참여하기 →</p>
             </div>
           </Link>
 
         </div>
 
         {/* 내 약속 일정 (항상 표시되는 고정 박스) */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm">
-          <div className="px-5 pt-4 pb-3 flex items-center gap-2 border-b border-gray-50">
+        <div className={`rounded-3xl overflow-hidden ${GLASS}`}>
+          <div className="px-5 pt-4 pb-3 flex items-center gap-2 border-b border-white/40">
             <span className="text-base">📅</span>
             <p className="font-bold text-gray-800">내 약속 일정</p>
             {upcomingAppointments.length > 0 && (
-              <span className="text-[11px] text-gray-400 font-medium">{upcomingAppointments.length}건</span>
+              <span className="text-[11px] text-violet-500 font-bold bg-violet-100/70 px-2 py-0.5 rounded-full">{upcomingAppointments.length}건</span>
             )}
           </div>
           {upcomingAppointments.length === 0 ? (
-            <div className="py-10 flex flex-col items-center gap-2 text-gray-300">
-              <span className="text-3xl">🗓️</span>
+            <div className="py-10 flex flex-col items-center gap-2 text-gray-400">
+              <span className="text-3xl opacity-60">🗓️</span>
               <p className="text-xs">예정된 약속이 없어요</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
+            <div className="divide-y divide-white/40 max-h-72 overflow-y-auto">
               {upcomingAppointments.map((a) => (
                 <Link
                   key={a.id}
                   to={`/chat/${a.roomId}?appt=${a.id}`}
-                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/50 transition-colors"
                 >
-                  <div className={`w-11 h-11 rounded-2xl flex flex-col items-center justify-center shrink-0 ${a.status === 'confirmed' ? 'bg-green-50' : 'bg-yellow-50'}`}>
-                    <span className={`text-[10px] font-bold leading-none ${a.status === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                  <div className={`w-11 h-11 rounded-2xl flex flex-col items-center justify-center shrink-0 ${a.status === 'confirmed' ? 'bg-emerald-100/80' : 'bg-amber-100/80'}`}>
+                    <span className={`text-[10px] font-bold leading-none ${a.status === 'confirmed' ? 'text-emerald-600' : 'text-amber-600'}`}>
                       {dayjs(a.date).format('M월')}
                     </span>
-                    <span className={`text-base font-black leading-tight ${a.status === 'confirmed' ? 'text-green-700' : 'text-yellow-700'}`}>
+                    <span className={`text-base font-black leading-tight ${a.status === 'confirmed' ? 'text-emerald-700' : 'text-amber-700'}`}>
                       {dayjs(a.date).format('D')}
                     </span>
                   </div>
@@ -255,7 +259,7 @@ export default function HomePage() {
                       {a.partnerNickname && ` · ${a.partnerNickname}`}
                     </p>
                   </div>
-                  <span className={`shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full ${a.status === 'confirmed' ? 'text-green-600 bg-green-50' : 'text-yellow-600 bg-yellow-50'}`}>
+                  <span className={`shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full ${a.status === 'confirmed' ? 'text-emerald-600 bg-emerald-100/70' : 'text-amber-600 bg-amber-100/70'}`}>
                     {a.status === 'confirmed' ? '확정' : '대기'}
                   </span>
                 </Link>
@@ -265,36 +269,36 @@ export default function HomePage() {
         </div>
 
         {/* 최근 채팅 */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm">
-          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-50">
+        <div className={`rounded-3xl overflow-hidden ${GLASS}`}>
+          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-white/40">
             <div className="flex items-center gap-2">
               <p className="font-bold text-gray-800">채팅</p>
               {totalUnread > 0 && (
-                <span className="min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
+                <span className="min-w-[20px] h-5 px-1.5 text-[11px] font-bold text-white bg-gradient-to-br from-rose-500 to-pink-500 rounded-full flex items-center justify-center">
                   {totalUnread > 99 ? '99+' : totalUnread}
                 </span>
               )}
             </div>
-            <Link to="/chat" className="text-xs text-primary-500 font-semibold">전체 보기</Link>
+            <Link to="/chat" className="text-xs text-violet-500 font-bold">전체 보기</Link>
           </div>
           {rooms.length === 0 ? (
-            <div className="py-10 flex flex-col items-center gap-2 text-gray-300">
-              <span className="text-3xl">💬</span>
+            <div className="py-10 flex flex-col items-center gap-2 text-gray-400">
+              <span className="text-3xl opacity-60">💬</span>
               <p className="text-xs">아직 채팅이 없어요</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-white/40">
               {rooms.slice(0, 5).map((room) => (
                 <Link
                   key={room.id}
                   to={`/chat/${room.id}`}
-                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/50 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-violet-100 flex items-center justify-center shrink-0 overflow-hidden">
                     {room.type === 'individual' && room.partner?.profileImage ? (
                       <img src={room.partner.profileImage} alt={room.partner.nickname} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-sm font-bold text-primary-500">
+                      <span className="text-sm font-bold text-violet-500">
                         {room.type === 'individual' ? (room.partner?.nickname?.[0] ?? '?') : '👥'}
                       </span>
                     )}
@@ -312,7 +316,7 @@ export default function HomePage() {
                     </p>
                   </div>
                   {room.unreadCount > 0 && (
-                    <span className="shrink-0 min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-primary-500 rounded-full flex items-center justify-center">
+                    <span className="shrink-0 min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-gradient-to-br from-rose-500 to-pink-500 rounded-full flex items-center justify-center">
                       {room.unreadCount}
                     </span>
                   )}

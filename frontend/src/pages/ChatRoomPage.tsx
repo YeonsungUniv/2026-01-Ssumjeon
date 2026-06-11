@@ -277,7 +277,7 @@ export default function ChatRoomPage() {
   return (
     <div className="flex flex-col h-full">
       {/* 헤더 */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white sticky top-0 z-10">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/40 bg-white/70 backdrop-blur-xl sticky top-0 z-10">
         <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600 shrink-0">
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -329,7 +329,7 @@ export default function ChatRoomPage() {
       {/* 메시지 목록 */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50"
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-white/40 backdrop-blur-sm"
         onScroll={(e) => { if (e.currentTarget.scrollTop === 0) loadMore() }}
       >
         {loadingMore && (
@@ -412,7 +412,7 @@ export default function ChatRoomPage() {
                     <div className={`flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
                       {!isMe && <span className="text-xs text-gray-400 px-1">{msg.senderNickname}</span>}
                       {isExpiredImage(msg.content) ? (
-                        <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
+                        <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-gradient-to-br from-rose-500 to-pink-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
                           <span className="block px-4 py-2.5 text-xs opacity-60">🗑️ 이미지가 만료되었습니다</span>
                         </div>
                       ) : isImageContent(msg.content) ? (
@@ -423,7 +423,7 @@ export default function ChatRoomPage() {
                           onClick={() => window.open(msg.content, '_blank')}
                         />
                       ) : (
-                        <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-primary-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
+                        <div className={`rounded-2xl overflow-hidden text-sm ${isMe ? 'bg-gradient-to-br from-rose-500 to-pink-500 text-white rounded-br-sm' : 'bg-white text-gray-800 rounded-bl-sm shadow-sm'}`}>
                           <span className="block px-4 py-2.5">{msg.content}</span>
                         </div>
                       )}
@@ -469,7 +469,7 @@ export default function ChatRoomPage() {
       )}
 
       {/* 입력창 */}
-      <div className={`border-t border-gray-100 bg-white ${room?.isBlocked || room?.partnerLeft ? 'opacity-40 pointer-events-none' : ''}`}>
+      <div className={`border-t border-white/40 bg-white/70 backdrop-blur-xl ${room?.isBlocked || room?.partnerLeft ? 'opacity-40 pointer-events-none' : ''}`}>
         <div className="flex gap-2 px-4 py-3">
           {/* 숨겨진 파일 입력 */}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />

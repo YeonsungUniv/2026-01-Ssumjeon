@@ -58,7 +58,7 @@ export default function TabBar({ collapsed = false, onToggle }: { collapsed?: bo
   }
 
   return (
-    <nav className={`hidden md:flex fixed left-0 top-0 h-full bg-white border-r border-gray-100 flex-col z-50 shadow-sm transition-[width] duration-200 ${collapsed ? 'w-16' : 'w-52'}`}>
+    <nav className={`hidden md:flex fixed left-0 top-0 h-full bg-white/60 backdrop-blur-xl border-r border-white/50 flex-col z-50 shadow-[0_8px_30px_rgba(120,90,200,0.08)] transition-[width] duration-200 ${collapsed ? 'w-16' : 'w-52'}`}>
       {/* 헤더 + 접기/펴기 토글 */}
       <div className={`flex items-center border-b border-gray-100 ${collapsed ? 'justify-center py-5' : 'justify-between px-6 py-6'}`}>
         {!collapsed && (
@@ -112,7 +112,7 @@ export function MobileNav() {
     : baseTabs
 
   return (
-    <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-white border-t border-gray-100 z-50 flex pb-[env(safe-area-inset-bottom)]">
+    <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-white/70 backdrop-blur-xl border-t border-white/50 shadow-[0_-4px_24px_rgba(120,90,200,0.10)] z-50 flex pb-[env(safe-area-inset-bottom)]">
       {tabs.map(({ to, label, icon: Icon, badge }) => {
         const badgeCount = badge === 'chat' ? totalUnread : badge === 'request' ? pendingIncomingCount : 0
         return (

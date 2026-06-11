@@ -8,8 +8,11 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    @apply text-gray-900 font-sans antialiased;
     min-height: 100dvh;
+    /* 오로라 베이스 그라데이션 (AuroraBackground 미적용 화면도 톤 유지) */
+    background: linear-gradient(180deg, #fdf4ff 0%, #f6f4ff 40%, #eef4ff 75%, #f0fbff 100%);
+    background-attachment: fixed;
   }
 
   #root {
@@ -18,6 +21,14 @@
     flex-direction: column;
   }
 }
+
+/* ── 오로라 블롭 떠다니는 애니메이션 ───────────────────────────── */
+@keyframes aurora-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(24px, -18px) scale(1.08); }
+  66%      { transform: translate(-18px, 16px) scale(0.96); }
+}
+.aurora-blob { animation: aurora-float 18s ease-in-out infinite; }
 
 /* ── 홈 카드 아이콘 애니메이션 ──────────────────────────────── */
 @keyframes heart-bounce {
@@ -50,31 +61,37 @@
 }
 
 @layer components {
+  /* 그라데이션 + 글로우 (오로라 글래스) */
   .btn-primary {
-    @apply bg-primary-500 text-white font-semibold px-6 py-3 rounded-2xl
-           hover:bg-primary-600 active:bg-primary-700 transition-colors
-           disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold px-6 py-3 rounded-2xl
+           shadow-[0_8px_24px_rgba(244,63,94,0.30)]
+           hover:shadow-[0_10px_30px_rgba(244,63,94,0.42)] hover:brightness-105 active:brightness-95
+           transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
   }
 
   .btn-secondary {
-    @apply bg-secondary-500 text-white font-semibold px-6 py-3 rounded-2xl
-           hover:bg-secondary-600 active:bg-secondary-700 transition-colors
-           disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-semibold px-6 py-3 rounded-2xl
+           shadow-[0_8px_24px_rgba(139,92,246,0.30)]
+           hover:shadow-[0_10px_30px_rgba(139,92,246,0.42)] hover:brightness-105 active:brightness-95
+           transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
   }
 
   .btn-outline {
-    @apply border-2 border-primary-500 text-primary-500 font-semibold px-6 py-3 rounded-2xl
-           hover:bg-primary-50 active:bg-primary-100 transition-colors
+    @apply border border-white/70 bg-white/50 backdrop-blur text-rose-500 font-semibold px-6 py-3 rounded-2xl
+           hover:bg-white/80 active:bg-white transition-colors
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  /* 반투명 글래스 입력창 */
   .input-field {
-    @apply w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white
-           focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400
+    @apply w-full px-4 py-3 rounded-2xl border border-white/70 bg-white/60 backdrop-blur
+           focus:outline-none focus:ring-2 focus:ring-rose-300/60 focus:border-rose-300
            placeholder:text-gray-400 text-gray-900 transition;
   }
 
+  /* 프로스티드 글래스 카드 */
   .card {
-    @apply bg-white rounded-3xl shadow-sm border border-gray-100 p-6;
+    @apply bg-white/55 backdrop-blur-xl rounded-3xl border border-white/60
+           shadow-[0_8px_30px_rgba(120,90,200,0.10)] p-6;
   }
 }

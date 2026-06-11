@@ -20,8 +20,8 @@ export default function ChatLayout() {
   return (
     <div className="flex h-dvh">
       {/* 좌측 채팅방 목록 — 모바일에선 방 선택 시 숨김 */}
-      <div className={`${roomId ? 'hidden md:flex' : 'flex'} w-full md:w-80 shrink-0 border-r border-gray-100 bg-white flex-col`}>
-        <div className="px-5 py-4 border-b border-gray-100">
+      <div className={`${roomId ? 'hidden md:flex' : 'flex'} w-full md:w-80 shrink-0 border-r border-white/50 bg-white/60 backdrop-blur-xl flex-col`}>
+        <div className="px-5 py-4 border-b border-white/40">
           <h2 className="text-lg font-bold text-gray-800">채팅</h2>
         </div>
 
@@ -41,7 +41,7 @@ export default function ChatLayout() {
                     key={room.id}
                     to={`/chat/${room.id}`}
                     className={`flex items-center gap-3 px-4 py-3 transition-colors ${
-                      isActive ? 'bg-primary-50 border-r-2 border-primary-500' : 'hover:bg-gray-50'
+                      isActive ? 'bg-white/70 border-r-2 border-rose-500' : 'hover:bg-white/50'
                     }`}
                   >
                     <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center shrink-0 overflow-hidden">
