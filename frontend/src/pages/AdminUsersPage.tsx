@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminApi, type AdminUser } from '@/api/auth'
+import { useAuthStore } from '@/store/authStore'
 import DepartmentSelect from '@/components/DepartmentSelect'
 import AdminSubNav from '@/components/layout/AdminSubNav'
 
@@ -10,6 +11,7 @@ const STATUS_LABEL: Record<AdminUser['status'], { text: string; cls: string }> =
 }
 
 export default function AdminUsersPage() {
+  const { user: me } = useAuthStore()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -20,6 +22,7 @@ export default function AdminUsersPage() {
   const [editStudentId, setEditStudentId] = useState('')
   const [saving, setSaving] = useState(false)
   const [editError, setEditError] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const fetchUsers = async (q?: string) => {
     setLoading(true)
@@ -71,6 +74,19 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleDelete = async (u: AdminUser) => {
+    if (!confirm(`'${u.nickname}'(@${u.username}) 계정을 정말로 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.`)) return
+    setDeletingId(u.id)
+    try {
+      await adminApi.deleteUser(u.id)
+      setUsers((prev) => prev.filter((x) => x.id !== u.id))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '삭제 실패')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       <AdminSubNav />
@@ -119,7 +135,18 @@ export default function AdminUsersPage() {
                       <p><span className="text-gray-400">학과</span> · {u.department}</p>
                       <p><span className="text-gray-400">학번</span> · {u.studentId ?? '-'} <span className="text-gray-400">({u.gender === 'male' ? '남' : '여'})</span></p>
                     </div>
-                    <button onClick={() => startEdit(u)} className="btn-outline text-sm py-1.5 px-4 shrink-0">수정</button>
+                    <div className="flex gap-2 shrink-0">
+                      <button onClick={() => startEdit(u)} className="btn-outline text-sm py-1.5 px-4">수정</button>
+                      {u.id !== me?.id && (
+                        <button
+                          onClick={() => handleDelete(u)}
+                          disabled={deletingId === u.id}
+                          className="text-sm py-1.5 px-4 rounded-2xl border border-red-200 text-red-500 font-medium hover:bg-red-50 disabled:opacity-40 transition-colors"
+                        >
+                          {deletingId === u.id ? '삭제 중...' : '삭제'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3 border-t border-gray-100 pt-3">

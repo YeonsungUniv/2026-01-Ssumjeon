@@ -96,6 +96,9 @@ export const adminApi = {
   updateUser: (userId: string, payload: { department?: string; studentId?: string }) =>
     client.patch<ApiResponse<AdminUser>>(`/admin/users/${userId}`, payload),
 
+  deleteUser: (userId: string) =>
+    client.delete<ApiResponse<{ deleted: boolean }>>(`/admin/users/${userId}`),
+
   listPending: () =>
     client.get<ApiResponse<PendingUser[]>>('/admin/pending'),
 

@@ -9,6 +9,7 @@ router.use(authenticate, adminOnly)
 
 router.get('/users', adminController.listUsers)
 router.patch('/users/:userId', adminController.updateUser)
+router.delete('/users/:userId', adminController.deleteUser)
 
 router.get('/pending', adminController.listPending)
 router.patch('/users/:userId/approve', adminController.approveUser)

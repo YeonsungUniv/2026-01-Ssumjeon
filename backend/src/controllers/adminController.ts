@@ -4,6 +4,7 @@ import { success, fail } from '../utils/response'
 import { entryYearOf } from '../utils/cohort'
 import { deleteFromS3 } from '../utils/s3'
 import { sendAccountResultEmail } from '../services/authService'
+import { purgeUser } from '../services/userService'
 import type { AuthRequest, UserRow } from '../types'
 
 // 관리자 사용자 목록/상세용 공통 매핑
@@ -86,6 +87,19 @@ export const adminController = {
       )
       if (result.rows.length === 0) return fail(res, '사용자를 찾을 수 없습니다.', 404)
       return success(res, adminUserDto(result.rows[0]))
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  // 관리자 임의 사용자 삭제 (연관 데이터·S3 파일까지 완전 삭제)
+  async deleteUser(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { userId } = req.params
+      if (userId === req.user!.userId) return fail(res, '본인 계정은 여기서 삭제할 수 없습니다.')
+      const ok = await purgeUser(userId)
+      if (!ok) return fail(res, '사용자를 찾을 수 없습니다.', 404)
+      return success(res, { deleted: true })
     } catch (err) {
       next(err)
     }
