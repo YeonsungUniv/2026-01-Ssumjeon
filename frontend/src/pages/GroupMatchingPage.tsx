@@ -321,22 +321,6 @@ export default function GroupMatchingPage() {
                   ))}
                 </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-2">원하는 상대 성별</p>
-                <div className="flex gap-2">
-                  {([undefined, 'male', 'female'] as const).map((g) => (
-                    <button
-                      key={g ?? 'any'}
-                      onClick={() => setForm({ ...form, preferredGender: g })}
-                      className={`flex-1 py-2 rounded-xl border-2 text-sm font-semibold transition ${
-                        form.preferredGender === g ? 'border-secondary-500 bg-secondary-50 text-secondary-600' : 'border-gray-200 text-gray-500'
-                      }`}
-                    >
-                      {g === undefined ? '제한 없음' : g === 'male' ? '남성 팀' : '여성 팀'}
-                    </button>
-                  ))}
-                </div>
-              </div>
               {/* 참여 성별 제한 */}
               <div>
                 <p className="text-xs text-gray-400 mb-2">참여 가능 성별</p>
@@ -399,6 +383,8 @@ export default function GroupMatchingPage() {
                 // 성별 제한(allowedGender)이 설정된 경우에만 차단. 제한없음이면 동성도 참여 가능
                 const genderBlocked = room.allowedGender && room.allowedGender !== user?.gender
                 const canJoin = !myRoom && !genderBlocked && !room.isPrivate
+                // 비공개 방은 참여 누르면 초대코드 입력 후 입장
+                const canJoinPrivate = !myRoom && !genderBlocked && room.isPrivate
                 // 과팅 신청은 팀장만 가능 (상대 팀은 반대 성별·대기중)
                 const canMatch = myRoom && isLeader && myRoom.id !== room.id && myRoom.gender !== room.gender && myRoom.status === 'waiting'
                 return (
@@ -425,13 +411,19 @@ export default function GroupMatchingPage() {
                         {canJoin && (
                           <button onClick={() => joinRoom(room.id)} className="btn-primary text-sm px-4 py-2">참여</button>
                         )}
+                        {canJoinPrivate && (
+                          <button
+                            onClick={() => { setJoinCode(''); setJoinCodeError(''); setShowJoinByCode(true) }}
+                            className="btn-primary text-sm px-4 py-2"
+                          >
+                            참여
+                          </button>
+                        )}
                         {canMatch && (
                           <button onClick={() => requestMatch(room.id)} className="btn-secondary text-sm px-4 py-2">과팅 신청</button>
                         )}
-                        {!canJoin && !canMatch && !myRoom && (
-                          <span className="text-xs text-gray-300">
-                            {room.isPrivate ? '초대코드 전용' : '입장 불가'}
-                          </span>
+                        {!canJoin && !canJoinPrivate && !canMatch && !myRoom && genderBlocked && (
+                          <span className="text-xs text-gray-300">입장 불가</span>
                         )}
                         {myRoom && !canMatch && myRoom.id !== room.id && myRoom.gender !== room.gender && myRoom.status === 'waiting' && !isLeader && (
                           <span className="text-xs text-gray-300">팀장만 신청</span>
