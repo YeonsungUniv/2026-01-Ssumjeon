@@ -470,13 +470,15 @@ export default function GroupMatchingPage() {
             </div>
           )}
 
-          {/* 신청중인 과팅 (보낸 신청 + 취소) */}
-          {matchReqs.outgoing.length > 0 && (
-            <div className="card space-y-2.5">
-              <p className="text-sm font-bold text-gray-800">
-                신청중인 과팅 <span className="text-violet-500">{matchReqs.outgoing.length}</span>
-              </p>
-              {matchReqs.outgoing.map((o) => (
+          {/* 신청중인 과팅 (보낸 신청 + 취소) — 항상 표시 */}
+          <div className="card space-y-2.5">
+            <p className="text-sm font-bold text-gray-800">
+              신청중인 과팅 <span className="text-violet-500">{matchReqs.outgoing.length}</span>
+            </p>
+            {matchReqs.outgoing.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-3">아직 신청한 과팅이 없어요</p>
+            ) : (
+              matchReqs.outgoing.map((o) => (
                 <div key={o.requestId} className="flex items-center gap-2 rounded-2xl bg-white/55 border border-white/60 px-3 py-2.5">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800 truncate">{o.room?.title ?? '상대 팀'}</p>
@@ -491,9 +493,9 @@ export default function GroupMatchingPage() {
                     취소
                   </button>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
 
         {/* 우측: 방 목록 */}
