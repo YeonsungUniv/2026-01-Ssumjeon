@@ -396,10 +396,11 @@ export default function GroupMatchingPage() {
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
               {filteredRooms.map((room) => {
-                const isSameGender = room.gender === user?.gender
+                // 성별 제한(allowedGender)이 설정된 경우에만 차단. 제한없음이면 동성도 참여 가능
                 const genderBlocked = room.allowedGender && room.allowedGender !== user?.gender
-                const canJoin = !myRoom && !isSameGender && !genderBlocked && !room.isPrivate
-                const canMatch = myRoom && myRoom.id !== room.id && myRoom.gender !== room.gender && myRoom.status === 'waiting'
+                const canJoin = !myRoom && !genderBlocked && !room.isPrivate
+                // 과팅 신청은 팀장만 가능 (상대 팀은 반대 성별·대기중)
+                const canMatch = myRoom && isLeader && myRoom.id !== room.id && myRoom.gender !== room.gender && myRoom.status === 'waiting'
                 return (
                   <div key={room.id} className="card hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between gap-3 mb-3">
@@ -429,8 +430,11 @@ export default function GroupMatchingPage() {
                         )}
                         {!canJoin && !canMatch && !myRoom && (
                           <span className="text-xs text-gray-300">
-                            {room.isPrivate ? '초대코드 전용' : genderBlocked ? '입장 불가' : '같은 성별'}
+                            {room.isPrivate ? '초대코드 전용' : '입장 불가'}
                           </span>
+                        )}
+                        {myRoom && !canMatch && myRoom.id !== room.id && myRoom.gender !== room.gender && myRoom.status === 'waiting' && !isLeader && (
+                          <span className="text-xs text-gray-300">팀장만 신청</span>
                         )}
                       </div>
                     </div>
