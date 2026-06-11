@@ -278,8 +278,6 @@ export const groupMatchingService = {
     if (!myRoom || !targetRoom) throw new Error('방을 찾을 수 없습니다.')
     if (myRoom.status !== 'waiting' || targetRoom.status !== 'waiting')
       throw new Error('매칭할 수 없는 상태입니다.')
-    if (myRoom.gender === targetRoom.gender)
-      throw new Error('같은 성별 팀과는 매칭할 수 없습니다.')
 
     // 리더만 매칭 요청 가능
     const leaderCheck = await query(

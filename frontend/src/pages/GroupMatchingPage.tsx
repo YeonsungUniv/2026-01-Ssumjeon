@@ -242,6 +242,23 @@ export default function GroupMatchingPage() {
                 </p>
               </div>
 
+              {/* 방 설정 요약 */}
+              <div className="rounded-2xl bg-white/55 border border-white/60 px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 mb-2">방 설정</p>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                  <span className="text-gray-400">팀 성별</span>
+                  <span className="text-gray-700 font-medium text-right">{myRoom.gender === 'male' ? '남성팀' : '여성팀'}</span>
+                  <span className="text-gray-400">최대 인원</span>
+                  <span className="text-gray-700 font-medium text-right">{myRoom.maxMembers}명</span>
+                  <span className="text-gray-400">참여 가능 성별</span>
+                  <span className="text-gray-700 font-medium text-right">
+                    {myRoom.allowedGender ? (myRoom.allowedGender === 'male' ? '남성만' : '여성만') : '제한 없음'}
+                  </span>
+                  <span className="text-gray-400">공개 여부</span>
+                  <span className="text-gray-700 font-medium text-right">{myRoom.isPrivate ? '🔒 초대코드방' : '공개방'}</span>
+                </div>
+              </div>
+
               {/* 초대 코드 */}
               {myRoom.status === 'waiting' && myRoom.inviteCode && (
                 <div className="bg-white/55 backdrop-blur-xl rounded-2xl border border-white/60 shadow-[0_6px_24px_rgba(120,90,200,0.08)] px-4 py-3 flex items-center justify-between gap-3">
@@ -407,8 +424,8 @@ export default function GroupMatchingPage() {
                 const canJoin = !myRoom && !genderBlocked && !room.isPrivate
                 // 비공개 방은 참여 누르면 초대코드 입력 후 입장
                 const canJoinPrivate = !myRoom && !genderBlocked && room.isPrivate
-                // 과팅 신청은 팀장만 가능 (상대 팀은 반대 성별·대기중)
-                const canMatch = myRoom && isLeader && myRoom.id !== room.id && myRoom.gender !== room.gender && myRoom.status === 'waiting'
+                // 과팅 신청은 팀장만 가능 (상대 팀이 대기중이면 성별 무관)
+                const canMatch = myRoom && isLeader && myRoom.id !== room.id && myRoom.status === 'waiting'
                 return (
                   <div key={room.id} className="card hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between gap-3 mb-3">
@@ -447,7 +464,7 @@ export default function GroupMatchingPage() {
                         {!canJoin && !canJoinPrivate && !canMatch && !myRoom && genderBlocked && (
                           <span className="text-xs text-gray-300">입장 불가</span>
                         )}
-                        {myRoom && !canMatch && myRoom.id !== room.id && myRoom.gender !== room.gender && myRoom.status === 'waiting' && !isLeader && (
+                        {myRoom && !canMatch && myRoom.id !== room.id && myRoom.status === 'waiting' && !isLeader && (
                           <span className="text-xs text-gray-300">팀장만 신청</span>
                         )}
                       </div>
