@@ -30,15 +30,17 @@ export const adminController = {
   async listUsers(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const q = String(req.query.q ?? '').trim().toLowerCase()
-      const where = q
-        ? `WHERE LOWER(username) LIKE $1 OR LOWER(nickname) LIKE $1
-             OR LOWER(COALESCE(email,'')) LIKE $1 OR COALESCE(student_id,'') LIKE $1`
-        : ''
-      const params = q ? [`%${q}%`] : []
+      const conds = ['id != $1'] // 본인 계정 제외
+      const params: unknown[] = [req.user!.userId]
+      if (q) {
+        params.push(`%${q}%`)
+        conds.push(`(LOWER(username) LIKE $2 OR LOWER(nickname) LIKE $2
+             OR LOWER(COALESCE(email,'')) LIKE $2 OR COALESCE(student_id,'') LIKE $2)`)
+      }
       const result = await query<UserRow>(
         `SELECT id, username, nickname, email, student_id, department, grade, gender,
                 status, is_admin, enrollment_doc, created_at
-         FROM users ${where} ORDER BY created_at DESC`,
+         FROM users WHERE ${conds.join(' AND ')} ORDER BY created_at DESC`,
         params,
       )
       return success(res, result.rows.map(adminUserDto))
@@ -97,6 +99,10 @@ export const adminController = {
     try {
       const { userId } = req.params
       if (userId === req.user!.userId) return fail(res, '본인 계정은 여기서 삭제할 수 없습니다.')
+      // 관리자 계정은 삭제 불가
+      const target = await query<{ is_admin: boolean }>('SELECT is_admin FROM users WHERE id = $1', [userId])
+      if (target.rows.length === 0) return fail(res, '사용자를 찾을 수 없습니다.', 404)
+      if (target.rows[0].is_admin) return fail(res, '관리자 계정은 삭제할 수 없습니다.')
       const ok = await purgeUser(userId)
       if (!ok) return fail(res, '사용자를 찾을 수 없습니다.', 404)
       return success(res, { deleted: true })
