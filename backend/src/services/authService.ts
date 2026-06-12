@@ -194,7 +194,7 @@ export const authService = {
     password: string
     nickname?: string
     gender: 'male' | 'female'
-    department: string
+    department?: string
     email: string
     enrollmentDoc: string
   }) {
@@ -242,7 +242,7 @@ export const authService = {
       `INSERT INTO users (id, username, email, password_hash, nickname, student_id, gender, department, grade, interests, enrollment_doc, status, is_verified)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending', true)
        RETURNING *`,
-      [id, payload.username, payload.email, passwordHash, nickname, studentId, payload.gender, payload.department, grade, [], payload.enrollmentDoc],
+      [id, payload.username, payload.email, passwordHash, nickname, studentId, payload.gender, payload.department?.trim() || '미설정', grade, [], payload.enrollmentDoc],
     )
 
     return { user: toUserDto(result.rows[0]) }

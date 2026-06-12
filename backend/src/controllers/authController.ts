@@ -76,7 +76,6 @@ export const authController = {
       const { username, password, nickname, gender, department, email } = req.body
 
       if (!email) return fail(res, '이메일을 입력해주세요.')
-      if (!department) return fail(res, '학과를 선택해주세요.')
       if (!req.file) return fail(res, '재학증명서를 업로드해주세요.')
 
       // 재학증명서를 S3에 업로드 (관리자 수신함에서 열람)

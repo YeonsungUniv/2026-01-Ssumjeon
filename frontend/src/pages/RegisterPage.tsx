@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { authApi } from '@/api/auth'
-import DepartmentSelect from '@/components/DepartmentSelect'
 
 const SCHOOL_DOMAIN = '@yeonsung.ac.kr'
 
@@ -19,7 +18,6 @@ export default function RegisterPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 'done'>(1)
   const [error, setError] = useState('')
   const [step1Data, setStep1Data] = useState<Step1Form | null>(null)
-  const [department, setDepartment] = useState('')
 
   // 재학증명서 (Step 3)
   const [enrollmentFile, setEnrollmentFile] = useState<File | null>(null)
@@ -49,7 +47,6 @@ export default function RegisterPage() {
   const fullEmail = emailLocal.trim() ? `${emailLocal.trim().toLowerCase()}${SCHOOL_DOMAIN}` : ''
 
   const onStep1Submit = async (data: Step1Form) => {
-    if (!department) { setError('학과를 선택해주세요.'); return }
     try {
       const res = await authApi.checkUsername(data.username)
       if (!res.data.available) {
@@ -108,7 +105,7 @@ export default function RegisterPage() {
   }
 
   const onFinalSubmit = async () => {
-    if (!step1Data || !department) return
+    if (!step1Data) return
     if (!emailVerified) { setEmailError('이메일 인증을 완료해주세요.'); return }
     if (!enrollmentFile) { setDocError('재학증명서를 첨부해주세요.'); return }
     setError('')
@@ -117,7 +114,6 @@ export default function RegisterPage() {
       await authApi.register({
         ...step1Data,
         nickname: step1Data.nickname.trim() || undefined,
-        department,
         email: fullEmail,
         enrollmentDoc: enrollmentFile,
       })
@@ -229,15 +225,7 @@ export default function RegisterPage() {
               }
             </div>
 
-            {/* 학과 */}
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-2">
-                학과 <span className="text-red-400">*</span>
-                {department && <span className="ml-2 text-primary-500 font-semibold">{department}</span>}
-              </p>
-              <DepartmentSelect value={department} onChange={setDepartment} />
-              <p className="text-xs text-gray-400 mt-1.5">학번(입학년도)은 학교 이메일로 자동 인식됩니다.</p>
-            </div>
+            <p className="text-xs text-gray-400">학번(입학년도)은 학교 이메일로 자동 인식됩니다. 학과는 가입 후 관리자가 설정합니다.</p>
 
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}
             <button type="submit" disabled={isSubmitting} className="btn-primary w-full mt-1">다음</button>

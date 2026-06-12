@@ -11,7 +11,7 @@ export interface RegisterPayload {
   password: string
   nickname?: string
   gender: 'male' | 'female'
-  department: string
+  department?: string
   email: string
   enrollmentDoc: File
 }
@@ -43,7 +43,7 @@ export const authApi = {
     form.append('password', payload.password)
     if (payload.nickname) form.append('nickname', payload.nickname)
     form.append('gender', payload.gender)
-    form.append('department', payload.department)
+    if (payload.department) form.append('department', payload.department)
     form.append('email', payload.email)
     form.append('enrollmentDoc', payload.enrollmentDoc)
     return client.post<ApiResponse<{ user: User }>>('/auth/register', form)
