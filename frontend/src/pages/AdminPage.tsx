@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { adminApi, authApi, type PendingUser } from '@/api/auth'
+import { groupMatchingApi } from '@/api/groupMatching'
 import { useAuthStore } from '@/store/authStore'
+import { useNotificationStore } from '@/store/notificationStore'
 import AuroraBackground from '@/components/layout/AuroraBackground'
+import NotificationBell from '@/components/NotificationBell'
 
 export default function AdminPage() {
   const { user, setAuth, logout } = useAuthStore()
@@ -16,10 +19,23 @@ export default function AdminPage() {
   const [loginLoading, setLoginLoading] = useState(false)
 
   const isAdmin = user?.isAdmin === true
+  const { setAdminCounts, setGroupIncoming } = useNotificationStore()
 
   useEffect(() => {
     if (isAdmin) fetchPending()
   }, [isAdmin])
+
+  // 알림 카운트 갱신 (이 포털 페이지엔 MainLayout 폴링이 없으므로 별도 처리)
+  useEffect(() => {
+    if (!isAdmin) return
+    const load = () => {
+      adminApi.getCounts().then((r) => setAdminCounts(r.data.pendingUsers, r.data.pendingInquiries)).catch(() => {})
+      groupMatchingApi.getMatchRequests().then((r) => setGroupIncoming(r.data.incoming.length)).catch(() => {})
+    }
+    load()
+    const id = setInterval(load, 30000)
+    return () => clearInterval(id)
+  }, [isAdmin, setAdminCounts, setGroupIncoming])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -117,6 +133,7 @@ export default function AdminPage() {
   // 관리자 화면
   return (
     <div className="p-5 space-y-5 max-w-2xl mx-auto">
+      <NotificationBell />
       <div className="flex items-center justify-between pt-2">
         <h2 className="text-xl font-bold text-gray-800">관리자 — 가입 승인</h2>
         <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-gray-700">로그아웃</button>
