@@ -225,8 +225,6 @@ export default function RegisterPage() {
               }
             </div>
 
-            <p className="text-xs text-gray-400">학번(입학년도)은 학교 이메일로 자동 인식됩니다. 학과는 가입 후 관리자가 설정합니다.</p>
-
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}
             <button type="submit" disabled={isSubmitting} className="btn-primary w-full mt-1">다음</button>
           </form>
