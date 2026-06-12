@@ -30,11 +30,19 @@ export const adminController = {
   async listUsers(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const q = String(req.query.q ?? '').trim().toLowerCase()
+      const field = String(req.query.field ?? 'all') // all|username|nickname|email|student_id
       const conds = ['id != $1'] // 본인 계정 제외
       const params: unknown[] = [req.user!.userId]
       if (q) {
         params.push(`%${q}%`)
-        conds.push(`(LOWER(username) LIKE $2 OR LOWER(nickname) LIKE $2
+        const byField: Record<string, string> = {
+          username: 'LOWER(username) LIKE $2',
+          nickname: 'LOWER(nickname) LIKE $2',
+          email: "LOWER(COALESCE(email,'')) LIKE $2",
+          student_id: "COALESCE(student_id,'') LIKE $2",
+        }
+        conds.push(byField[field] ??
+          `(LOWER(username) LIKE $2 OR LOWER(nickname) LIKE $2
              OR LOWER(COALESCE(email,'')) LIKE $2 OR COALESCE(student_id,'') LIKE $2)`)
       }
       const result = await query<UserRow>(

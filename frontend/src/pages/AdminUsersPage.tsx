@@ -13,6 +13,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [searchField, setSearchField] = useState<'all' | 'username' | 'nickname' | 'email' | 'student_id'>('all')
 
   // 편집 상태
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -22,10 +23,10 @@ export default function AdminUsersPage() {
   const [editError, setEditError] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const fetchUsers = async (q?: string) => {
+  const fetchUsers = async (q?: string, field?: string) => {
     setLoading(true)
     try {
-      const res = await adminApi.listUsers(q)
+      const res = await adminApi.listUsers(q, field)
       setUsers(res.data)
     } finally {
       setLoading(false)
@@ -36,7 +37,7 @@ export default function AdminUsersPage() {
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    fetchUsers(search.trim() || undefined)
+    fetchUsers(search.trim() || undefined, searchField)
   }
 
   const startEdit = (u: AdminUser) => {
@@ -94,9 +95,26 @@ export default function AdminUsersPage() {
       </div>
 
       <form onSubmit={onSearch} className="flex gap-2">
+        <select
+          value={searchField}
+          onChange={(e) => setSearchField(e.target.value as typeof searchField)}
+          className="input-field shrink-0 w-28"
+        >
+          <option value="all">전체</option>
+          <option value="username">아이디</option>
+          <option value="nickname">닉네임</option>
+          <option value="email">이메일</option>
+          <option value="student_id">학번</option>
+        </select>
         <input
           type="text"
-          placeholder="아이디·닉네임·이메일·학번 검색"
+          placeholder={
+            searchField === 'username' ? '아이디 검색'
+              : searchField === 'nickname' ? '닉네임 검색'
+              : searchField === 'email' ? '이메일 검색'
+              : searchField === 'student_id' ? '학번 검색'
+              : '아이디·닉네임·이메일·학번 검색'
+          }
           className="input-field flex-1"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

@@ -90,8 +90,9 @@ export interface AdminUser {
 }
 
 export const adminApi = {
-  listUsers: (q?: string) =>
-    client.get<ApiResponse<AdminUser[]>>('/admin/users', q ? { q } : undefined),
+  listUsers: (q?: string, field?: string) =>
+    client.get<ApiResponse<AdminUser[]>>('/admin/users',
+      q ? { q, ...(field && field !== 'all' ? { field } : {}) } : undefined),
 
   updateUser: (userId: string, payload: { department?: string; studentId?: string }) =>
     client.patch<ApiResponse<AdminUser>>(`/admin/users/${userId}`, payload),
