@@ -3,6 +3,7 @@ import client from '@/api/client'
 import type { ApiResponse } from '@/types'
 import dayjs from 'dayjs'
 import AdminSubNav from '@/components/layout/AdminSubNav'
+import { useNotificationStore } from '@/store/notificationStore'
 
 interface Inquiry {
   id: string
@@ -23,6 +24,7 @@ export default function SuggestionsAdminPage() {
   const [answer, setAnswer] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [filter, setFilter] = useState<'all' | 'pending' | 'answered'>('all')
+  const decPendingInquiries = useNotificationStore((s) => s.decPendingInquiries)
 
   useEffect(() => {
     client.get<ApiResponse<Inquiry[]>>('/admin/support').then((res) => setInquiries(res.data))
@@ -30,9 +32,11 @@ export default function SuggestionsAdminPage() {
 
   const handleAnswer = async () => {
     if (!selected || !answer.trim()) return
+    const wasPending = selected.status === 'pending'
     setSubmitting(true)
     try {
       await client.patch(`/admin/support/${selected.id}/answer`, { answer })
+      if (wasPending) decPendingInquiries()
       setInquiries((prev) =>
         prev.map((i) =>
           i.id === selected.id ? { ...i, status: 'answered', answer, answered_at: new Date().toISOString() } : i,

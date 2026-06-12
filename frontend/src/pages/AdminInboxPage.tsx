@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { adminApi, type PendingUser } from '@/api/auth'
 import AdminSubNav from '@/components/layout/AdminSubNav'
+import { useNotificationStore } from '@/store/notificationStore'
 
 export default function AdminInboxPage() {
   const [pending, setPending] = useState<PendingUser[]>([])
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState<string | null>(null)
+  const decPendingUsers = useNotificationStore((s) => s.decPendingUsers)
 
   useEffect(() => { fetchPending() }, [])
 
@@ -24,6 +26,7 @@ export default function AdminInboxPage() {
     try {
       await adminApi.approveUser(userId)
       setPending((prev) => prev.filter((u) => u.id !== userId))
+      decPendingUsers()
     } catch (e) {
       alert(e instanceof Error ? e.message : '승인 실패')
     } finally {
@@ -37,6 +40,7 @@ export default function AdminInboxPage() {
     try {
       await adminApi.rejectUser(userId)
       setPending((prev) => prev.filter((u) => u.id !== userId))
+      decPendingUsers()
     } catch (e) {
       alert(e instanceof Error ? e.message : '거절 실패')
     } finally {

@@ -6,6 +6,8 @@ interface NotificationState {
   groupIncoming: number     // 받은 과팅 신청
   setAdminCounts: (pendingUsers: number, pendingInquiries: number) => void
   setGroupIncoming: (n: number) => void
+  decPendingUsers: () => void
+  decPendingInquiries: () => void
 }
 
 export const useNotificationStore = create<NotificationState>((set) => ({
@@ -14,4 +16,6 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   groupIncoming: 0,
   setAdminCounts: (pendingUsers, pendingInquiries) => set({ pendingUsers, pendingInquiries }),
   setGroupIncoming: (groupIncoming) => set({ groupIncoming }),
+  decPendingUsers: () => set((s) => ({ pendingUsers: Math.max(0, s.pendingUsers - 1) })),
+  decPendingInquiries: () => set((s) => ({ pendingInquiries: Math.max(0, s.pendingInquiries - 1) })),
 }))
