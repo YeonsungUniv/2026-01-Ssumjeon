@@ -24,37 +24,61 @@ function HeartArrowIcon({ active }: { active: boolean }) {
     ? { animation: 'arrow-fly-in 0.55s cubic-bezier(0.22,1,0.36,1) forwards' }
     : { opacity: 0, transform: 'translate(-44px,-44px)' }
 
+  const HEART_PATH = 'M32 56C32 56 7 41 7 24C7 14 14 8 23 8C27.5 8 31 11 32 13C33 11 36.5 8 41 8C50 8 57 14 57 24C57 41 32 56 32 56Z'
+
   return (
-    <div className="relative w-14 h-14" style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }}>
+    <div className="relative w-14 h-14" style={{ filter: 'drop-shadow(0 3px 6px rgba(130,20,50,0.40))' }}>
+      {/* 뒤쪽 화살 (깃·샤프트) — 골드 메탈릭 */}
       <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 1, ...arrowAnim }}>
-        <line x1="10" y1="10" x2="22" y2="22" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" />
-        <g transform="rotate(-70, 10, 10)">
-          <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="white" stroke="#d97706" strokeWidth="0.6" />
-          <line x1="10" y1="9" x2="10" y2="-3" stroke="#d97706" strokeWidth="0.7" strokeLinecap="round" />
-        </g>
-        <g transform="rotate(-45, 10, 10)">
-          <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="white" stroke="#d97706" strokeWidth="0.6" />
-          <line x1="10" y1="9" x2="10" y2="-3" stroke="#d97706" strokeWidth="0.7" strokeLinecap="round" />
-        </g>
-        <g transform="rotate(-20, 10, 10)">
-          <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="white" stroke="#d97706" strokeWidth="0.6" />
-          <line x1="10" y1="9" x2="10" y2="-3" stroke="#d97706" strokeWidth="0.7" strokeLinecap="round" />
-        </g>
+        <defs>
+          <linearGradient id="arrowGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#fde68a" />
+            <stop offset="45%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#a85a00" />
+          </linearGradient>
+        </defs>
+        {[-70, -45, -20].map((deg, i) => (
+          <g key={i} transform={`rotate(${deg}, 10, 10)`}>
+            <path d="M10,10 C7,8 7,3 10,-3 C13,3 13,8 10,10Z" fill="#fff7e6" stroke="url(#arrowGrad)" strokeWidth="0.8" />
+            <line x1="10" y1="9" x2="10" y2="-3" stroke="#c2740a" strokeWidth="0.7" strokeLinecap="round" />
+          </g>
+        ))}
+        <line x1="10" y1="10" x2="24" y2="24" stroke="#a85a00" strokeWidth="3.6" strokeLinecap="round" />
+        <line x1="10" y1="10" x2="24" y2="24" stroke="url(#arrowGrad)" strokeWidth="2.4" strokeLinecap="round" />
+        <line x1="11" y1="10.5" x2="22" y2="21.5" stroke="#fff3cf" strokeWidth="0.8" strokeLinecap="round" opacity="0.85" />
       </svg>
+
+      {/* 하트 — 그라데이션 + 광택으로 입체감 */}
       <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 2 }}>
-        <g transform="rotate(12, 32, 32)">
-          <path
-            d="M32 56C32 56 7 41 7 24C7 14 14 8 23 8C27.5 8 31 11 32 13C33 11 36.5 8 41 8C50 8 57 14 57 24C57 41 32 56 32 56Z"
-            fill="#e11d48"
-            style={active ? { animation: 'heart-bounce 0.65s ease-out' } : undefined}
-          />
-          <ellipse cx="22" cy="19" rx="6" ry="3.5" fill="white" opacity="0.2" transform="rotate(-30 22 19)" />
+        <defs>
+          <linearGradient id="heartGrad" x1="0.15" y1="0" x2="0.85" y2="1">
+            <stop offset="0%" stopColor="#ff8aa6" />
+            <stop offset="45%" stopColor="#f5295b" />
+            <stop offset="100%" stopColor="#b3123c" />
+          </linearGradient>
+          <radialGradient id="heartGloss" cx="0.32" cy="0.26" r="0.55">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        <g transform="rotate(12, 32, 32)" style={active ? { animation: 'heart-bounce 0.65s ease-out' } : undefined}>
+          <path d={HEART_PATH} fill="url(#heartGrad)" />
+          <path d={HEART_PATH} fill="url(#heartGloss)" />
+          <ellipse cx="21" cy="18" rx="7" ry="4.2" fill="#ffffff" opacity="0.45" transform="rotate(-28 21 18)" />
+          <circle cx="39" cy="15" r="1.8" fill="#ffffff" opacity="0.5" />
         </g>
       </svg>
+
+      {/* 앞쪽 화살촉 — 골드(하트와 대비), 관통 그림자 포함 */}
       <svg viewBox="0 0 64 64" className="absolute inset-0 w-full h-full" style={{ zIndex: 3, ...arrowAnim }}>
-        <line x1="42" y1="42" x2="50" y2="50" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" />
+        {/* 화살이 하트를 뚫고 나온 자리 그림자 */}
+        <ellipse cx="40.5" cy="40.5" rx="3.4" ry="1.7" fill="#7a0f2e" opacity="0.5" transform="rotate(45 40.5 40.5)" />
+        <line x1="42" y1="42" x2="50" y2="50" stroke="#a85a00" strokeWidth="3.6" strokeLinecap="round" />
+        <line x1="42" y1="42" x2="50" y2="50" stroke="url(#arrowGrad)" strokeWidth="2.4" strokeLinecap="round" />
+        <line x1="42.5" y1="42.5" x2="49" y2="49" stroke="#fff3cf" strokeWidth="0.8" strokeLinecap="round" opacity="0.85" />
         <g transform="translate(53,53) rotate(45)">
-          <path d="M0,6 C-8,1 -8,-5 -3,-5 C-1,-5 0,-3 0,-2 C0,-3 1,-5 3,-5 C8,-5 8,1 0,6Z" fill="#e11d48" />
+          <path d="M0,6 C-8,1 -8,-5 -3,-5 C-1,-5 0,-3 0,-2 C0,-3 1,-5 3,-5 C8,-5 8,1 0,6Z" fill="url(#arrowGrad)" stroke="#a85a00" strokeWidth="0.5" />
+          <path d="M0,4 C-4,1 -4,-3 -1.5,-3.5 L0,-2 Z" fill="#fff3cf" opacity="0.55" />
         </g>
       </svg>
     </div>
