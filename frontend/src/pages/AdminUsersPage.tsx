@@ -153,15 +153,13 @@ export default function AdminUsersPage() {
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => startEdit(u)} className="btn-outline text-sm py-1.5 px-4">수정</button>
-                      {!u.isAdmin && (
-                        <button
-                          onClick={() => handleDelete(u)}
-                          disabled={deletingId === u.id}
-                          className="text-sm py-1.5 px-4 rounded-2xl border border-red-200 text-red-500 font-medium hover:bg-red-50 disabled:opacity-40 transition-colors"
-                        >
-                          {deletingId === u.id ? '삭제 중...' : '삭제'}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleDelete(u)}
+                        disabled={deletingId === u.id}
+                        className="text-sm py-1.5 px-4 rounded-2xl border border-red-200 text-red-500 font-medium hover:bg-red-50 disabled:opacity-40 transition-colors"
+                      >
+                        {deletingId === u.id ? '삭제 중...' : '삭제'}
+                      </button>
                     </div>
                   </div>
                 ) : (
