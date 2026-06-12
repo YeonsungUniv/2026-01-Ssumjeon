@@ -2,8 +2,9 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useChatStore } from '@/store/chatStore'
 import { useAuthStore } from '@/store/authStore'
 import { useMatchRequestStore } from '@/store/matchRequestStore'
+import { useNotificationStore } from '@/store/notificationStore'
 
-type Tab = { to: string; label: string; icon: ({ className }: { className?: string }) => JSX.Element; badge?: 'chat' | 'request' }
+type Tab = { to: string; label: string; icon: ({ className }: { className?: string }) => JSX.Element; badge?: 'chat' | 'request' | 'inbox' | 'inquiry' | 'admin' }
 
 const baseTabs: Tab[] = [
   { to: '/',               label: '홈',    icon: HomeIcon },
@@ -15,19 +16,28 @@ const baseTabs: Tab[] = [
 
 const adminTabs: Tab[] = [
   { to: '/admin/users',  label: '사용자 관리', icon: UsersIcon },
-  { to: '/admin/inbox',  label: '가입 수신함', icon: InboxIcon },
-  { to: '/suggestions',  label: '건의사항',   icon: SuggestionIcon },
+  { to: '/admin/inbox',  label: '가입 수신함', icon: InboxIcon, badge: 'inbox' },
+  { to: '/suggestions',  label: '건의사항',   icon: SuggestionIcon, badge: 'inquiry' },
 ]
 
 export default function TabBar({ collapsed = false, onToggle }: { collapsed?: boolean; onToggle?: () => void }) {
   const { rooms } = useChatStore()
   const { user } = useAuthStore()
   const { pendingIncomingCount } = useMatchRequestStore()
+  const { pendingUsers, pendingInquiries } = useNotificationStore()
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
   const isAdmin = user?.isAdmin === true
 
+  const badgeFor = (badge?: Tab['badge']) =>
+    badge === 'chat' ? totalUnread
+      : badge === 'request' ? pendingIncomingCount
+      : badge === 'inbox' ? pendingUsers
+      : badge === 'inquiry' ? pendingInquiries
+      : badge === 'admin' ? pendingUsers + pendingInquiries
+      : 0
+
   const renderTab = ({ to, label, icon: Icon, badge }: Tab) => {
-    const badgeCount = badge === 'chat' ? totalUnread : badge === 'request' ? pendingIncomingCount : 0
+    const badgeCount = badgeFor(badge)
     return (
       <NavLink
         key={to}
@@ -100,6 +110,7 @@ export function MobileNav() {
   const { rooms } = useChatStore()
   const { user } = useAuthStore()
   const { pendingIncomingCount } = useMatchRequestStore()
+  const { pendingUsers, pendingInquiries } = useNotificationStore()
   const { pathname } = useLocation()
   const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
   const isAdmin = user?.isAdmin === true
@@ -108,13 +119,18 @@ export function MobileNav() {
   if (/^\/chat\/.+/.test(pathname)) return null
 
   const tabs: Tab[] = isAdmin
-    ? [...baseTabs, { to: '/admin/users', label: '관리', icon: UsersIcon }]
+    ? [...baseTabs, { to: '/admin/users', label: '관리', icon: UsersIcon, badge: 'admin' }]
     : baseTabs
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-white/70 backdrop-blur-xl border-t border-white/50 shadow-[0_-4px_24px_rgba(120,90,200,0.10)] z-50 flex pb-[env(safe-area-inset-bottom)]">
       {tabs.map(({ to, label, icon: Icon, badge }) => {
-        const badgeCount = badge === 'chat' ? totalUnread : badge === 'request' ? pendingIncomingCount : 0
+        const badgeCount = badge === 'chat' ? totalUnread
+          : badge === 'request' ? pendingIncomingCount
+          : badge === 'inbox' ? pendingUsers
+          : badge === 'inquiry' ? pendingInquiries
+          : badge === 'admin' ? pendingUsers + pendingInquiries
+          : 0
         return (
           <NavLink
             key={to}

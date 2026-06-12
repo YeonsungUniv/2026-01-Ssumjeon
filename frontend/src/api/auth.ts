@@ -100,6 +100,9 @@ export const adminApi = {
   deleteUser: (userId: string) =>
     client.delete<ApiResponse<{ deleted: boolean }>>(`/admin/users/${userId}`),
 
+  getCounts: () =>
+    client.get<ApiResponse<{ pendingUsers: number; pendingInquiries: number }>>('/admin/counts'),
+
   listPending: () =>
     client.get<ApiResponse<PendingUser[]>>('/admin/pending'),
 

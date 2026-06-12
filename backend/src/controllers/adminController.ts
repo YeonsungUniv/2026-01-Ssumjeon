@@ -228,4 +228,20 @@ export const adminController = {
       next(err)
     }
   },
+
+  // 관리자 알림 카운트 (가입 대기 / 미답변 건의)
+  async getCounts(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const [pu, pi] = await Promise.all([
+        query<{ c: string }>("SELECT COUNT(*) c FROM users WHERE status = 'pending'"),
+        query<{ c: string }>("SELECT COUNT(*) c FROM support_inquiries WHERE status = 'pending'"),
+      ])
+      return success(res, {
+        pendingUsers: Number(pu.rows[0].c),
+        pendingInquiries: Number(pi.rows[0].c),
+      })
+    } catch (err) {
+      next(err)
+    }
+  },
 }

@@ -7,6 +7,7 @@ const router = Router()
 
 router.use(authenticate, adminOnly)
 
+router.get('/counts', adminController.getCounts)
 router.get('/users', adminController.listUsers)
 router.patch('/users/:userId', adminController.updateUser)
 router.delete('/users/:userId', adminController.deleteUser)
