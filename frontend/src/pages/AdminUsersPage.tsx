@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminApi, type AdminUser } from '@/api/auth'
+import { useAuthStore } from '@/store/authStore'
 import DepartmentSelect from '@/components/DepartmentSelect'
 import AdminSubNav from '@/components/layout/AdminSubNav'
 
@@ -10,6 +11,7 @@ const STATUS_LABEL: Record<AdminUser['status'], { text: string; cls: string }> =
 }
 
 export default function AdminUsersPage() {
+  const { user: me } = useAuthStore()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -135,7 +137,7 @@ export default function AdminUsersPage() {
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => startEdit(u)} className="btn-outline text-sm py-1.5 px-4">수정</button>
-                      {!u.isAdmin && (
+                      {u.id !== me?.id && (
                         <button
                           onClick={() => handleDelete(u)}
                           disabled={deletingId === u.id}

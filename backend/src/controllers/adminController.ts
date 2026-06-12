@@ -97,10 +97,6 @@ export const adminController = {
     try {
       const { userId } = req.params
       if (userId === req.user!.userId) return fail(res, '본인 계정은 여기서 삭제할 수 없습니다.')
-      // 관리자 계정은 삭제 불가
-      const target = await query<{ is_admin: boolean }>('SELECT is_admin FROM users WHERE id = $1', [userId])
-      if (target.rows.length === 0) return fail(res, '사용자를 찾을 수 없습니다.', 404)
-      if (target.rows[0].is_admin) return fail(res, '관리자 계정은 삭제할 수 없습니다.')
       const ok = await purgeUser(userId)
       if (!ok) return fail(res, '사용자를 찾을 수 없습니다.', 404)
       return success(res, { deleted: true })
