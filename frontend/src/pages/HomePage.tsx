@@ -61,11 +61,14 @@ function HeartArrowIcon({ active }: { active: boolean }) {
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
         </defs>
-        <g transform="rotate(12, 32, 32)" style={active ? { animation: 'heart-bounce 0.65s ease-out' } : undefined}>
-          <path d={HEART_PATH} fill="url(#heartGrad)" />
-          <path d={HEART_PATH} fill="url(#heartGloss)" />
-          <ellipse cx="21" cy="18" rx="7" ry="4.2" fill="#ffffff" opacity="0.45" transform="rotate(-28 21 18)" />
-          <circle cx="39" cy="15" r="1.8" fill="#ffffff" opacity="0.5" />
+        <g transform="rotate(12, 32, 32)">
+          {/* 바운스(scale)는 안쪽에서만 → 회전(기울기)은 그대로 유지, 갑작스런 기울어짐 제거 */}
+          <g style={active ? { animation: 'heart-bounce 0.65s ease-out', transformBox: 'fill-box', transformOrigin: 'center' } : undefined}>
+            <path d={HEART_PATH} fill="url(#heartGrad)" />
+            <path d={HEART_PATH} fill="url(#heartGloss)" />
+            <ellipse cx="21" cy="18" rx="7" ry="4.2" fill="#ffffff" opacity="0.45" transform="rotate(-28 21 18)" />
+            <circle cx="39" cy="15" r="1.8" fill="#ffffff" opacity="0.5" />
+          </g>
         </g>
       </svg>
 
