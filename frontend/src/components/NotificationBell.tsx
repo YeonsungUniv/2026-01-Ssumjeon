@@ -1,33 +1,24 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useChatStore } from '@/store/chatStore'
-import { useMatchRequestStore } from '@/store/matchRequestStore'
-import { useNotificationStore } from '@/store/notificationStore'
-import { useAuthStore } from '@/store/authStore'
+import { useNotifications } from '@/hooks/useNotifications'
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
-  const { rooms } = useChatStore()
-  const { pendingIncomingCount } = useMatchRequestStore()
-  const { groupIncoming, pendingUsers, pendingInquiries } = useNotificationStore()
-  const isAdmin = useAuthStore((s) => s.user?.isAdmin === true)
-
-  const totalUnread = rooms.reduce((a, r) => a + r.unreadCount, 0)
+  const { chat, match, group, inbox, inquiry, total, isAdmin } = useNotifications()
 
   const items = [
-    { key: 'chat', n: totalUnread, label: '읽지 않은 메시지', icon: '💬', to: '/chat' },
-    { key: 'match', n: pendingIncomingCount, label: '받은 채팅 신청', icon: '💗', to: '/matching' },
-    { key: 'group', n: groupIncoming, label: '받은 과팅 신청', icon: '🎉', to: '/group-matching' },
+    { key: 'chat', n: chat, label: '읽지 않은 메시지', icon: '💬', to: '/chat' },
+    { key: 'match', n: match, label: '받은 채팅 신청', icon: '💗', to: '/matching' },
+    { key: 'group', n: group, label: '받은 과팅 신청', icon: '🎉', to: '/group-matching' },
     ...(isAdmin
       ? [
-          { key: 'inbox', n: pendingUsers, label: '가입 승인 대기', icon: '📨', to: '/admin/inbox' },
-          { key: 'inquiry', n: pendingInquiries, label: '새 건의사항', icon: '📝', to: '/suggestions' },
+          { key: 'inbox', n: inbox, label: '가입 승인 대기', icon: '📨', to: '/admin/inbox' },
+          { key: 'inquiry', n: inquiry, label: '새 건의사항', icon: '📝', to: '/suggestions' },
         ]
       : []),
   ]
-  const total = items.reduce((a, i) => a + i.n, 0)
   const active = items.filter((i) => i.n > 0)
 
   useEffect(() => {

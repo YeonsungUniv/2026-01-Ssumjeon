@@ -9,6 +9,7 @@ import { groupMatchingApi } from '@/api/groupMatching'
 import { adminApi } from '@/api/auth'
 import { useChatStore } from '@/store/chatStore'
 import { useAuthStore } from '@/store/authStore'
+import { useMatchRequestStore } from '@/store/matchRequestStore'
 import { useNotificationStore } from '@/store/notificationStore'
 
 const FULL_HEIGHT_ROUTES = /^\/chat/
@@ -17,7 +18,8 @@ export default function MainLayout() {
   useSocket()
   const { setRooms } = useChatStore()
   const { user } = useAuthStore()
-  const { setAdminCounts, setGroupIncoming } = useNotificationStore()
+  const { setAdminCounts, setGroupIncoming, markSeen, groupIncoming, pendingUsers, pendingInquiries } = useNotificationStore()
+  const pendingIncomingCount = useMatchRequestStore((s) => s.pendingIncomingCount)
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === '1')
 
@@ -32,6 +34,14 @@ export default function MainLayout() {
   useEffect(() => {
     chatApi.getRooms().then((res) => setRooms(res.data))
   }, [setRooms])
+
+  // 해당 페이지에 들어가면 그 카테고리 알림을 '확인'으로 처리 (벨/배지 차감)
+  useEffect(() => {
+    if (pathname.startsWith('/matching')) markSeen('match', pendingIncomingCount)
+    else if (pathname.startsWith('/group-matching')) markSeen('group', groupIncoming)
+    else if (pathname.startsWith('/admin/inbox')) markSeen('inbox', pendingUsers)
+    else if (pathname.startsWith('/suggestions')) markSeen('inquiry', pendingInquiries)
+  }, [pathname, pendingIncomingCount, groupIncoming, pendingUsers, pendingInquiries, markSeen])
 
   // 알림 카운트 주기적 갱신 (받은 과팅 신청 + 관리자: 가입대기/미답변 건의)
   useEffect(() => {

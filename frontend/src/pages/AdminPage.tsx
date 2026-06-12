@@ -19,7 +19,12 @@ export default function AdminPage() {
   const [loginLoading, setLoginLoading] = useState(false)
 
   const isAdmin = user?.isAdmin === true
-  const { setAdminCounts, setGroupIncoming } = useNotificationStore()
+  const { setAdminCounts, setGroupIncoming, markSeen, pendingUsers } = useNotificationStore()
+
+  // 이 포털은 가입 승인 화면이므로 들어오면 '가입 수신함' 알림 확인 처리
+  useEffect(() => {
+    if (isAdmin) markSeen('inbox', pendingUsers)
+  }, [isAdmin, pendingUsers, markSeen])
 
   useEffect(() => {
     if (isAdmin) fetchPending()

@@ -1,15 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { useChatStore } from '@/store/chatStore'
-import { useAuthStore } from '@/store/authStore'
-import { useMatchRequestStore } from '@/store/matchRequestStore'
-import { useNotificationStore } from '@/store/notificationStore'
+import { useNotifications } from '@/hooks/useNotifications'
 
-type Tab = { to: string; label: string; icon: ({ className }: { className?: string }) => JSX.Element; badge?: 'chat' | 'request' | 'inbox' | 'inquiry' | 'admin' }
+type BadgeKey = 'chat' | 'request' | 'group' | 'inbox' | 'inquiry' | 'admin'
+type Tab = { to: string; label: string; icon: ({ className }: { className?: string }) => JSX.Element; badge?: BadgeKey }
 
 const baseTabs: Tab[] = [
   { to: '/',               label: '홈',    icon: HomeIcon },
   { to: '/matching',       label: '매칭',  icon: HeartIcon, badge: 'request' },
-  { to: '/group-matching', label: '과팅',  icon: GroupIcon },
+  { to: '/group-matching', label: '과팅',  icon: GroupIcon, badge: 'group' },
   { to: '/chat',           label: '채팅',  icon: ChatIcon, badge: 'chat' },
   { to: '/profile',        label: '나',    icon: PersonIcon },
 ]
@@ -20,21 +18,21 @@ const adminTabs: Tab[] = [
   { to: '/suggestions',  label: '건의사항',   icon: SuggestionIcon, badge: 'inquiry' },
 ]
 
-export default function TabBar({ collapsed = false, onToggle }: { collapsed?: boolean; onToggle?: () => void }) {
-  const { rooms } = useChatStore()
-  const { user } = useAuthStore()
-  const { pendingIncomingCount } = useMatchRequestStore()
-  const { pendingUsers, pendingInquiries } = useNotificationStore()
-  const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
-  const isAdmin = user?.isAdmin === true
-
-  const badgeFor = (badge?: Tab['badge']) =>
-    badge === 'chat' ? totalUnread
-      : badge === 'request' ? pendingIncomingCount
-      : badge === 'inbox' ? pendingUsers
-      : badge === 'inquiry' ? pendingInquiries
-      : badge === 'admin' ? pendingUsers + pendingInquiries
+function useBadgeFor() {
+  const { chat, match, group, inbox, inquiry, isAdmin } = useNotifications()
+  const fn = (badge?: BadgeKey) =>
+    badge === 'chat' ? chat
+      : badge === 'request' ? match
+      : badge === 'group' ? group
+      : badge === 'inbox' ? inbox
+      : badge === 'inquiry' ? inquiry
+      : badge === 'admin' ? inbox + inquiry
       : 0
+  return { badgeFor: fn, isAdmin }
+}
+
+export default function TabBar({ collapsed = false, onToggle }: { collapsed?: boolean; onToggle?: () => void }) {
+  const { badgeFor, isAdmin } = useBadgeFor()
 
   const renderTab = ({ to, label, icon: Icon, badge }: Tab) => {
     const badgeCount = badgeFor(badge)
@@ -107,13 +105,8 @@ export default function TabBar({ collapsed = false, onToggle }: { collapsed?: bo
 
 // 모바일 하단 탭바 (md 미만에서만 노출)
 export function MobileNav() {
-  const { rooms } = useChatStore()
-  const { user } = useAuthStore()
-  const { pendingIncomingCount } = useMatchRequestStore()
-  const { pendingUsers, pendingInquiries } = useNotificationStore()
+  const { badgeFor, isAdmin } = useBadgeFor()
   const { pathname } = useLocation()
-  const totalUnread = rooms.reduce((acc, r) => acc + r.unreadCount, 0)
-  const isAdmin = user?.isAdmin === true
 
   // 채팅방(입력창 있는 화면)에서는 하단바 숨김 — 입력창 가림 방지
   if (/^\/chat\/.+/.test(pathname)) return null
@@ -125,12 +118,7 @@ export function MobileNav() {
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-white/70 backdrop-blur-xl border-t border-white/50 shadow-[0_-4px_24px_rgba(120,90,200,0.10)] z-50 flex pb-[env(safe-area-inset-bottom)]">
       {tabs.map(({ to, label, icon: Icon, badge }) => {
-        const badgeCount = badge === 'chat' ? totalUnread
-          : badge === 'request' ? pendingIncomingCount
-          : badge === 'inbox' ? pendingUsers
-          : badge === 'inquiry' ? pendingInquiries
-          : badge === 'admin' ? pendingUsers + pendingInquiries
-          : 0
+        const badgeCount = badgeFor(badge)
         return (
           <NavLink
             key={to}
